@@ -19,6 +19,7 @@
 /// <reference path="activity/verifier.ts" />
 /// <reference path="activity/game.ts" />
 /// <reference path="activity/hmlgame.ts" />
+/// <reference path="activity/segame.ts" />
 
 declare var CCSParser;
 declare var TCCSParser;
@@ -38,6 +39,7 @@ module Main {
         activityHandler.addActivity("verifier" , new Activity.Verifier("#verifier-container", "#verify-btn"));
         activityHandler.addActivity("game" , new Activity.Game("#game-container", "#game-btn", "#select-game"));
         activityHandler.addActivity("hmlgame" , new Activity.HmlGame("#hml-game-container", "#hml-game-btn", "#select-game"));
+        activityHandler.addActivity("segame" , new Activity.SEGame("#se-game-container", "#se-game-btn", "#select-game"));
         activityHandler.selectActivity("editor");
 
         new New("#new-btn", activityHandler);
