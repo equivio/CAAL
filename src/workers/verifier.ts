@@ -214,6 +214,146 @@ messageHandlers.isWeaklyTraceEq = data => {
     self.postMessage(data);
 };
 
+messageHandlers.isStronglyTwoNestedSimulationEquivalent = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let parsedGraph = BJN.parseForBJN(attackSuccGen);
+        let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
+        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[5] > 1});
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isStronglyReadinessTracesEquivalent = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let parsedGraph = BJN.parseForBJN(attackSuccGen);
+        let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
+        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[3] > 1 || energyLevel[4] > 1 || energyLevel[5] > 1});
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isStronglyPossibleFuturesEquivalent = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let parsedGraph = BJN.parseForBJN(attackSuccGen);
+        let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
+        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[5] > 1});
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isStronglyReadynessEquivalent = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let parsedGraph = BJN.parseForBJN(attackSuccGen);
+        let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
+        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 1 || energyLevel[3] > 1 || energyLevel[4] > 1 || energyLevel[5] > 1});
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isStronglyFailureTracesEquivalent = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let parsedGraph = BJN.parseForBJN(attackSuccGen);
+        let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
+        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[3] > 0 || energyLevel[4] > 1 || energyLevel[5] > 1});
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isStronglyRevivalEquivalent = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let parsedGraph = BJN.parseForBJN(attackSuccGen);
+        let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
+        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 1 || energyLevel[3] > 0 || energyLevel[4] > 1 || energyLevel[5] > 1});
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isStronglyReadySimulationEquivalent = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let parsedGraph = BJN.parseForBJN(attackSuccGen);
+        let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
+        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[4] > 1 || energyLevel[5] > 1});
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isStronglyImpossibleFuturesEquivalent = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let parsedGraph = BJN.parseForBJN(attackSuccGen);
+        let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
+        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[5] > 1});
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isStronglyFailureEquivalent = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let parsedGraph = BJN.parseForBJN(attackSuccGen);
+        let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
+        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 1 || energyLevel[5] > 1});
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isStronglyEnablednessEquivalent = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let parsedGraph = BJN.parseForBJN(attackSuccGen);
+        let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
+        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[0] > 1 || energyLevel[1] > 1 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0});
+    }
+    self.postMessage(data);
+};
+
 function readFormulaSet(data) : HML.FormulaSet {
     var formulaSet = new HML.FormulaSet;
     if (inputMode === "CCS") {

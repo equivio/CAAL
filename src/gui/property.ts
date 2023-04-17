@@ -599,4 +599,233 @@ module Property {
             return super.getType() === "strong" ? "isStronglyTraceIncluded" : "isWeaklyTraceIncluded";
         }
     }
+
+    export class BJNEquivalence extends Relation{
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+        /**
+         * Check whether both process(first and second) is defined, and it exists in the CCS program.
+         * Property status must not be invalid.
+         * Property type must be strong.
+         * @return {boolean} if true, everything is defined.
+         */
+        public isReadyForVerification() : boolean {
+            var isReady = true;
+            var error = "";
+
+            if(!this.getFirstProcess() && !this.getSecondProcess()) {
+                isReady = false;
+                error = "Two processes must be selected"
+            } else {
+                // if they are defined check whether they are defined in the CCS-program
+                var processList = this.project.getGraph().getNamedProcesses()
+                if (processList.indexOf(this.getFirstProcess()) === -1 || processList.indexOf(this.getSecondProcess()) === -1) {
+                    isReady = false;
+                    error = "One of the processes is not defined in the CCS program."
+                } else{
+                    if (this.type === "weak"){
+                        isReady = false;
+                        error = "only strong equivalences are supported."
+                    }
+                }
+            }
+
+            if(!isReady) { 
+                this.setInvalidateStatus(error);
+            }
+
+            return isReady
+        }
+    }
+
+    export class TwoNestedSimulation extends BJNEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "2n"
+            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "TwoNestedSimulation";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isStronglyTwoNestedSimulationEquivalent";
+        }
+    }
+
+    export class ReadySimulation extends BJNEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "RS"
+            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "ReadySimulation";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isStronglyReadySimulationEquivalent";
+        }
+    }
+
+    export class ReadinessTraces extends BJNEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "RT"
+            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "ReadinessTraces";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isStronglyReadinessTracesEquivalent";
+        }
+    }
+
+    export class PossibleFutures extends BJNEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "PF"
+            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "PossibleFutures";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isStronglyPossibleFuturesEquivalent";
+        }
+    }
+
+    export class FailureTraces extends BJNEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "FT"
+            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "FailureTraces";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isStronglyFailureTracesEquivalent";
+        }
+    }
+
+    export class Readiness extends BJNEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "R"
+            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Readiness";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isStronglyReadinessEquivalent";
+        }
+    }
+
+    export class Revivals extends BJNEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "RV"
+            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Revivals";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isStronglyRevivalEquivalent";
+        }
+    }
+
+    export class ImpossibleFutures extends BJNEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "IF"
+            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "ImpossobleFutures";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isStronglyImpossibleFuturesEquivalent";
+        }
+    }
+
+    export class Failures extends BJNEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "F"
+            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Failures";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isStronglyFailureEquivalent";
+        }
+    }
+
+    export class Enabledness extends BJNEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "E"
+            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Enabledness";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isStronglyEnablednessEquivalent";
+        }
+    }
 }
