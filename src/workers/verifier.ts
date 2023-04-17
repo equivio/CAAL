@@ -6,7 +6,7 @@ declare var TCCSParser;
 declare var HMLParser;
 declare var THMLParser;
 
-importScripts("../ccs_grammar.js", "../tccs_grammar.js", "../hml_grammar.js", "../thml_grammar.js", "../data.js", "../util.js", "../ccs.js");
+importScripts("../ccs_grammar.js", "../tccs_grammar.js", "../hml_grammar.js", "../thml_grammar.js", "../data.js", "../util.js", "../ccs.js", "../BJN.js");
 
 var messageHandlers : any = {};
 var graph;
@@ -33,11 +33,20 @@ messageHandlers.program = data => {
 };
 
 messageHandlers.isStronglyBisimilar = data => {
-    var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true}),
-        defendSuccGen = attackSuccGen,
-        leftProcess = attackSuccGen.getProcessByName(data.leftProcess),
-        rightProcess = defendSuccGen.getProcessByName(data.rightProcess),
-        isBisimilar = Equivalence.isBisimilar(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id, graph);
+    if(inputMode === "TCCS"){
+        var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true}),
+            defendSuccGen = attackSuccGen,
+            leftProcess = attackSuccGen.getProcessByName(data.leftProcess),
+            rightProcess = defendSuccGen.getProcessByName(data.rightProcess),
+            isBisimilar = Equivalence.isBisimilar(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id, graph);
+    }
+    else{
+        let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let parsedGraph = BJN.parseForBJN(attackSuccGen);
+        let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
+        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        isBisimilar =  winningBudgets.length == 0;
+    }
     //Add some kind of request id to determine for which problem have result? It is necessary? Right now just add the new data to the result.
     data.result = isBisimilar;
     self.postMessage(data);
@@ -74,18 +83,25 @@ messageHandlers.isWeaklySimilar = data => {
 };
 
 messageHandlers.isStronglySimulationEquivalent = data => {
-    var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true}),
-        defendSuccGen = attackSuccGen,
-        leftProcess = attackSuccGen.getProcessByName(data.leftProcess),
-        rightProcess = defendSuccGen.getProcessByName(data.rightProcess),
-        isSimilarFromLeft = Equivalence.isSimilar(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id),
-        isSimilarFromRight = false;
-        
-        if (isSimilarFromLeft) {
-            isSimilarFromRight = Equivalence.isSimilar(attackSuccGen, defendSuccGen, rightProcess.id, leftProcess.id);
-        }
-        
-    data.result = isSimilarFromLeft && isSimilarFromRight;
+    if(inputMode === "TCCS"){
+        var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true}),
+            defendSuccGen = attackSuccGen,
+            leftProcess = attackSuccGen.getProcessByName(data.leftProcess),
+            rightProcess = defendSuccGen.getProcessByName(data.rightProcess),
+            isSimilarFromLeft = Equivalence.isSimilar(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id),
+            isSimilarFromRight = false;
+            if (isSimilarFromLeft) {
+                isSimilarFromRight = Equivalence.isSimilar(attackSuccGen, defendSuccGen, rightProcess.id, leftProcess.id);
+            }
+            data.result = isSimilarFromLeft && isSimilarFromRight;
+    }
+    else{
+        let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let parsedGraph = BJN.parseForBJN(attackSuccGen);
+        let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
+        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[4] > 0 || energyLevel[5] > 0});
+    }
     self.postMessage(data);
 };
 
@@ -106,12 +122,21 @@ messageHandlers.isWeaklySimulationEquivalent = data => {
 };
 
 messageHandlers.isStronglyTraceIncluded = data => {
-    var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-    var defendSuccGen = attackSuccGen;
-    var leftProcess = graph.processByName(data.leftProcess);
-    var rightProcess = graph.processByName(data.rightProcess);
-    
-    data.result = Equivalence.isTraceIncluded(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id, graph);
+    if(inputMode === "TCCS"){
+        var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        var defendSuccGen = attackSuccGen;
+        var leftProcess = graph.processByName(data.leftProcess);
+        var rightProcess = graph.processByName(data.rightProcess);
+        data.result = Equivalence.isTraceIncluded(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id, graph);
+    }
+    else{
+        let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let parsedGraph = BJN.parseForBJN(attackSuccGen);
+        let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
+        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        var isTraceIncluded = winningBudgets.every(function (energyLevel) { return energyLevel[1] > 1 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0; });
+        data.result = {isSatisfied: isTraceIncluded, formula: null};
+    }
     self.postMessage(data);
 };
 
@@ -126,26 +151,42 @@ messageHandlers.isWeaklyTraceIncluded = data => {
 };
 
 messageHandlers.isStronglyTraceEq = data => {
-    var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-    var defendSuccGen = attackSuccGen;
-    var leftProcess = graph.processByName(data.leftProcess);
-    var rightProcess = graph.processByName(data.rightProcess);
-    var formula : string;
-    
-    var leftToRightTraceInclusion = Equivalence.isTraceIncluded(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id, graph);
-    var rightToLeftTraceInclusion : any;
-    
-    if (!leftToRightTraceInclusion.isSatisfied) {
-        formula = leftToRightTraceInclusion.formula;
-    } else {
-        rightToLeftTraceInclusion = Equivalence.isTraceIncluded(attackSuccGen, defendSuccGen, rightProcess.id, leftProcess.id, graph);
-        formula = rightToLeftTraceInclusion.formula;
+    if(inputMode === "TCCS"){
+        var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        var defendSuccGen = attackSuccGen;
+        var leftProcess = graph.processByName(data.leftProcess);
+        var rightProcess = graph.processByName(data.rightProcess);
+        var formula : string;
+        
+        var leftToRightTraceInclusion = Equivalence.isTraceIncluded(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id, graph);
+        var rightToLeftTraceInclusion : any;
+        
+        if (!leftToRightTraceInclusion.isSatisfied) {
+            formula = leftToRightTraceInclusion.formula;
+        } else {
+            rightToLeftTraceInclusion = Equivalence.isTraceIncluded(attackSuccGen, defendSuccGen, rightProcess.id, leftProcess.id, graph);
+            formula = rightToLeftTraceInclusion.formula;
+        }
+        
+        data.result = {
+            isSatisfied: (leftToRightTraceInclusion.isSatisfied && rightToLeftTraceInclusion.isSatisfied),
+            formula: formula
+        };
     }
-    
-    data.result = {
-        isSatisfied: (leftToRightTraceInclusion.isSatisfied && rightToLeftTraceInclusion.isSatisfied),
-        formula: formula
-    };
+    else{
+        let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let parsedGraph = BJN.parseForBJN(attackSuccGen);
+
+        let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
+        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        var leftToRightTraceInclusion = winningBudgets.every(function (energyLevel) { return energyLevel[1] > 1 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0; });
+
+        gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.rightProcess), parsedGraph.getNodeByLabel(data.leftProcess));
+        winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        var rightToLeftTraceInclusion = winningBudgets.every(function (energyLevel) { return energyLevel[1] > 1 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0; });
+
+        data.result = {isSatisfied: leftToRightTraceInclusion && rightToLeftTraceInclusion, formula: null};
+    }
     self.postMessage(data);
 };
 

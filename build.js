@@ -40,6 +40,10 @@ ccsSourceFiles.include('src/ccs/*.ts');
 ccsSourceFiles = ccsSourceFiles.toArray();
 createTscFileTask(ccsTargetFile, ccsSourceFiles, {definitionFile: true}, 'Compile ' + ccsTargetFile);
 
+//BJN-Algorithm
+var bjn = _P('lib/BJN.js')
+createTscFileTask(bjn, [_P("src/BJN-Algo/BJN.ts")]);
+
 // verifier worker
 var workerVerifier = _P('lib/workers/verifier.js');
 createTscFileTask(workerVerifier, [_P('src/workers/verifier.ts')]);
@@ -75,7 +79,7 @@ createTscFileTask(mainTargetFile, mainSourceFiles, {definitionFile: true, source
 
 task('grammars', [ccsGrammar, tccsGrammar, hmlGrammar, thmlGrammar]);
 
-task('all', [dataTargetFile, utilTargetFile, 'grammars', ccsTargetFile, 'ace', workerVerifier, mainTargetFile], function() {
+task('all', [dataTargetFile, utilTargetFile, 'grammars', ccsTargetFile, 'ace', bjn, workerVerifier, mainTargetFile], function() {
     console.log('Done Building');
 });
 
@@ -96,7 +100,7 @@ function createTscFileTask(targetFile, sourceFiles, options, comment, onFinish) 
         var command = TSC;
         if (options.definitionFile) command += ' -d';
         if (options.sourceMap) command += ' --sourcemap';
-        command += ' --target ES5';
+        command += targetFile === bjn ? ' --target ES2015' : ' --target ES5';
         command += ' --out ' + targetFile + ' ' + sourceFiles.join(' ');
         jake.exec(command, {printStdout: true}, function () { onFinish(complete); });
     });
