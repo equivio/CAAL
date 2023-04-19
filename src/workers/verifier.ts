@@ -5,6 +5,7 @@ declare var CCSParser;
 declare var TCCSParser;
 declare var HMLParser;
 declare var THMLParser;
+declare var BJN;
 
 importScripts("../ccs_grammar.js", "../tccs_grammar.js", "../hml_grammar.js", "../thml_grammar.js", "../data.js", "../util.js", "../ccs.js", "../BJN.js");
 
@@ -158,7 +159,7 @@ messageHandlers.isStronglyTraceEq = data => {
         var rightProcess = graph.processByName(data.rightProcess);
         var formula : string;
         
-        var leftToRightTraceInclusion = Equivalence.isTraceIncluded(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id, graph);
+        let leftToRightTraceInclusion = Equivalence.isTraceIncluded(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id, graph);
         var rightToLeftTraceInclusion : any;
         
         if (!leftToRightTraceInclusion.isSatisfied) {
@@ -179,7 +180,7 @@ messageHandlers.isStronglyTraceEq = data => {
 
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        var leftToRightTraceInclusion = winningBudgets.every(function (energyLevel) { return energyLevel[1] > 1 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0; });
+        let leftToRightTraceInclusion = winningBudgets.every(function (energyLevel) { return energyLevel[1] > 1 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0; });
 
         gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.rightProcess), parsedGraph.getNodeByLabel(data.leftProcess));
         winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
