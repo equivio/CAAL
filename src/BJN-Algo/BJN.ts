@@ -62,18 +62,42 @@ module BJN{
         }
     }
 
+    // export function parseForBJN(succGen: CCS.SuccessorGenerator){
+    //     let graphForBJN = new Graph();
+    //     succGen.getGraph().getNamedProcesses().forEach((name) => {
+    //         graphForBJN.addNode(name);
+    //     })
+    //     graphForBJN.nodes.forEach((node) => {
+    //         let process = succGen.getGraph().processByName(node.label);
+    //         let transitions = succGen.getSuccessors(process.id);
+    //         transitions.forEach((transition) => {
+    //             graphForBJN.addEdge(node, graphForBJN.getNodeByLabel(transition.targetProcess.toString()), transition.action.getLabel());
+    //         })
+    //     })
+    //     return graphForBJN;
+    // }
+
     export function parseForBJN(succGen: CCS.SuccessorGenerator){
         let graphForBJN = new Graph();
+        let todo: CCS.Process[] = [];
+        // named processes are root node of tree
         succGen.getGraph().getNamedProcesses().forEach((name) => {
             graphForBJN.addNode(name);
+            todo.push(succGen.getGraph().processByName(name));
         })
-        graphForBJN.nodes.forEach((node) => {
-            let process = succGen.getGraph().processByName(node.label);
-            let transitions = succGen.getSuccessors(process.id);
+        // DFS
+        while(todo.length > 0){
+            let currentProc = todo.pop();           
+            let transitions = succGen.getSuccessors(currentProc.id);
             transitions.forEach((transition) => {
-                graphForBJN.addEdge(node, graphForBJN.getNodeByLabel(transition.targetProcess.toString()), transition.action.getLabel());
+                let targetProcessName = transition.targetProcess.toString();
+                if(!graphForBJN.getNodeByLabel(targetProcessName)){
+                    graphForBJN.addNode(targetProcessName);
+                    todo.push(transition.targetProcess);
+                }
+                graphForBJN.addEdge(graphForBJN.getNodeByLabel(currentProc.toString()), graphForBJN.getNodeByLabel(targetProcessName), transition.action.getLabel());
             })
-        })
+        }
         return graphForBJN;
     }
 
