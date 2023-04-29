@@ -62,21 +62,6 @@ module BJN{
         }
     }
 
-    // export function parseForBJN(succGen: CCS.SuccessorGenerator){
-    //     let graphForBJN = new Graph();
-    //     succGen.getGraph().getNamedProcesses().forEach((name) => {
-    //         graphForBJN.addNode(name);
-    //     })
-    //     graphForBJN.nodes.forEach((node) => {
-    //         let process = succGen.getGraph().processByName(node.label);
-    //         let transitions = succGen.getSuccessors(process.id);
-    //         transitions.forEach((transition) => {
-    //             graphForBJN.addEdge(node, graphForBJN.getNodeByLabel(transition.targetProcess.toString()), transition.action.getLabel());
-    //         })
-    //     })
-    //     return graphForBJN;
-    // }
-
     export function parseForBJN(succGen: CCS.SuccessorGenerator){
         let graphForBJN = new Graph();
         let todo: CCS.Process[] = [];
@@ -87,7 +72,7 @@ module BJN{
         })
         // DFS
         while(todo.length > 0){
-            let currentProc = todo.pop();           
+            let currentProc = todo.pop()!;           
             let transitions = succGen.getSuccessors(currentProc.id);
             transitions.forEach((transition) => {
                 let targetProcessName = transition.targetProcess.toString();
@@ -533,62 +518,127 @@ module BJN{
     }
 
 
-    function getEqualitiesFromEnergies(energyLevels: number[][]){
-        let equalities: String[] = [];
+    export function getEqualitiesFromEnergies(energyLevels: number[][]){
+        let equalities = {
+            bisimulation : false,
+            twoNestedSimulation : false,
+            readySimulation : false,
+            possibleFutures : false,
+            simulation : false,
+            readinessTraces : false,
+            failureTraces : false,
+            readiness : false,
+            impossibleFutures : false,
+            revivals : false,
+            failures : false,
+            traceEquivalence : false,
+            enabledness : false};
         // if there exists no distinguishing HML-formula, bisimulation applies
-        if (!energyLevels[0]){
-            equalities.push("bisimulation");
+        if (energyLevels.length == 0){
+            for (let eq in equalities){
+                equalities[eq] = true;
+            }
         }
         // if for all minimum energy budgets at least one dimension of each is greater than the "allowed" budget to refute, the equivalence applies
         else{
+            // two-nested simulation
             if (energyLevels.every((energyLevel) => { return energyLevel[5] > 1})){
-                equalities.push("2-nested simulation");
+                for (let eq in equalities){
+                    if (eq === "bisimulation"){
+                        continue;
+                    }
+                    equalities[eq] = true;
+                }
             }
             else{
+                // ready simulation
                 if (energyLevels.every((energyLevel) => { return energyLevel[4] > 1 || energyLevel[5] > 1})){
-                    equalities.push("ready simulation");
+                    for (let eq in equalities){
+                        if (["bisimulation", "twoNestedSimulation", "possibleFutures", "impossibleFutures"].indexOf(eq) > -1){
+                            continue;
+                        }
+                        equalities[eq] = true;
+                    }
                 }
                 else{
+                    // simulation
                     if (energyLevels.every((energyLevel) => { return energyLevel[4] > 0 || energyLevel[5] > 0})){
-                        equalities.push("simulation");
+                        equalities["simulation"] = true;
+                        equalities["traceEquivalence"] = true;
+                        equalities["enabledness"] = true;
                     }
                     else{
+                        // trace equivalence
                         if (energyLevels.every((energyLevel) => { return energyLevel[1] > 1 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0})){
-                            equalities.push("traces");
+                            equalities["traceEquivalence"] = true;
+                            equalities["enabledness"] = true;
                         }
+                        // enabledness
                         else{
                             if (energyLevels.every((energyLevel) => { return energyLevel[0] > 1 || energyLevel[1] > 1 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0})){
-                                equalities.push("enabledness");
+                                equalities["enabledness"] = true;
                             }
                         }
                     }
+                    // readiness traces
                     if (energyLevels.every((energyLevel) => { return energyLevel[3] > 1 || energyLevel[4] > 1 || energyLevel[5] > 1})){
-                        equalities.push("readiness traces");
+                        for (let eq in equalities){
+                            if (["bisimulation", "twoNestedSimulation", "readySimulation", "possibleFutures", "impossibleFutures", "simulation"].indexOf(eq) > -1){
+                                continue;
+                            }
+                            equalities[eq] = true;
+                        }
                     }
                     else{
+                        // failure trace
                         if (energyLevels.every((energyLevel) => { return energyLevel[3] > 0 || energyLevel[4] > 1 || energyLevel[5] > 1})){
-                            equalities.push("failure trace");
+                            equalities["failureTraces"] = true;
+                            equalities["revivals"] = true;
+                            equalities["failures"] = true;
+                            equalities["traceEquivalence"] = true;
+                            equalities["enabledness"] = true;
                         }
                     }
                 }
+                // possible futures
                 if (energyLevels.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[5] > 1})){
-                    equalities.push("possible futures");
+                    for (let eq in equalities){
+                        if (["bisimulation", "twoNestedSimulation", "readySimulation", "simulation", "readinessTraces", "failureTraces"].indexOf(eq) > -1){
+                            continue;
+                        }
+                        equalities[eq] = true;
+                    }
                 }
                 else{
+                    // impossible futures
                     if (energyLevels.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[5] > 1})){
-                        equalities.push("impossible futures");
+                        equalities["impossibleFutures"] = true;
+                        equalities["failures"] = true;
+                        equalities["traces"] = true;
+                        equalities["enabledness"] = true;
                     }
                     else{
+                        // failures
                         if (energyLevels.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 1 || energyLevel[5] > 1})){
-                            equalities.push("failures");
+                            equalities["failures"] = true;
+                            equalities["traces"] = true;
+                            equalities["enabledness"] = true;
                         }
                     }
+                    // readiness
                     if (energyLevels.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 1 || energyLevel[3] > 1 || energyLevel[4] > 1 || energyLevel[5] > 1})){
-                        equalities.push("readiness");
+                        equalities["readiness"] = true;
+                        equalities["revivals"] = true;
+                        equalities["failures"] = true;
+                        equalities["traces"] = true;
+                        equalities["enabledness"] = true;
                     }
                     else{
                         if (energyLevels.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 1 || energyLevel[3] > 0 || energyLevel[4] > 1 || energyLevel[5] > 1})){
-                            equalities.push("revivals");
+                            equalities["revivals"] = true;
+                            equalities["failures"] = true;
+                            equalities["traces"] = true;
+                            equalities["enabledness"] = true;
                         }
                     }
                 }

@@ -14,6 +14,7 @@ module Activity {
             this.queue = [];
 
             $("#add-property").on("click", () => this.showPropertyModal());
+            $("#verify-bjn").on("click", () => this.verifyBJN());
             $("#verify-all").on("click", () => this.verifyAll());
             $("#verify-stop").on("click", () => this.stopVerify());
             $("input[name=property-type]").on("change", () => this.showSelectedPropertyType());
@@ -303,15 +304,56 @@ module Activity {
 
             options["comment"] = $("#propertyComment").val();
 
-            var property = new window["Property"][propertyName](options);
-            this.project.addProperty(property);
+            if (propertyName === "BJNAlgo"){
+                // delete potential old props
+                let properties = this.project.getProperties().filter((prop) => {
+                    if ("forBJN" in prop){
+                        return prop["forBJN"];
+                    }
+                    return false
+                });
+                properties.forEach((prop) => {
+                    this.deleteProperty({data: {property: prop}});
+                })
+                let supportedEqs = [
+                    "Bisimulation",
+                    "TwoNestedSimulation",
+                    "ReadySimulation",
+                    "PossibleFutures",
+                    "Simulation",
+                    "ReadinessTraces",
+                    "FailureTraces",
+                    "Readiness",
+                    "ImpossibleFutures",
+                    "Revivals",
+                    "Failures",
+                    "TraceEquivalence",
+                    "Enabledness"
+                ];
+                options["forBJN"] = true;
+                supportedEqs.forEach((eq) => {
+                    var property = new window["Property"][eq](options);
+                    this.project.addProperty(property);
 
-            if (e) {
-                this.project.deleteProperty(e.data.property);
-                property.setRow(e.data.property.getRow());
+                    if (e) {
+                        this.project.deleteProperty(e.data.property);
+                        property.setRow(e.data.property.getRow());
+                    }
+                    this.displayProperty(property);
+                })
+            } else{
+
+                options["forBJN"] = false;
+                var property = new window["Property"][propertyName](options);
+                this.project.addProperty(property);
+
+                if (e) {
+                    this.project.deleteProperty(e.data.property);
+                    property.setRow(e.data.property.getRow());
+                }
+
+                this.displayProperty(property);
             }
-
-            this.displayProperty(property);
         }
 
         private deleteProperty(e) : void {
@@ -341,6 +383,93 @@ module Activity {
             this.verifyNext();
         }
 
+        private verifyBJN() : void {
+            if(this.verifyingProperty == null){
+                let properties = this.project.getProperties().filter((prop) => {
+                    if ("forBJN" in prop){
+                        return prop["forBJN"];
+                    }
+                    return false
+                });
+                this.disableVerification();
+                // since all props have same config, checking for one of them is enough
+                let someProp = properties[0];
+                if (!someProp.isReadyForVerification()) {
+                    console.log("something is wrong, please check the property");
+                    this.verifyingProperty = null;
+                    this.enableVerification();
+                    properties.forEach((prop) => {
+                        this.displayProperty(prop);
+                    });
+                    this.verifyNext();
+                    return;
+                }
+                someProp.startTimer();
+            
+                var program = this.project.getCCS();
+                var inputMode = InputMode[this.project.getInputMode()];
+                let worker = new Worker("lib/workers/verifier.js");
+                
+                worker.postMessage({
+                    type: "program",
+                    program: program,
+                    inputMode: inputMode
+                });
+            
+                worker.postMessage({
+                    type: "runBJN",
+                    time: someProp.getTime(),
+                    leftProcess: someProp.getFirstProcess(),
+                    rightProcess: someProp.getSecondProcess()
+                });
+                
+                worker.addEventListener("error", (error) => {
+                    worker.terminate();
+                    someProp.setError(error.message);
+                    someProp.setStatus(PropertyStatus.invalid);
+                    someProp.stopTimer();
+                    this.verifyingProperty = null;
+                    this.enableVerification();
+                    properties.forEach((prop) => {
+                        prop.setError(error.message);
+                        prop.setStatus(PropertyStatus.invalid);
+                        prop.stopTimer();
+                        this.displayProperty(prop);
+                    });
+                    this.verifyNext();
+                    return;
+                }, false);
+                
+                worker.addEventListener("message", (event) => {
+                    worker.terminate();
+                    let results = event.data.result;
+                    properties.forEach((prop) => {
+                        // first letter of class name needs to be lowercase
+                        let result = results[prop.getClassName().charAt(0).toLowerCase() + prop.getClassName().slice(1)]
+                        if (result === true){
+                            prop.setStatus(PropertyStatus.satisfied);
+                        }
+                        else if (result === false){
+                            prop.setStatus(PropertyStatus.unsatisfied);
+                        }
+                        else {
+                            prop.setStatus(result);
+                        }
+                    });
+                    someProp.stopTimer();
+                    let timeString = someProp.getElapsedTime();
+
+                    this.verifyingProperty = null;
+                    this.enableVerification();
+                    properties.forEach((prop) => {
+                        prop.setElapsedTime(timeString);
+                        this.displayProperty(prop);
+                    });
+                    this.verifyNext();
+                });
+            }
+        }
+
         private stopVerify() : void {
             if (this.verifyingProperty != null) {
                 this.verifyingProperty.abortVerification();
@@ -361,12 +490,14 @@ module Activity {
         private enableVerification() : void {
             $(".verify-property").removeClass("text-muted");
             $("#verify-all").prop("disabled", false);
+            $("#verify-bjn").prop("disabled", false);
             $("#verify-stop").prop("disabled", true);
         }
 
         private disableVerification() : void {
             $(".verify-property").addClass("text-muted");
             $("#verify-all").prop("disabled", true);
+            $("#verify-bjn").prop("disabled", true);
             $("#verify-stop").prop("disabled", false);
         }
     }

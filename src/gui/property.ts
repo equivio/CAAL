@@ -33,8 +33,16 @@ module Property {
             return this.status;
         }
 
+        public setStatus(status : PropertyStatus) : void {
+            this.status = status;
+        }
+
         public getError() : string {
             return this.error;
+        }
+
+        public setError(error : string) : void {
+            this.error = error;
         }
 
         public getComment() : string {
@@ -55,6 +63,10 @@ module Property {
 
         public getElapsedTime() : string {
             return this.elapsedTime;
+        }
+
+        public setElapsedTime(timeString : string) : void {
+            this.elapsedTime = timeString;
         }
 
         public startTimer() { 
@@ -151,6 +163,10 @@ module Property {
         public toJSON() : any { throw "Not implemented by subclass"; }
         public isReadyForVerification() : boolean { throw "Not implemented by subclass"; }
         public getGameConfiguration() : any { throw "Not implemented by subclass"; }
+        public getTime() : string {throw "Not implemented by subclass"; }
+        public getFirstProcess() : string {throw "Not implemented by subclass"; }
+        public getSecondProcess() : string {throw "Not implemented by subclass"; }
+        public getClassName() : string {throw "Not implemented by subclass"; }
     }
     
     export class HML extends Property {
@@ -316,6 +332,7 @@ module Property {
         protected secondProcess : string;
         protected type : string;
         protected time : string;
+        protected forBJN : boolean = false;
 
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(status);
@@ -324,6 +341,8 @@ module Property {
             this.type = options.type;
             this.time = options.time;
             this.comment = options.comment;
+            // flag to distinguish between independent Eqs and those that are part of the multiple at once BJN-Verififcation
+            this.forBJN = options.forBJN;
         }
 
         public getFirstProcess() : string {
@@ -359,6 +378,14 @@ module Property {
                 relation: this.getClassName(),
                 playerType: this.status === PropertyStatus.satisfied ? "attacker" : "defender"
             };
+        }
+
+        public getForBJN(){
+            return this.forBJN;
+        }
+
+        public setForBJN(value : boolean){
+            this.forBJN = value;
         }
 
         public toJSON() : any {
@@ -412,7 +439,7 @@ module Property {
             return isReady
         }
 
-        protected getClassName() : string { throw "Not implemented by class"; }
+        public getClassName() : string { throw "Not implemented by class"; }
         protected getWorkerHandler() : string { throw "Not implemented by subclass"; }
     }
 
@@ -783,7 +810,7 @@ module Property {
         }
 
         public getClassName() : string {
-            return "ImpossobleFutures";
+            return "ImpossibleFutures";
         }
 
         protected getWorkerHandler() : string {
