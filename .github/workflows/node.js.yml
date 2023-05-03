@@ -29,6 +29,7 @@ jobs:
     - run: npm ci
     - run: git submodule init
     - run: git submodule update
-    - run: cd modules/ace
-    - run: npm ci
+    - name: "Install Ace dependencies"
+      run: npm ci
+      working-directory: ./modules/ace   
     - run: npm run build-all
