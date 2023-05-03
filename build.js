@@ -116,10 +116,12 @@ function pegjs(targetFile, sourceFile, variable, extraOptions) {
 
 function addVersion(callback) {
     child_process.execFile('git', ['describe', '--tags', '--long'], function (error, stdout, stderr) {
-        if (error) throw error;
-        //remove newlines
-        var tag = stdout.replace(/(\r\n|\n|\r)/gm,"");
-        if (tag.length < 3) throw "Bad tag: " + tag;
+        let tag = 'DEV';
+        if (!error) {
+            //remove newlines
+            tag = stdout.replace(/(\r\n|\n|\r)/gm,"");
+            if (tag.length < 3) throw "Bad tag: " + tag;
+        }
         fs.appendFileSync(mainTargetFile, '\nvar Version = "' + tag + '";');
         callback();
     });
