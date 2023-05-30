@@ -493,7 +493,7 @@ module Activity {
     export enum PlayType { Attacker, Defender }
     export enum Move { Right, Left }
 
-    class Abstract {
+    export class Abstract {
         protected abstract() : any {
             throw new Error("Abstract method not implemented.");
         }

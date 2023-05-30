@@ -22,6 +22,7 @@ module GUI {
         setHoverOutListener(f : (identifier) => void ) : void;
         clearHoverOutListener() : void;
 
+        setRightGraphNodes(names : {q: string | undefined, qSet: string[] | undefined, QStarSet: string[] | undefined}) : void;
         setSelected(name : string) : void;
         getSelected() : string;
         highlightToNode(name: string) : void;

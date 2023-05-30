@@ -119,7 +119,7 @@ nav.navbar {
  * Activity styles
  */
 
-#editor-container, #explorer-container, #verifier-container, #game-container, #hml-game-container {
+#editor-container, #explorer-container, #verifier-container, #game-container, #hml-game-container, #se-game-container {
     margin-bottom: 15px;
 }
 
@@ -363,24 +363,24 @@ nav.navbar {
  * Games activity styles
  */
 
-#game-options {
+#game-options, #se-game-options {
     margin-bottom: 15px;
 }
 
-#game-options div, #game-options select {
+#game-options div, #game-options select, #se-game-options div, #se-game-options select {
     margin-right: 20px;
 }
 
-#game-options div:last-child, #game-options select:last-child {
+#game-options div:last-child, #game-options select:last-child, #se-game-options div:last-child, #se-game-options select:last-child {
     margin-right: 0;
 }
 
-#game-left-process, #game-right-process {
+#game-left-process, #game-right-process, #se-game-left-process, #se-game-right-process {
     width: 150px;
     float: left;
 }
 
-#game-ccs-type {
+#game-ccs-type, #se-game-ccs-type {
     width: 95px;
     float: left;
 }
@@ -390,48 +390,48 @@ nav.navbar {
     float: left;
 }
 
-#game-relation {
+#game-relation, #se-game-relation {
     width: 135px;
     float: left;
 }
 
-#game-left {
+#game-left, #se-game-left {
     padding-right: 0;
 }
 
-#game-right {
+#game-right, #se-game-right {
     padding-left: 0;
 }
 
-#game-left .input-group, #game-right .input-group {
+#game-left .input-group, #game-right .input-group, #se-game-left .input-group, #se-game-right .input-group {
     position: absolute;
     top: 10px;
     right: 10px;
     width: 88px;
 }
 
-#depth-left, #depth-right {
+#depth-left, #depth-right, #se-depth-left, #se-depth-right {
     text-align: center;
 }
 
-#game-left-canvas, #game-right-canvas {
+#game-left-canvas, #game-right-canvas, #se-game-left-canvas, #se-game-right-canvas {
     border: 1px solid #e7e7e7;
     overflow: auto;
 }
 
-#game-left-canvas .tooltip, #game-right-canvas .tooltip {
+#game-left-canvas .tooltip, #game-right-canvas .tooltip, #se-game-left-canvas .tooltip, #se-game-right-canvas .tooltip {
     font: normal 15px "Inconsolata";
 }
 
-#game-right-canvas {
+#game-right-canvas, #se-game-right-canvas {
     border-left: none;
 }
 
-#game-canvas-tooltip-left, #game-canvas-tooltip-right {
+#game-canvas-tooltip-left, #game-canvas-tooltip-right, #se-game-canvas-tooltip-left, #se-game-canvas-tooltip-right {
     position: absolute;
 }
 
-#game-main input[type=range] {
+#game-main input[type=range], #se-game-main input[type=range] {
     position: absolute;
     top: 10px;
     left: 10px;
@@ -439,20 +439,20 @@ nav.navbar {
     cursor: pointer;
 }
 
-#game-status .col-md-5 {
+#game-status .col-md-5, #se-game-status .col-md-5 {
     padding-right: 0;
 }
 
-#game-status .col-md-7 {
+#game-status .col-md-7, #se-game-status .col-md-7 {
     padding-left: 0;
 }
 
-#game-status .tooltip, #game-transitions-table tbody {
+#game-status .tooltip, #game-transitions-table tbody, #se-game-status .tooltip, #se-game-transitions-table tbody {
     font: normal 15px "Inconsolata";
     color: #333;
 }
 
-#game-log {
+#game-log, #se-game-log {
     height: 225px;
     padding: 10px;
     overflow: auto;
@@ -460,31 +460,31 @@ nav.navbar {
     border-top: none;
 }
 
-#game-log h4.game-round {
+#game-log h4.game-round, #se-game-log h4.se-game-round {
     font-weight: bold;
 }
 
-#game-log p {
+#game-log p, #se-game-log p {
     margin: 0 0 10px 20px;
 }
 
-#game-log p:last-child {
+#game-log p:last-child, #segame-log p:last-child {
     margin-bottom: 0;
 }
 
-#game-log p.intro, #game-log p.outro {
+#game-log p.intro, #game-log p.outro, #se-game-log p.intro, #se-game-log p.outro {
     margin-left: 0;
 }
 
-#game-log p.outro {
+#game-log p.outro, #se-game-log p.outro {
     margin-top: 20px;
 }
 
-#game-log h4 {
+#game-log h4, #se-game-log h4 {
     margin: 20px 0 10px 0;
 }
 
-#game-transitions {
+#game-transitions, #se-game-transitions {
     height: 225px;
     padding: 10px;
     overflow: auto;
@@ -494,32 +494,32 @@ nav.navbar {
 }
 
 @media (max-width: 991px) {
-    #game-left-process, #game-right-process, #game-ccs-type, #game-tccs-type, #game-relation {
+    #game-left-process, #game-right-process, #game-ccs-type, #game-tccs-type, #game-relation, #se-game-left-process, #se-game-right-process, #se-game-ccs-type, #se-game-relation {
         width: 100%;
     }
 
-    #game-left {
+    #game-left, #se-game-left {
         padding-right: 15px;
     }
 
-    #game-right {
+    #game-right, #se-game-right {
         padding-left: 15px;
     }
 
-    #game-right-canvas {
+    #game-right-canvas, #se-game-right-canvas {
         border-top: none;
         border-left: 1px solid #e7e7e7;
     }
 
-    #game-transitions {
+    #game-transitions, #se-game-transitions {
         border-left: 1px solid #e7e7e7;
     }
 
-    #game-status .col-md-5 {
+    #game-status .col-md-5, #se-game-status .col-md-5 {
         padding-right: 15px;
     }
 
-    #game-status .col-md-7 {
+    #game-status .col-md-7, #se-game-status .col-md-7 {
         padding-left: 15px;
     }
 }
@@ -530,6 +530,13 @@ nav.navbar {
 #game-container:-o-full-screen      {width: 100%; height: 100%; background-color: #fff; padding: 15px; margin-bottom: 0}
 #game-container:full-screen         {width: 100%; height: 100%; background-color: #fff; padding: 15px; margin-bottom: 0}
 #game-container:fullscreen          {width: 100%; height: 100%; background-color: #fff; padding: 15px; margin-bottom: 0}
+
+#se-game-container:-webkit-full-screen {width: 100%; height: 100%; background-color: #fff; padding: 15px; margin-bottom: 0}
+#se-game-container:-moz-full-screen    {width: 100%; height: 100%; background-color: #fff; padding: 15px; margin-bottom: 0}
+#se-game-container:-ms-fullscreen      {width: 100%; height: 100%; background-color: #fff; padding: 15px; margin-bottom: 0}
+#se-game-container:-o-full-screen      {width: 100%; height: 100%; background-color: #fff; padding: 15px; margin-bottom: 0}
+#se-game-container:full-screen         {width: 100%; height: 100%; background-color: #fff; padding: 15px; margin-bottom: 0}
+#se-game-container:fullscreen          {width: 100%; height: 100%; background-color: #fff; padding: 15px; margin-bottom: 0}
 
 
 /*

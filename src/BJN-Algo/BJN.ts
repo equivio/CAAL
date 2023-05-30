@@ -12,6 +12,7 @@ module BJN{
         }
     }
 
+    // TODO: remove redundant adj
     class Node{
         label: string;
         adj: Node[];
@@ -62,7 +63,7 @@ module BJN{
         }
     }
 
-    export function parseForBJN(succGen: CCS.SuccessorGenerator){
+    export function parseForBJN(succGen: CCS.SuccessorGenerator) : Graph{
         let graphForBJN = new Graph();
         let todo: CCS.Process[] = [];
         // named processes are root node of tree
@@ -87,7 +88,7 @@ module BJN{
     }
 
 
-    class Position extends WithAutoIncrementedId{
+    export class Position extends WithAutoIncrementedId{
         p: Node;
         qSet?: Node[]
         qStarSet?: Node[]
@@ -155,10 +156,36 @@ module BJN{
 
             return true;
         }
+
+        toString() : string {
+            let str = "(" + this.p.label + ",";
+            if(this.q){
+                str += this.q.label
+            }
+            else{
+                str += "{"
+                for(let i = 0; i < this.qSet!.length; i++){
+                    str += this.qSet![i].label;
+                    str += i < this.qSet!.length -1 ? "," : ""
+                }
+                str += "}";
+                if(this.qStarSet){
+                    str += ",{";
+                    for(let i = 0; i < this.qStarSet!.length; i++){
+                        str += this.qStarSet![i].label;
+                        str += i < this.qStarSet!.length -1 ? "," : ""
+                    }
+                    str += "}";
+                }
+                
+            }
+            str += ")"
+            return str;
+        }
     }
 
 
-    class Move{
+    export class Move{
         from: Position;
         to: Position;
         update: (number | number[])[];
@@ -167,6 +194,22 @@ module BJN{
             this.from = from;
             this.to = to;
             this.update = update
+        }
+
+        updateToString() : string {
+            let str = "(";
+            for(let i = 0; i < 6; i++){
+                let dim = this.update[i];
+                // check if dim is relative or minimum selection update
+                if(Number.isFinite(dim)){
+                    str += dim;
+                }
+                else{
+                    str += "min(" + dim[0] + "," + dim[1] + ")";
+                }
+                str += i<5 ? "," : ")"
+            }
+            return str;
         }
     }
 
@@ -341,8 +384,48 @@ module BJN{
                 }
             }
         }
+
+        getPossibleMoves(left: string, right: {q: string | undefined, qSet: string[] | undefined, qStarSet: string[] | undefined}) : Move[]{
+            let p = new Node(left);
+            let q = right.q ? new Node(right.q) : undefined;
+
+            let qSet : Node[] | undefined;
+            if(right.qSet){
+                qSet = [];
+                right.qSet.forEach((e) => { qSet!.push(new Node(e)) })
+            }
+            else{ qSet = undefined; }
+
+            let qStarSet : Node[] | undefined;
+            if(right.qStarSet){
+                qStarSet = [];
+                right.qStarSet.forEach((e) => { qStarSet!.push(new Node(e)) })
+            }
+            else{ qStarSet = undefined; }
+
+
+            let currentPos = this.positions.find((pos) => {
+                return pos.isEqualTo(new Position(p, false, qSet, qStarSet, q))
+            })
+            if(!currentPos){ throw "game state not found"; }
+            let possibleMoves = this.moves.filter((move) => {
+                return move.from.isEqualTo(currentPos!);
+            })
+            return possibleMoves;
+        }
     }
 
+    export function update(budget: number[], update: any) : number[]{
+        for(let i = 0; i < 6; i++){
+            if(Array.isArray(update[i])){
+                budget[i] = Math.min(budget[update[i][0]], budget[update[i][1]]);
+            }
+            else{
+                budget[i] -= update[i];
+            }
+        }
+        return budget;
+    }
 
     function inverseUpdate(energyLevel: number[], update: (number | number[])[]){
         let parts: number[][] = [[...energyLevel]];

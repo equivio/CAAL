@@ -1,0 +1,1 @@
+{"id":null,"title":"Example Ben Paper","ccs":"agent S = tis.S + tis.Div + ena.Div;\nagent Sdash = tis.Sdash + ena.Div;\nagent Div = tis.Div;","properties":[{"className":"Bisimulation","status":1,"options":{"type":"strong","time":null,"firstProcess":"S","secondProcess":"Sdash","comment":""}}],"inputMode":"CCS"}
