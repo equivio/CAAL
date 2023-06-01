@@ -416,15 +416,16 @@ module BJN{
     }
 
     export function update(budget: number[], update: any) : number[]{
+        let updatedBudget: number[] = [];
         for(let i = 0; i < 6; i++){
             if(Array.isArray(update[i])){
-                budget[i] = Math.min(budget[update[i][0]], budget[update[i][1]]);
+                updatedBudget[i] = Math.min(budget[update[i][0]], budget[update[i][1]]);
             }
             else{
-                budget[i] -= update[i];
+                updatedBudget[i] = budget[i] + update[i];
             }
         }
-        return budget;
+        return updatedBudget;
     }
 
     function inverseUpdate(energyLevel: number[], update: (number | number[])[]){

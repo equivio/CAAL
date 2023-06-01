@@ -509,7 +509,7 @@ module Activity {
         private gameType : string;
         private time : string;
         private energyBudget : number[];
-        private energySpent: number[];
+        private energyLeft: number[];
         public succGen : CCS.SuccessorGenerator;
         private bjn : BJN.Game;
         private attackerWinBudgets : Map<BJN.Position, number[][]>;
@@ -540,7 +540,7 @@ module Activity {
             this.succGen = succGen;
             this.graph = graph;
             this.energyBudget = energyBudget;
-            this.energySpent = Array(6).fill(0);
+            this.energyLeft = energyBudget;
             this.gameType = gameType;
             this.time = time;
             this.currentLeft = currentLeft;
@@ -646,17 +646,15 @@ module Activity {
         public play(player : Player, choice : BJN.Move) : void {
                 this.gameLog.printPlay(player, choice, this);
                 this.saveCurrentConfig(choice);
+                this.moveCount++;
+                this.gameLog.printMoveCount(this.moveCount, this.getCurrentConfiguration());
                 // TODO: cycle detection
-                if(choice.to.qStarSet){
+                if(choice.to.isDefenderPosition){
                     this.preparePlayer(this.defender);
                 }
                 else{
                     this.preparePlayer(this.attacker);
                 }
-                // TODO: fix premature winning message
-                this.moveCount++;
-                this.gameLog.printMoveCount(this.moveCount, this.getCurrentConfiguration());
-
             //this.gameActivity.centerNode(destinationProcess, this.lastMove);
         }
 
@@ -725,18 +723,18 @@ module Activity {
             else{ return this.getWinningAttack(choices, false) ? this.attacker : this.defender }
         }
 
-        public getWinningAttack(choices : BJN.Move[], updateEnergySpent : boolean) : any {
+        public getWinningAttack(choices : BJN.Move[], updateEnergyLeft : boolean) : any {
              for(let i = 0; i < choices.length; i++){
-                let cost = BJN.update(this.energySpent, choices[i].update);
+                let newEnergyLeft = BJN.update(this.energyLeft, choices[i].update);
                 let positionAttackerWin = this.attackerWinBudgets.get(choices[i].to);
                 if(!positionAttackerWin){ throw "Something went wrong when selecting a move."; }
                 else{
                     if(positionAttackerWin.some((budget) => {
                         return budget.every((dim, index) => {
-                            return dim + cost[index] <= this.energyBudget[index];
+                            return dim <= newEnergyLeft[index];
                         })
                     })){
-                        if(updateEnergySpent){ this.energySpent = cost; }
+                        if(updateEnergyLeft){ this.energyLeft = newEnergyLeft; }
                         return choices[i];
                     }
                 }
@@ -748,18 +746,18 @@ module Activity {
             return choices[0]
         }
         // TODO: Case no budget exists
-        public getWinningDefend(choices : BJN.Move[], updateEnergySpent : boolean) : any {
+        public getWinningDefend(choices : BJN.Move[], updateEnergyLeft : boolean) : any {
             for(let i = 0; i < choices.length; i++){
-                let cost = BJN.update(this.energySpent, choices[i].update);
+                let newEnergyLeft = BJN.update(this.energyLeft, choices[i].update);
                 let positionAttackerWin = this.attackerWinBudgets.get(choices[i].to);
                 if(!positionAttackerWin){ throw "Something went wrong when selecting a move."; }
                 else{
                     if(positionAttackerWin.every((budget) => {
                         return budget.some((dim, index) => {
-                            return dim + cost[index] > this.energyBudget[index];
+                            return dim  > newEnergyLeft[index];
                         })
                     })){
-                        if(updateEnergySpent){ this.energySpent = cost; }
+                        if(updateEnergyLeft){ this.energyLeft = newEnergyLeft; }
                         return choices[i];
                     }
                 }
@@ -780,6 +778,7 @@ module Activity {
             this.playType = playType;
         }
 
+        //TODO: check for energy left
         public prepareTurn(choices : any, game : SEGameLogic) : void {
             switch (this.playType)
             {
@@ -881,7 +880,7 @@ module Activity {
     // such ai
     class Computer extends Player {
 
-        static Delay : number = 1500;
+        static Delay : number = 0;
 
         private delayedPlay;
 
