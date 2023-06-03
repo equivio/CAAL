@@ -385,7 +385,7 @@ module BJN{
             }
         }
 
-        getPossibleMoves(left: string, right: {q: string | undefined, qSet: string[] | undefined, qStarSet: string[] | undefined}) : Move[]{
+        parsePosition(left: string, right: {q: string | undefined, qSet: string[] | undefined, qStarSet: string[] | undefined}) : Position {
             let p = new Node(left);
             let q = right.q ? new Node(right.q) : undefined;
 
@@ -402,10 +402,12 @@ module BJN{
                 right.qStarSet.forEach((e) => { qStarSet!.push(new Node(e)) })
             }
             else{ qStarSet = undefined; }
+            return new Position(p, false, qSet, qStarSet, q);
+        }
 
-
+        getPossibleMoves(position : Position) : Move[]{
             let currentPos = this.positions.find((pos) => {
-                return pos.isEqualTo(new Position(p, false, qSet, qStarSet, q))
+                return pos.isEqualTo(position)
             })
             if(!currentPos){ throw "game state not found"; }
             let possibleMoves = this.moves.filter((move) => {

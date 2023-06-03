@@ -68,6 +68,7 @@ module Activity {
             this.$gameRelation.on("change", () => this.newGame(false, false));
             this.$playerType.on("change", () => this.newGame(false, false));
             this.$restart.on("click", () => this.newGame(false, false));
+            // TODO: fix
             this.$rightDepth.on("change", () => this.setDepth(this.SEGameLogic.getCurrentConfiguration().right, this.rightGraph, this.$rightDepth.val(), Move.Right));
             this.$leftFreeze.on("click", (e) => this.toggleFreeze(this.leftGraph, !this.$leftFreeze.data("frozen"), $(e.currentTarget)));
             this.$rightFreeze.on("click", (e) => this.toggleFreeze(this.rightGraph, !this.$rightFreeze.data("frozen"), $(e.currentTarget)));
@@ -78,11 +79,13 @@ module Activity {
 
             this.$leftDepth.on("change", () => {
                 this.validateDepth(this.$leftDepth);
+                // TODO: fix
                 this.setDepth(this.SEGameLogic.getCurrentConfiguration().left, this.leftGraph, this.$leftDepth.val(), Move.Left);
             });
 
             this.$rightDepth.on("change", () => {
                 this.validateDepth(this.$rightDepth);
+                // TODO: fix
                 this.setDepth(this.SEGameLogic.getCurrentConfiguration().right, this.rightGraph, this.$rightDepth.val(), Move.Right);
             });
 
@@ -529,7 +532,7 @@ module Activity {
         private lastAction : CCS.Action;
         //private currentNodeId : dg.DgNodeId = 0; // the DG node id
 
-        //private cycleCache : any;
+        private cycleCache : any;
 
         constructor(gameActivity : SEGame, gameLog : GameLog, graph : CCS.Graph, succGen : CCS.SuccessorGenerator,
             energyBudget : number[], currentLeft : any, currentRight : any, time : string, gameType : string) {
@@ -587,8 +590,8 @@ module Activity {
             this.stopGame();
             //this.currentNodeId = 0;
 
-            // this.cycleCache = {};
-            // this.cycleCache[this.getConfigurationStr(this.getCurrentConfiguration())] = this.currentNodeId;
+            this.cycleCache = {};
+            this.cycleCache[this.bjn.parsePosition(this.currentLeft, this.currentRight).toString()] = true;
 
             this.gameActivity.highlightNodes();
             //this.gameActivity.centerNode(this.currentLeft, Move.Left);
@@ -599,7 +602,7 @@ module Activity {
                 //this.gameActivity.centerNode(this.currentRight.qSet![0], Move.Right);
             }
             this.gameLog.printIntro(this.getCurrentWinner(), this.attacker);
-            this.gameLog.printMoveCount(this.moveCount, this.getCurrentConfiguration());
+            this.gameLog.printMoveStart(this.moveCount, this.getCurrentConfiguration());
             this.preparePlayer(this.attacker);
         }
 
@@ -646,14 +649,23 @@ module Activity {
         public play(player : Player, choice : BJN.Move) : void {
                 this.gameLog.printPlay(player, choice, this);
                 this.saveCurrentConfig(choice);
-                this.moveCount++;
-                this.gameLog.printMoveCount(this.moveCount, this.getCurrentConfiguration());
-                // TODO: cycle detection
-                if(choice.to.isDefenderPosition){
-                    this.preparePlayer(this.defender);
+                this.energyLeft = BJN.update(this.energyLeft, choice.update);
+                // check for exceeded budget and cycle
+                if(this.energyLeft.find((dim) => { return dim < 0; })){
+                    this.gameLog.printExcessWinner((player === this.attacker) ? this.defender : this.attacker);
+                    this.stopGame();
                 }
                 else{
-                    this.preparePlayer(this.attacker);
+                    if(!this.cycleExists(player)){
+                        this.moveCount++;
+                        this.gameLog.printMoveStart(this.moveCount, this.getCurrentConfiguration());
+                        if(choice.to.isDefenderPosition){
+                            this.preparePlayer(this.defender);
+                        }
+                        else{
+                            this.preparePlayer(this.attacker);
+                        }
+                    }
                 }
             //this.gameActivity.centerNode(destinationProcess, this.lastMove);
         }
@@ -665,7 +677,7 @@ module Activity {
             if (choices.length === 0) {
                 // the player to be prepared cannot make a move
                 // the player to prepare has lost, announce it
-                this.gameLog.printWinner((player === this.attacker) ? this.defender : this.attacker);
+                this.gameLog.printStuckWinner((player === this.attacker) ? this.defender : this.attacker);
 
                 // stop game
                 this.stopGame();
@@ -683,24 +695,22 @@ module Activity {
             }
         }
 
-        // protected cycleExists() : boolean {
-        //     var configuration = this.getCurrentConfiguration();
-        //     var cacheStr = this.getConfigurationStr(configuration);
+        protected cycleExists(player : Player) : boolean {
+            let cacheStr = this.bjn.parsePosition(this.currentLeft, this.currentRight).toString();;
 
-        //     if (this.cycleCache[cacheStr] != undefined) {
-        //         // cycle detected
-        //         this.gameLog.printCycleWinner(this.defender);
-        //         this.stopGame();
+            if (this.cycleCache[cacheStr]) {
+                // cycle detected
+                this.gameLog.printCycleWinner((player === this.attacker) ? this.defender : this.attacker);
+                this.stopGame();
 
-        //         // clear the cache
-        //         this.cycleCache = {};
-        //         this.cycleCache[cacheStr] = this.currentNodeId;
-        //         return true;
-        //     } else {
-        //         this.cycleCache[cacheStr] = this.currentNodeId;
-        //         return false;
-        //     }
-        // }
+                // clear the cache
+                this.cycleCache = {};
+                return true;
+            } else {
+                this.cycleCache[cacheStr] = true;
+                return false;
+            }
+        }
 
         public getConfigurationStr(configuration : any) : string {
             var result = "(";
@@ -714,16 +724,16 @@ module Activity {
         }
 
         public getCurrentChoices() : any {
-            return this.bjn.getPossibleMoves(this.currentLeft, this.currentRight);
+            return this.bjn.getPossibleMoves(this.bjn.parsePosition(this.currentLeft, this.currentRight));
         }
 
         public getCurrentWinner() : Player {
-            let choices = this.bjn.getPossibleMoves(this.currentLeft, this.currentRight);
-            if(this.currentRight.qStarSet){ return this.getWinningDefend(choices, false) ? this.defender : this.attacker }
-            else{ return this.getWinningAttack(choices, false) ? this.attacker : this.defender }
+            let choices = this.bjn.getPossibleMoves(this.bjn.parsePosition(this.currentLeft, this.currentRight));
+            if(this.currentRight.qStarSet){ return this.getWinningDefend(choices) ? this.defender : this.attacker }
+            else{ return this.getWinningAttack(choices) ? this.attacker : this.defender }
         }
 
-        public getWinningAttack(choices : BJN.Move[], updateEnergyLeft : boolean) : any {
+        public getWinningAttack(choices : BJN.Move[]) : any {
              for(let i = 0; i < choices.length; i++){
                 let newEnergyLeft = BJN.update(this.energyLeft, choices[i].update);
                 let positionAttackerWin = this.attackerWinBudgets.get(choices[i].to);
@@ -734,7 +744,6 @@ module Activity {
                             return dim <= newEnergyLeft[index];
                         })
                     })){
-                        if(updateEnergyLeft){ this.energyLeft = newEnergyLeft; }
                         return choices[i];
                     }
                 }
@@ -746,7 +755,7 @@ module Activity {
             return choices[0]
         }
         // TODO: Case no budget exists
-        public getWinningDefend(choices : BJN.Move[], updateEnergyLeft : boolean) : any {
+        public getWinningDefend(choices : BJN.Move[]) : any {
             for(let i = 0; i < choices.length; i++){
                 let newEnergyLeft = BJN.update(this.energyLeft, choices[i].update);
                 let positionAttackerWin = this.attackerWinBudgets.get(choices[i].to);
@@ -757,7 +766,6 @@ module Activity {
                             return dim  > newEnergyLeft[index];
                         })
                     })){
-                        if(updateEnergyLeft){ this.energyLeft = newEnergyLeft; }
                         return choices[i];
                     }
                 }
@@ -910,24 +918,21 @@ module Activity {
 
         private losingAttack(choices : any, game : SEGameLogic) : void {
             var losingAttack = game.getLosingAttack(choices);
-            //var move : Move = losingAttack.move == 1 ? Move.Left : Move.Right; // 1: left, 2: right
             game.play(this, losingAttack);
         }
 
         private winningAttack(choices : any, game : SEGameLogic) : void {
-            var choice : any = game.getWinningAttack(choices, true);
-            //var move : Move = choice.move == 1 ? Move.Left : Move.Right; // 1: left, 2: right
-
+            var choice : any = game.getWinningAttack(choices);
             game.play(this, choice);
         }
 
         private losingDefend(choices : any, game : SEGameLogic) : void {
-            var losingDefend = game.getLosingDefend(choices);
-            game.play(this, losingDefend);
+            var choice = game.getLosingDefend(choices);
+            game.play(this, choice);
         }
 
         private winningDefend(choices : any, game : SEGameLogic) : void {
-            var choice = game.getWinningDefend(choices, true);
+            var choice = game.getWinningDefend(choices);
             game.play(this, choice);
         }
     }
@@ -975,7 +980,7 @@ module Activity {
             this.$log.find(".se-game-prompt").last().remove();
         }
 
-        public printMoveCount(move : number, configuration : any) : void {
+        public printMoveStart(move : number, configuration : any) : void {
             this.println("Move " + move, "<h4 class='se-game-round'>");
             this.printConfiguration(configuration);
         }
@@ -1037,7 +1042,7 @@ module Activity {
             this.println(this.render(template, context), "<p>");
         }
 
-        public printWinner(winner : Player) : void {
+        public printStuckWinner(winner : Player) : void {
             var template = "{1} no available transitions. You {2}!";
 
             var context = {
@@ -1046,6 +1051,16 @@ module Activity {
                 3: {text: (winner.getPlayType() === PlayType.Attacker) ? "defender" : "attacker"}
             };
 
+            this.println(this.render(template, context), "<p class='outro'>");
+        }
+
+        public printExcessWinner(winner : Player) : void {
+            if(winner.getPlayType() == PlayType.Attacker) {throw "Defender cannot lose by exceeding the budget"}
+            let template = "{1} exceeded the budget. You {2}!";
+            let context = {
+                1: {text: (winner instanceof Human) ? "Attacker has" : "You (attacker) have"},
+                2: {text: (winner instanceof Human) ? "win" : "lose"}
+            };
             this.println(this.render(template, context), "<p class='outro'>");
         }
 
