@@ -588,7 +588,6 @@ module Activity {
             if (this.attacker == undefined || this.defender == undefined)
                 throw "No players in game.";
             this.stopGame();
-            //this.currentNodeId = 0;
 
             this.cycleCache = {};
             this.cycleCache[this.bjn.parsePosition(this.currentLeft, this.currentRight).toString()] = true;
@@ -601,7 +600,8 @@ module Activity {
             else{
                 //this.gameActivity.centerNode(this.currentRight.qSet![0], Move.Right);
             }
-            this.gameLog.printIntro(this.getCurrentWinner(), this.attacker);
+            this.currentWinner = this.getCurrentWinner();
+            this.gameLog.printIntro(this.currentWinner, this.attacker);
             this.gameLog.printMoveStart(this.moveCount, this.getCurrentConfiguration());
             this.preparePlayer(this.attacker);
         }
@@ -623,7 +623,6 @@ module Activity {
 
             this.attacker = attacker;
             this.defender = defender;
-            this.currentWinner = this.getCurrentWinner();
         }
         protected saveCurrentConfig(choice : BJN.Move) : void {
             let destination = choice.to            
@@ -656,7 +655,8 @@ module Activity {
                     this.stopGame();
                 }
                 else{
-                    if(!this.cycleExists(player)){
+                    // check for cycle if it's attacker's turn. Short circuit evaluation
+                    if(choice.from.isDefenderPosition || !this.cycleExists(player)){
                         this.moveCount++;
                         this.gameLog.printMoveStart(this.moveCount, this.getCurrentConfiguration());
                         if(choice.to.isDefenderPosition){
@@ -735,6 +735,8 @@ module Activity {
 
         public getWinningAttack(choices : BJN.Move[]) : any {
              for(let i = 0; i < choices.length; i++){
+                // check if position was visited before (cycle avoidance)
+                if(this.cycleCache[choices[i].to.toString()]){ continue; }
                 let newEnergyLeft = BJN.update(this.energyLeft, choices[i].update);
                 let positionAttackerWin = this.attackerWinBudgets.get(choices[i].to);
                 if(!positionAttackerWin){ throw "Something went wrong when selecting a move."; }
@@ -754,7 +756,6 @@ module Activity {
         public getLosingAttack(choices : any) : any {
             return choices[0]
         }
-        // TODO: Case no budget exists
         public getWinningDefend(choices : BJN.Move[]) : any {
             for(let i = 0; i < choices.length; i++){
                 let newEnergyLeft = BJN.update(this.energyLeft, choices[i].update);
@@ -786,7 +787,6 @@ module Activity {
             this.playType = playType;
         }
 
-        //TODO: check for energy left
         public prepareTurn(choices : any, game : SEGameLogic) : void {
             switch (this.playType)
             {
@@ -1014,7 +1014,7 @@ module Activity {
             }
 
             var context = {
-                // TODO: ? maybe add ccs-tooltips
+                // TODO: maybe add ccs-tooltips
                 1: {text: configuration.left, tag: "<span>", attr: [{name: "class", value: "monospace"}]},
                 2: {text: rightConfig, tag: "<span>", attr: [{name: "class", value: "monospace"}]}
             }
