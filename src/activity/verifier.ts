@@ -341,6 +341,7 @@ module Activity {
                     }
                     this.displayProperty(property);
                 })
+                $("#verify-bjn").prop("disabled", false);
             } else{
 
                 options["forBJN"] = false;
@@ -391,6 +392,10 @@ module Activity {
                     }
                     return false
                 });
+                if(properties.length === 0){
+                    this.verifyNext();
+                    return;
+                }
                 this.disableVerification();
                 // since all props have same config, checking for one of them is enough
                 let someProp = properties[0];
