@@ -136,13 +136,7 @@ module Activity {
             this.fullscreen.onShow();
 
             if (this.changed || configuration) {
-                if (this.project.getInputMode() === InputMode.CCS) {
-                    this.$ccsGameTypes.show();
-                } else {
-                    this.$ccsGameTypes.hide();
-                    // TODO: TCCS error case handling
-                }
-
+                this.$ccsGameTypes.show();
                 this.changed = false;
                 this.graph = this.project.getGraph();
                 this.displayOptions();
@@ -223,6 +217,34 @@ module Activity {
             this.rightGraph.freeze(); // force freeze for graph
         }
 
+        protected checkPreconditions() : boolean {
+            try {
+                var graph = this.project.getGraph();
+
+                if (graph.getNamedProcesses().length === 0) {
+                    this.showMessageBox("No Named Processes", "There must be at least one named process in the program.");
+                    return false;
+                }
+
+                if(this.project.getInputMode() === InputMode.TCCS){
+                    this.showMessageBox("Bad input", "The Spectroscopy Energy Game does not support TCCS input");
+                    return false;
+                }
+
+                var errors = graph.getErrors();
+
+                if (errors.length > 0) {
+                    this.showMessageBox("Error", errors.map(error => error.toString()).join("\n"));
+                    return false;
+                }
+            } catch (error) {
+                this.showMessageBox("Error", error);
+                return false;
+            }
+
+            return true;
+        }
+
         private displayOptions() : void {
             var processes = this.graph.getNamedProcesses().reverse();
 
@@ -242,31 +264,18 @@ module Activity {
             var options = {
                 leftProcess: this.$leftProcessList.val(),
                 rightProcess: this.$rightProcessList.val(),
-                type: null,
+                type: this.$ccsGameTypes.val(),
                 time: "",
                 relation: this.$gameRelation.val(),
                 playerType: this.$playerType.filter(":checked").val()
             };
-
-            if (this.project.getInputMode() === InputMode.CCS) {
-                options.type = this.$ccsGameTypes.val();
-            } else {
-                // TODO: Handle Error Case
-            }
-
             return options;
         }
 
         private setOptions(options : any) : void {
             this.$leftProcessList.val(options.leftProcess);
             this.$rightProcessList.val(options.rightProcess);
-
-            if (this.project.getInputMode() === InputMode.CCS) {
-                this.$ccsGameTypes.val(options.type);
-            } else {
-                // TODO: Handle Error Case
-            }
-
+            this.$ccsGameTypes.val(options.type);
             this.$gameRelation.val(options.relation);
 
             // Bootstrap radio buttons only support changes via click events.
