@@ -421,7 +421,7 @@ module BJN{
         let updatedBudget: number[] = [];
         for(let i = 0; i < 6; i++){
             if(Array.isArray(update[i])){
-                updatedBudget[i] = Math.min(budget[update[i][0]], budget[update[i][1]]);
+                updatedBudget[i] = Math.min(budget[update[i][0]-1], budget[update[i][1]-1]);
             }
             else{
                 updatedBudget[i] = budget[i] + update[i];

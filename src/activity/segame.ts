@@ -659,13 +659,13 @@ module Activity {
                 this.saveCurrentConfig(choice);
                 this.energyLeft = BJN.update(this.energyLeft, choice.update);
                 // check for exceeded budget and cycle
-                if(this.energyLeft.find((dim) => { return dim < 0; })){
+                if(this.energyLeft.some((dim) => { return dim < 0; })){
                     this.gameLog.printExcessWinner((player === this.attacker) ? this.defender : this.attacker);
                     this.stopGame();
                 }
                 else{
                     // check for cycle if it's attacker's turn. Short circuit evaluation
-                    if(choice.from.isDefenderPosition || !this.cycleExists(player)){
+                    if(choice.to.isDefenderPosition || !this.cycleExists()){
                         this.moveCount++;
                         this.gameLog.printMoveStart(this.moveCount, this.getCurrentConfiguration());
                         if(choice.to.isDefenderPosition){
@@ -704,12 +704,12 @@ module Activity {
             }
         }
 
-        protected cycleExists(player : Player) : boolean {
-            let cacheStr = this.bjn.parsePosition(this.currentLeft, this.currentRight).toString();;
+        protected cycleExists() : boolean {
+            let cacheStr = this.bjn.parsePosition(this.currentLeft, this.currentRight).toString();
 
             if (this.cycleCache[cacheStr]) {
                 // cycle detected
-                this.gameLog.printCycleWinner((player === this.attacker) ? this.defender : this.attacker);
+                this.gameLog.printCycleWinner(this.defender);
                 this.stopGame();
 
                 // clear the cache
@@ -746,7 +746,7 @@ module Activity {
              for(let i = 0; i < choices.length; i++){
                 // check if position was visited before (cycle avoidance)
                 if(this.cycleCache[choices[i].to.toString()]){ continue; }
-                let newEnergyLeft = BJN.update(this.energyLeft, choices[i].update);
+                let newEnergyLeft : number[] = BJN.update(this.energyLeft, choices[i].update);
                 let positionAttackerWin = this.attackerWinBudgets.get(choices[i].to);
                 if(!positionAttackerWin){ throw "Something went wrong when selecting a move."; }
                 else{
@@ -763,11 +763,43 @@ module Activity {
         }
         // TODO: Move Policy with manhattan-distance or similar
         public getLosingAttack(choices : any) : any {
-            return choices[0]
+            let bestScore : number = -Infinity;
+            let bestChoice : BJN.Move; 
+            for(let i = 0; i < choices.length; i++){
+                // cycle check
+                if(this.cycleCache[choices[i].to.toString()]){
+                    if(i === 0){ bestChoice = choices[0]; }
+                    continue;
+                }
+                let newEnergyLeft : number[] = BJN.update(this.energyLeft, choices[i].update);
+                // budget excess check
+                if(newEnergyLeft.some((dim) => { return dim < 0; })){
+                    if(i === 0){ bestChoice = choices[0]; }
+                    continue;
+                }
+                let positionAttackerWin = this.attackerWinBudgets.get(choices[i].to);
+                if(!positionAttackerWin){ throw "Something went wrong when selecting a move."; }
+                if(positionAttackerWin.length === 0){
+                    if(i === 0){ bestChoice = choices[0]; }
+                    continue;
+                }
+                // manhattan-distance as indicator of best possible losing move
+                positionAttackerWin.forEach((budget) => {
+                    let score : number = newEnergyLeft.reduce((acc, curr, i) => {
+                        if(curr === Infinity){ return acc + 100 - budget[i] }
+                        return acc + curr - budget[i];
+                    }, 0)
+                    if(score > bestScore){
+                        bestScore = score;
+                        bestChoice = choices[i];
+                    }
+                })
+            }
+            return bestChoice!;
         }
         public getWinningDefend(choices : BJN.Move[]) : any {
             for(let i = 0; i < choices.length; i++){
-                let newEnergyLeft = BJN.update(this.energyLeft, choices[i].update);
+                let newEnergyLeft : number [] = BJN.update(this.energyLeft, choices[i].update);
                 let positionAttackerWin = this.attackerWinBudgets.get(choices[i].to);
                 if(!positionAttackerWin){ throw "Something went wrong when selecting a move."; }
                 else{
@@ -784,9 +816,29 @@ module Activity {
         }
         // TODO: Move Policy
         public getLosingDefend(choices : any) : any {
-            return choices[0];
+            let bestScore : number = Infinity;
+            let bestChoice : BJN.Move; 
+            for(let i = 0; i < choices.length; i++){
+                let newEnergyLeft : number[] = BJN.update(this.energyLeft, choices[i].update);
+                let positionAttackerWin = this.attackerWinBudgets.get(choices[i].to);
+                if(!positionAttackerWin){ throw "Something went wrong when selecting a move."; }
+                // manhattan-distance as indicator of best possible losing move
+                let minBudget : number = Infinity;
+                positionAttackerWin.forEach((budget) => {
+                    minBudget = Math.min(minBudget, budget.reduce((acc, curr) => { return acc + curr}, 0))
+                })
+                let score : number = newEnergyLeft.reduce((acc, curr) => {
+                    if(curr === Infinity) { return acc + 100 }
+                    return acc + curr;
+                }, 0)
+                score -= minBudget;
+                if(score < bestScore){
+                    bestScore = score;
+                    bestChoice = choices[i];
+                }
+            }
+            return bestChoice!;
         }
-        //protected createDependencyGraph(graph : CCS.Graph, currentLeft : any, currentRight : any) : dg.PlayableDependencyGraph { return this.abstract(); }
     }
 
     class Player extends Abstract {
@@ -1077,8 +1129,7 @@ module Activity {
             var template = "A cycle has been detected. {1}!";
 
             var context = {
-                1: {text: (winner instanceof Human) ? "You (" + winner.playTypeStr(true) + ") win" : "You ({2}) lose"},
-                2: {text: (winner.getPlayType() === PlayType.Attacker) ? "defender" : "attacker"}
+                1: {text: (winner instanceof Human) ? "You (defender) win" : "You (attacker) lose"}
             };
 
             this.println(this.render(template, context), "<p class='outro'>");
