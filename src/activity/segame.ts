@@ -17,6 +17,7 @@ module Activity {
         private $gameRelation : JQuery;
         private $playerType : JQuery;
         private $restart : JQuery;
+        private $energyGauge : JQuery;
         private $leftContainer : JQuery;
         private $rightContainer : JQuery;
         private $leftZoom : JQuery;
@@ -46,6 +47,7 @@ module Activity {
             this.$gameRelation = $("#se-game-relation");
             this.$playerType = $("input[name=se-player-type]");
             this.$restart = $("#se-game-restart");
+            this.$energyGauge = $("#se-game-gauge");
             this.$leftContainer = $("#se-game-left-canvas");
             this.$rightContainer = $("#se-game-right-canvas");
             this.$leftZoom = $("#se-zoom-left");
@@ -299,6 +301,15 @@ module Activity {
                 }
             });
         }
+
+        private displayEnergyGauge(energyLeft: number[]) : void {
+            let str = "Energy Left: (";
+            for (let i = 0; i < energyLeft.length; i++){
+                str += energyLeft[i] === Infinity ? "∞" : energyLeft[i];
+                str += i < energyLeft.length -1 ? ", " : ")";
+            }
+            this.$energyGauge.html(str);
+        }
         
         private newGame(drawLeft : boolean, drawRight : boolean, configuration? : any) : void {
             var options;
@@ -331,6 +342,7 @@ module Activity {
 
             // TODO: Show Initial Budget and Energy Left
             let budget = this.getEnergyBudgetFromRelation(options.relation);
+            this.displayEnergyGauge(budget);
 
             this.SEGameLogic = new SEGameLogic(this, new GameLog(options.time, this), this.graph, this.succGen, budget, options.leftProcess,
                  {q: undefined, qSet: [options.rightProcess], qStarSet: undefined}, 
@@ -439,6 +451,7 @@ module Activity {
             }
 
             this.highlightNodes();
+            this.displayEnergyGauge(this.SEGameLogic.getEnergyLeft());
         }
 
         public highlightNodes() : void {
@@ -551,7 +564,7 @@ module Activity {
         }
     }
 
-    // TODO: switch class dgGame to SEGame, update protected to private
+    // TODO:  update attributes
     class SEGameLogic extends Abstract {
 
         //private dependencyGraph : dg.PlayableDependencyGraph;
@@ -559,7 +572,6 @@ module Activity {
         private graph : CCS.Graph;
         private gameType : string;
         private time : string;
-        private energyBudget : number[];
         private energyLeft: number[];
         public succGen : CCS.SuccessorGenerator;
         private bjn : BJN.Game;
@@ -590,7 +602,6 @@ module Activity {
             this.gameLog = gameLog;
             this.succGen = succGen;
             this.graph = graph;
-            this.energyBudget = energyBudget;
             this.energyLeft = energyBudget;
             this.gameType = gameType;
             this.time = time;
@@ -608,6 +619,10 @@ module Activity {
 
         public getGameLog() : GameLog {
             return this.gameLog;
+        }
+
+        public getEnergyLeft() : number[] {
+            return this.energyLeft;
         }
 
         // public computeMarking() : dg.LevelMarking {
