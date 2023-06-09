@@ -81,7 +81,7 @@ module BJN{
                     graphForBJN.addNode(targetProcessName);
                     todo.push(transition.targetProcess);
                 }
-                graphForBJN.addEdge(graphForBJN.getNodeByLabel(currentProc.toString()), graphForBJN.getNodeByLabel(targetProcessName), transition.action.getLabel());
+                graphForBJN.addEdge(graphForBJN.getNodeByLabel(currentProc.toString())!, graphForBJN.getNodeByLabel(targetProcessName)!, transition.action.getLabel());
             })
         }
         return graphForBJN;
@@ -216,7 +216,7 @@ module BJN{
     function findTwoPartitions(set: Node[]){
         let combinations: Node[][] = [[]];
         for(let i = 0; i < Math.pow(2, set.length); i++){
-            let combination = [];
+            let combination: Node[] = [];
             for(let j = 0; j < set.length; j++){
                 if ((i & Math.pow(2,j))){
                     combination.push(set[j]);

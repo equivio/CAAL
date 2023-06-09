@@ -10,11 +10,11 @@ class Renderer {
     public particleSystem : ParticleSystem = null;
     
     private nodeStatusColors = {
-        "unexpanded": "rgb(160,160,160)",
-        "expanded": "rgb(51, 65, 185)",
-        "selected": "rgb(245, 50, 50)",
-        "selectedAsQ": "rgb(100, 245, 50)",
-        "selectedAsQStar": "rgb(255, 255, 0)"
+        "unexpanded": "rgb(160,160,160)", // grey
+        "expanded": "rgb(51, 65, 185)", // blue
+        "selected": "rgb(245, 50, 50)", // red
+        "selectedAsQ": "rgb(100, 245, 50)", // green
+        "selectedAsQStar": "rgb(255, 255, 0)" // yellow
     }
 
     private highlightSettings = {
