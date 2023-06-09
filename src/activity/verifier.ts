@@ -168,31 +168,48 @@ module Activity {
 
             if (status === PropertyStatus.unknown || status === PropertyStatus.invalid) {
             } else {
-                var gameConfiguration = property.getGameConfiguration();
-                if (gameConfiguration) {
-                    var startGame = () => {
-                        if (property instanceof Property.HML) {
-                            Main.activityHandler.selectActivity("hmlgame", gameConfiguration);
-                        } else {
-                            Main.activityHandler.selectActivity("game", gameConfiguration);
+                let gameConfiguration = property.getGameConfiguration();
+                // check if property is supported by equivalence/hml game
+                if (!(property instanceof Property.BJNEquivalence)){
+                    if (gameConfiguration && !(property instanceof Property.TraceEquivalence)) {
+                        var startGame = () => {
+                            if (property instanceof Property.HML) {
+                                Main.activityHandler.selectActivity("hmlgame", gameConfiguration);
+                            } else {
+                                Main.activityHandler.selectActivity("game", gameConfiguration);
+                            }
                         }
+
+                        $ul.append($("<li>").append($("<a>").append("Play Game"))
+                            .on("click", () => startGame()));
                     }
 
-                    $ul.append($("<li>").append($("<a>").append("Play Game"))
-                        .on("click", () => startGame()));
+                    if (status === PropertyStatus.unsatisfied && property instanceof Property.DistinguishingFormula && property.getTime() !== "untimed") {
+                        var generateFormula = (properties) => {
+                            if (properties) {
+                                this.project.addPropertyAfter(property.getId(), properties.secondProperty);
+                                this.project.addPropertyAfter(property.getId(), properties.firstProperty);
+                                this.displayProperties();
+                            }
+                        }
+
+                        $ul.append($("<li>").append($("<a>").append("Generate Distinguishing Formula"))
+                            .on("click", () => property.generateDistinguishingFormula(generateFormula)));
+                    }
                 }
-
-                if (status === PropertyStatus.unsatisfied && property instanceof Property.DistinguishingFormula && property.getTime() !== "untimed") {
-                    var generateFormula = (properties) => {
-                        if (properties) {
-                            this.project.addPropertyAfter(property.getId(), properties.secondProperty);
-                            this.project.addPropertyAfter(property.getId(), properties.firstProperty);
-                            this.displayProperties();
-                        }
+                if(gameConfiguration){
+                    // check if relation is supported by the Spectroscopy Energy Game
+                    let matchflag = false;
+                    $("#se-game-relation option").each((i, e) => {
+                        let $element = $(e);
+                        if($element.val() === gameConfiguration.relation){ matchflag = true; return false; }
+                    })
+                    if(matchflag){
+                        gameConfiguration.playerType = "attacker";
+                        $ul.append($("<li>").append($("<a>").append("Play Spectroscopy Energy Game"))
+                            .on("click", () => Main.activityHandler.selectActivity("segame", gameConfiguration)));
                     }
 
-                    $ul.append($("<li>").append($("<a>").append("Generate Distinguishing Formula"))
-                        .on("click", () => property.generateDistinguishingFormula(generateFormula)));
                 }
             }
 

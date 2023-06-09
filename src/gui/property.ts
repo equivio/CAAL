@@ -598,6 +598,17 @@ module Property {
             var symbol = super.getType() === "strong" ? "&#8594;" : "&#8658;";
             return "Traces<sub>" + symbol + super.getTimeSubscript() + "</sub>(" + this.firstProcess + ") = Traces<sub>" + symbol + super.getTimeSubscript() + "</sub>(" + this.secondProcess + ")";
         }
+
+        public getGameConfiguration() {
+            return {
+                leftProcess: this.firstProcess,
+                rightProcess: this.secondProcess,
+                type: this.type,
+                time: this.time ? this.time : "",
+                relation: this.getClassName(),
+                playerType: this.status === PropertyStatus.satisfied ? "attacker" : "defender"
+            };
+        }
         
         public getClassName() : string {
             return "TraceEquivalence";
