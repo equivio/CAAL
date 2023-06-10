@@ -45,7 +45,7 @@ module Activity {
         
         // used for matching process names/ids globally
         static wrapProcess(text : string) : JQuery {
-            return $("<span>").attr("class", "ccs-tooltip-process").append(text);
+            return $("<span>").append(text);
         }
         
         static wrap(text : string) : JQuery {

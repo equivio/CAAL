@@ -5,35 +5,35 @@
 module Activity {
 
     export class SEGame extends Activity {
-        private graph : CCS.Graph;
-        private succGen : CCS.SuccessorGenerator;
-        private SEGameLogic : SEGameLogic;
-        private fullscreen : Fullscreen;
-        private tooltip : ProcessTooltip;
-        private timeout : any;
-        private $leftProcessList : JQuery;
-        private $rightProcessList : JQuery;
-        private $ccsGameTypes : JQuery;
-        private $gameRelation : JQuery;
-        private $playerType : JQuery;
-        private $restart : JQuery;
-        private $energyGauge : JQuery;
-        private $leftContainer : JQuery;
-        private $rightContainer : JQuery;
-        private $leftZoom : JQuery;
-        private $rightZoom : JQuery;
-        private $leftDepth : JQuery;
-        private $rightDepth : JQuery;
-        private $leftFreeze : JQuery;
-        private $rightFreeze : JQuery;
-        private leftCanvas : HTMLCanvasElement;
-        private rightCanvas : HTMLCanvasElement;
+        private graph: CCS.Graph;
+        private succGen: CCS.SuccessorGenerator;
+        private SEGameLogic: SEGameLogic;
+        private fullscreen: Fullscreen;
+        private tooltip: ProcessTooltip;
+        private timeout: any;
+        private $leftProcessList: JQuery;
+        private $rightProcessList: JQuery;
+        private $ccsGameTypes: JQuery;
+        private $gameRelation: JQuery;
+        private $playerType: JQuery;
+        private $restart: JQuery;
+        private $energyGauge: JQuery;
+        private $leftContainer: JQuery;
+        private $rightContainer: JQuery;
+        private $leftZoom: JQuery;
+        private $rightZoom: JQuery;
+        private $leftDepth: JQuery;
+        private $rightDepth: JQuery;
+        private $leftFreeze: JQuery;
+        private $rightFreeze: JQuery;
+        private leftCanvas: HTMLCanvasElement;
+        private rightCanvas: HTMLCanvasElement;
         private leftRenderer: Renderer;
-        private rightRenderer : Renderer;
+        private rightRenderer: Renderer;
         private leftGraph: GUI.ProcessGraphUI;
         private rightGraph: GUI.ProcessGraphUI;
 
-        constructor(container : string, button : string, activeToggle : string) {
+        constructor(container: string, button: string, activeToggle: string) {
             super(container, button, activeToggle);
 
             this.project = Project.getInstance();
@@ -56,8 +56,8 @@ module Activity {
             this.$rightDepth = $("#se-depth-right");
             this.$leftFreeze = $("#se-freeze-left");
             this.$rightFreeze = $("#se-freeze-right");
-            this.leftCanvas = <HTMLCanvasElement> this.$leftContainer.find("canvas")[0];
-            this.rightCanvas = <HTMLCanvasElement> this.$rightContainer.find("canvas")[0];
+            this.leftCanvas = <HTMLCanvasElement>this.$leftContainer.find("canvas")[0];
+            this.rightCanvas = <HTMLCanvasElement>this.$rightContainer.find("canvas")[0];
 
             this.leftRenderer = new Renderer(this.leftCanvas);
             this.rightRenderer = new Renderer(this.rightCanvas);
@@ -74,8 +74,8 @@ module Activity {
             this.$rightFreeze.on("click", (e) => this.toggleFreeze(this.rightGraph, !this.$rightFreeze.data("frozen"), $(e.currentTarget)));
 
             // Manually remove focus from depth input when the canvas is clicked.
-            $(this.leftCanvas).on("click", () => {if (this.$leftDepth.is(":focus")) this.$leftDepth.blur()});
-            $(this.rightCanvas).on("click", () => {if (this.$rightDepth.is(":focus")) this.$rightDepth.blur()});
+            $(this.leftCanvas).on("click", () => { if (this.$leftDepth.is(":focus")) this.$leftDepth.blur() });
+            $(this.rightCanvas).on("click", () => { if (this.$rightDepth.is(":focus")) this.$rightDepth.blur() });
 
             this.$leftDepth.on("change", () => {
                 this.validateDepth(this.$leftDepth);
@@ -86,14 +86,14 @@ module Activity {
                 this.validateDepth(this.$rightDepth);
                 let rightConfig = this.SEGameLogic.getCurrentConfiguration().right;
                 let rightDepth = this.$rightDepth.val()
-                if(rightConfig.q){
+                if (rightConfig.q) {
                     this.setDepth(rightConfig.q, this.rightGraph, rightDepth, Move.Right);
                 }
-                else{
+                else {
                     rightConfig.qSet.forEach((process) => {
                         this.setDepth(process, this.rightGraph, rightDepth, Move.Right);
                     })
-                    if(rightConfig.qStarSet){
+                    if (rightConfig.qStarSet) {
                         rightConfig.qStarSet.forEach((process) => {
                             this.setDepth(process, this.rightGraph, rightDepth, Move.Right);
                         })
@@ -111,7 +111,7 @@ module Activity {
             }
         }
 
-        private setDepth(processId : string, graph : GUI.ProcessGraphUI, depth : number, move : Move) : void {
+        private setDepth(processId: string, graph: GUI.ProcessGraphUI, depth: number, move: Move): void {
             this.clear(graph);
             let process = this.graph.processById(processId);
             this.draw(process, graph, depth, true);
@@ -123,7 +123,7 @@ module Activity {
                 this.toggleFreeze(graph, false, this.$rightFreeze);
         }
 
-        private validateDepth($input : JQuery) : void {
+        private validateDepth($input: JQuery): void {
             if (!/^[1-9][0-9]*$/.test($input.val())) {
                 $input.val($input.data("previous-depth"));
             } else {
@@ -131,7 +131,7 @@ module Activity {
             }
         }
 
-        private toggleFreeze(graph : GUI.ProcessGraphUI, freeze : boolean, button : JQuery) : void {
+        private toggleFreeze(graph: GUI.ProcessGraphUI, freeze: boolean, button: JQuery): void {
             if (freeze) {
                 graph.freeze();
                 button.find("i").replaceWith("<i class='fa fa-lock fa-lg'></i>");
@@ -143,7 +143,7 @@ module Activity {
             button.data("frozen", freeze);
         }
 
-        public onShow(configuration? : any) : void {
+        public onShow(configuration?: any): void {
             $(window).on("resize", () => this.resize(this.$leftZoom.val(), this.$rightZoom.val()));
 
             this.fullscreen.onShow();
@@ -176,7 +176,7 @@ module Activity {
                     tooltipAnchor.css("left", position.x - this.$leftContainer.scrollLeft());
                     tooltipAnchor.css("top", position.y - this.$leftContainer.scrollTop() - 10);
 
-                    tooltipAnchor.tooltip({title: this.tooltip.ccsNotationForProcessId(processId), html: true});
+                    tooltipAnchor.tooltip({ title: this.tooltip.ccsNotationForProcessId(processId), html: true });
                     tooltipAnchor.tooltip("show");
                 }, 1000)
             });
@@ -194,7 +194,7 @@ module Activity {
                     tooltipAnchor.css("left", position.x - this.$rightContainer.scrollLeft());
                     tooltipAnchor.css("top", position.y - this.$rightContainer.scrollTop() - 10);
 
-                    tooltipAnchor.tooltip({title: this.tooltip.ccsNotationForProcessId(processId), html: true});
+                    tooltipAnchor.tooltip({ title: this.tooltip.ccsNotationForProcessId(processId), html: true });
                     tooltipAnchor.tooltip("show");
                 }, 1000)
             });
@@ -211,7 +211,7 @@ module Activity {
             this.toggleFreeze(this.rightGraph, this.$rightFreeze.data("frozen"), this.$rightFreeze); // (un)freeze, depending on the lock icon
         }
 
-        public onHide() : void {
+        public onHide(): void {
             $(window).off("resize");
 
             this.fullscreen.onHide();
@@ -230,7 +230,7 @@ module Activity {
             this.rightGraph.freeze(); // force freeze for graph
         }
 
-        protected checkPreconditions() : boolean {
+        protected checkPreconditions(): boolean {
             try {
                 var graph = this.project.getGraph();
 
@@ -239,7 +239,7 @@ module Activity {
                     return false;
                 }
 
-                if(this.project.getInputMode() === InputMode.TCCS){
+                if (this.project.getInputMode() === InputMode.TCCS) {
                     this.showMessageBox("Bad input", "The Spectroscopy Energy Game does not support TCCS input");
                     return false;
                 }
@@ -258,7 +258,7 @@ module Activity {
             return true;
         }
 
-        private displayOptions() : void {
+        private displayOptions(): void {
             var processes = this.graph.getNamedProcesses().reverse();
 
             this.$leftProcessList.empty();
@@ -273,7 +273,7 @@ module Activity {
             this.$rightProcessList.find("option:nth-child(2)").prop("selected", true);
         }
 
-        private getOptions() : any {
+        private getOptions(): any {
             var options = {
                 leftProcess: this.$leftProcessList.val(),
                 rightProcess: this.$rightProcessList.val(),
@@ -285,7 +285,7 @@ module Activity {
             return options;
         }
 
-        private setOptions(options : any) : void {
+        private setOptions(options: any): void {
             this.$leftProcessList.val(options.leftProcess);
             this.$rightProcessList.val(options.rightProcess);
             this.$ccsGameTypes.val(options.type);
@@ -293,7 +293,7 @@ module Activity {
 
             // Bootstrap radio buttons only support changes via click events.
             // Manually handle .active class.
-            this.$playerType.each(function() {
+            this.$playerType.each(function () {
                 if ($(this).attr("value") === options.playerType) {
                     $(this).parent().addClass("active");
                 } else {
@@ -302,16 +302,16 @@ module Activity {
             });
         }
 
-        private displayEnergyGauge(energyLeft: number[]) : void {
+        private displayEnergyGauge(energyLeft: number[]): void {
             let str = "Energy Left: (";
-            for (let i = 0; i < energyLeft.length; i++){
+            for (let i = 0; i < energyLeft.length; i++) {
                 str += energyLeft[i] === Infinity ? "∞" : energyLeft[i];
-                str += i < energyLeft.length -1 ? ", " : ")";
+                str += i < energyLeft.length - 1 ? ", " : ")";
             }
             this.$energyGauge.html(str);
         }
-        
-        private newGame(drawLeft : boolean, drawRight : boolean, configuration? : any) : void {
+
+        private newGame(drawLeft: boolean, drawRight: boolean, configuration?: any): void {
             var options;
 
             if (configuration) {
@@ -322,7 +322,7 @@ module Activity {
             }
 
             this.succGen = CCS.getSuccGenerator(this.graph,
-                {inputMode: InputMode[this.project.getInputMode()], time: options.time, succGen: options.type, reduce: true});
+                { inputMode: InputMode[this.project.getInputMode()], time: options.time, succGen: options.type, reduce: true });
 
             if (drawLeft || !this.leftGraph.getNode(this.succGen.getProcessByName(options.leftProcess).id.toString())) {
                 this.clear(this.leftGraph);
@@ -338,20 +338,18 @@ module Activity {
                 this.toggleFreeze(this.rightGraph, false, this.$rightFreeze);
             }
 
-            if (this.SEGameLogic !== undefined) {this.SEGameLogic.stopGame()};
+            if (this.SEGameLogic !== undefined) { this.SEGameLogic.stopGame() };
 
-            // TODO: Show Initial Budget and Energy Left
             let budget = this.getEnergyBudgetFromRelation(options.relation);
             this.displayEnergyGauge(budget);
 
-            this.SEGameLogic = new SEGameLogic(this, new GameLog(options.time, this), this.graph, this.succGen, budget, options.leftProcess,
-                 {q: undefined, qSet: [options.rightProcess], qStarSet: undefined}, 
-                options.time, options.type)
+            this.SEGameLogic = new SEGameLogic(this, new GameLog(options.time), this.succGen, budget, options.leftProcess,
+                { q: undefined, qSet: [options.rightProcess], qStarSet: undefined })
 
             //this.SEGameLogic.computeMarking();
 
-            var attacker : Player;
-            var defender : Player;
+            var attacker: Player;
+            var defender: Player;
 
             if (options.playerType === "defender") {
                 attacker = new Computer(PlayType.Attacker);
@@ -365,8 +363,8 @@ module Activity {
             this.SEGameLogic.startGame();
         }
 
-        private getEnergyBudgetFromRelation(relation : string) : number[]{
-            switch(relation){
+        private getEnergyBudgetFromRelation(relation: string): number[] {
+            switch (relation) {
                 case "Bisimulation":
                     return [Infinity, Infinity, Infinity, Infinity, Infinity, Infinity];
                 case "TwoNestedSimulation":
@@ -398,12 +396,12 @@ module Activity {
             }
         }
 
-        private draw(process : CCS.Process, graph : GUI.ProcessGraphUI, depth : number, highlightNodes : boolean) : void {
+        private draw(process: CCS.Process, graph: GUI.ProcessGraphUI, depth: number, highlightNodes: boolean): void {
             var allTransitions = CCS.getNSuccessors(
                 CCS.getSuccGenerator(this.graph, { inputMode: InputMode[this.project.getInputMode()], time: "timed", succGen: "strong", reduce: true }),
                 process,
                 depth
-                );
+            );
 
             for (var fromId in allTransitions) {
                 var fromProcess = this.graph.processById(fromId);
@@ -413,37 +411,37 @@ module Activity {
 
                 Object.keys(groupedByTargetProcessId).forEach(strProcId => {
                     var group = groupedByTargetProcessId[strProcId],
-                        data = group.map(t => {return {label: t.action.toString(false)}});
+                        data = group.map(t => { return { label: t.action.toString(false) } });
                     this.showProcess(this.graph.processById(strProcId), graph);
                     graph.showTransitions(fromProcess.id, strProcId, data);
                 });
             }
 
-            if(highlightNodes){
+            if (highlightNodes) {
                 this.highlightNodes();
             }
         }
 
-        private showProcess(process : CCS.Process, graph : GUI.ProcessGraphUI) : void {
+        private showProcess(process: CCS.Process, graph: GUI.ProcessGraphUI): void {
             if (graph.getProcessDataObject(process.id)) return;
-            graph.showProcess(process.id, {label: this.labelFor(process), status: "unexpanded"});
+            graph.showProcess(process.id, { label: this.labelFor(process), status: "unexpanded" });
         }
 
-        private showProcessAsExplored(process : CCS.Process, graph : GUI.ProcessGraphUI) : void {
+        private showProcessAsExplored(process: CCS.Process, graph: GUI.ProcessGraphUI): void {
             graph.getProcessDataObject(process.id).status = "expanded";
         }
 
-        public onPlay(position : BJN.Position) : void {
+        public onPlay(position: BJN.Position): void {
             this.draw(this.graph.processById(position.p.label), this.leftGraph, this.$leftDepth.val(), false);
             let rightDepth = this.$rightDepth.val();
-            if (position.q){
+            if (position.q) {
                 this.draw(this.graph.processById(position.q.label), this.rightGraph, rightDepth, false);
             }
-            else{
+            else {
                 position.qSet!.forEach((process) => {
                     this.draw(this.graph.processById(process.label), this.rightGraph, rightDepth, false);
                 })
-                if(position.qStarSet){
+                if (position.qStarSet) {
                     position.qStarSet.forEach((process) => {
                         this.draw(this.graph.processById(process.label), this.rightGraph, rightDepth, false);
                     })
@@ -454,25 +452,25 @@ module Activity {
             this.displayEnergyGauge(this.SEGameLogic.getEnergyLeft());
         }
 
-        public highlightNodes() : void {
+        public highlightNodes(): void {
             if (!this.SEGameLogic)
                 return;
 
             var configuration = this.SEGameLogic.getCurrentConfiguration();
             this.leftGraph.setSelected(configuration.left);
-            
+
             let configIds = Object.create(null);
-            if(configuration.right.q){
+            if (configuration.right.q) {
                 configIds.q = configuration.right.q;
             }
-            else{
-                if(configuration.right.qSet){
+            else {
+                if (configuration.right.qSet) {
                     configIds.qSet = [];
                     configuration.right.qSet.forEach((proc) => {
                         configIds.qSet.push(proc);
                     })
                 }
-                if(configuration.right.qStarSet){
+                if (configuration.right.qStarSet) {
                     configIds.qStarSet = [];
                     configuration.right.qStarSet.forEach((proc) => {
                         configIds.qStarSet.push(proc);
@@ -482,31 +480,31 @@ module Activity {
             this.rightGraph.setRightGraphNodes(configIds);
         }
 
-        private clear(graph : GUI.ProcessGraphUI) : void {
+        private clear(graph: GUI.ProcessGraphUI): void {
             graph.clearAll();
         }
 
-        public labelFor(process : CCS.Process) : string {
+        public labelFor(process: CCS.Process): string {
             return this.graph.getLabel(process);
         }
 
-        public findRightCenterNode() : string {
-            let rightConfig = this.SEGameLogic.currentRight;
-            if(rightConfig.q){
+        public findRightCenterNode(): string {
+            let rightConfig = this.SEGameLogic.getCurrentConfiguration().right;
+            if (rightConfig.q) {
                 return rightConfig.q;
             }
-            if(rightConfig.qSet && rightConfig.qSet[0]){
+            if (rightConfig.qSet && rightConfig.qSet[0]) {
                 return rightConfig.qSet[0];
             }
-            if(rightConfig.qStarSet && rightConfig.qStarSet[0]){
+            if (rightConfig.qStarSet && rightConfig.qStarSet[0]) {
                 return rightConfig.qStarSet[0];
             }
             // if there are only empty sets, signal to not center anything
             return "";
         }
 
-        public centerNode(processId : string, move : Move) : void {
-            if(!processId){ return; }
+        public centerNode(processId: string, move: Move): void {
+            if (!processId) { return; }
             let process = this.graph.processById(processId);
             if (move === Move.Left) {
                 var position = this.leftGraph.getPosition(process.id.toString());
@@ -519,7 +517,7 @@ module Activity {
             }
         }
 
-        private resize(leftZoom : number, rightZoom : number) : void {
+        private resize(leftZoom: number, rightZoom: number): void {
             var offsetTop = $("#se-game-main").offset().top;
             var offsetBottom = $("#se-game-status").height();
 
@@ -564,47 +562,35 @@ module Activity {
         }
     }
 
-    // TODO:  update attributes
     class SEGameLogic extends Abstract {
 
-        //private dependencyGraph : dg.PlayableDependencyGraph;
-        //private marking : dg.LevelMarking;
-        private graph : CCS.Graph;
-        private gameType : string;
-        private time : string;
         private energyLeft: number[];
-        public succGen : CCS.SuccessorGenerator;
-        private bjn : BJN.Game;
-        private attackerWinBudgets : Map<BJN.Position, number[][]>;
-        
-        private gameActivity : SEGame;
-        private gameLog : GameLog;
+        private succGen: CCS.SuccessorGenerator;
+        private bjn: BJN.Game;
+        private attackerWinBudgets: Map<BJN.Position, number[][]>;
 
-        private currentLeft : string;
-        public currentRight : {q: string | undefined, qSet: string[] | undefined, qStarSet: string[] | undefined};
+        private gameActivity: SEGame;
+        private gameLog: GameLog;
 
-        private attacker : Player;
-        private defender : Player;
-        private currentWinner : Player;
+        private currentLeft: string;
+        private currentRight: { q: string | undefined, qSet: string[] | undefined, qStarSet: string[] | undefined };
 
-        private moveCount : number = 1;
-        private lastMove : Move;
-        private lastAction : CCS.Action;
-        //private currentNodeId : dg.DgNodeId = 0; // the DG node id
+        private attacker: Player;
+        private defender: Player;
+        private currentWinner: Player;
 
-        private cycleCache : any;
+        private moveCount: number = 1;
 
-        constructor(gameActivity : SEGame, gameLog : GameLog, graph : CCS.Graph, succGen : CCS.SuccessorGenerator,
-            energyBudget : number[], currentLeft : any, currentRight : any, time : string, gameType : string) {
+        private cycleCache: any;
+
+        constructor(gameActivity: SEGame, gameLog: GameLog, succGen: CCS.SuccessorGenerator,
+            energyBudget: number[], currentLeft: any, currentRight: any) {
             super();
 
             this.gameActivity = gameActivity;
             this.gameLog = gameLog;
             this.succGen = succGen;
-            this.graph = graph;
             this.energyLeft = energyBudget;
-            this.gameType = gameType;
-            this.time = time;
             this.currentLeft = currentLeft;
             this.currentRight = currentRight;
             let parsedGraph = BJN.parseForBJN(this.succGen);
@@ -613,41 +599,31 @@ module Activity {
             this.attackerWinBudgets = BJN.computeWinningBudgets(this.bjn);
         }
 
-        public getTransitionStr(update : string) : string {
-                return "-" + update + "->";
+        public getTransitionStr(update: string): string {
+            return "-" + update + "->";
         }
 
-        public getGameLog() : GameLog {
+        public getGameLog(): GameLog {
             return this.gameLog;
         }
 
-        public getEnergyLeft() : number[] {
+        public getEnergyLeft(): number[] {
             return this.energyLeft;
         }
 
-        // public computeMarking() : dg.LevelMarking {
-        //     this.dependencyGraph = this.createDependencyGraph(this.graph, this.currentLeft, this.currentRight);
-        //     this.marking = this.createMarking();
-        //     return this.marking;
-        // }
-
-        // protected createMarking() : dg.LevelMarking {
-        //     return dg.liuSmolkaLocal2(this.currentNodeId, this.dependencyGraph);
-        // }
-
-        public getMoveCount() : number {
+        public getMoveCount(): number {
             return this.moveCount;
         }
 
-        public isCurrentWinner(player : Player) : boolean {
+        public isCurrentWinner(player: Player): boolean {
             return this.getCurrentWinner() === player;
         }
 
-        public getCurrentConfiguration() : any {
+        public getCurrentConfiguration(): any {
             return { left: this.currentLeft, right: this.currentRight };
         }
 
-        public startGame() : void {
+        public startGame(): void {
             if (this.attacker == undefined || this.defender == undefined)
                 throw "No players in game.";
             this.stopGame();
@@ -665,13 +641,13 @@ module Activity {
             this.preparePlayer(this.attacker);
         }
 
-        public stopGame() : void {
+        public stopGame(): void {
             // tell players to abort their prepared play
             this.attacker.abortPlay();
             this.defender.abortPlay();
         }
 
-        public setPlayers(attacker : Player, defender : Player) : void {
+        public setPlayers(attacker: Player, defender: Player): void {
             if (attacker.getPlayType() == defender.getPlayType()) {
                 throw "Cannot make game with two " + attacker.playTypeStr() + "s";
             }
@@ -683,44 +659,44 @@ module Activity {
             this.attacker = attacker;
             this.defender = defender;
         }
-        protected saveCurrentConfig(position : BJN.Position) : void {          
-            this.currentLeft  = position.p.label;
-            let qSet : string[] | undefined = undefined;
-            if (position.qSet){
+        private saveCurrentConfig(position: BJN.Position): void {
+            this.currentLeft = position.p.label;
+            let qSet: string[] | undefined = undefined;
+            if (position.qSet) {
                 qSet = [];
                 position.qSet.forEach((e) => {
                     qSet!.push(e.label);
                 })
             }
-            let qStarSet : string[] | undefined = undefined;
-            if (position.qStarSet){
+            let qStarSet: string[] | undefined = undefined;
+            if (position.qStarSet) {
                 qStarSet = [];
                 position.qStarSet.forEach((e) => {
                     qStarSet!.push(e.label);
                 })
             }
-            this.currentRight = {q: position.q?.label, qSet: qSet, qStarSet: qStarSet};
-        
+            this.currentRight = { q: position.q?.label, qSet: qSet, qStarSet: qStarSet };
+
         }
 
-        public play(player : Player, choice : BJN.Move) : void {
+        public play(player: Player, choice: BJN.Move): void {
             this.gameLog.printPlay(player, choice, this);
             this.saveCurrentConfig(choice.to);
             this.energyLeft = BJN.update(this.energyLeft, choice.update);
             // check for exceeded budget and cycle
-            if(this.energyLeft.some((dim) => { return dim < 0; })){
+            if (this.energyLeft.some((dim) => { return dim < 0; })) {
                 this.gameLog.printExcessWinner((player === this.attacker) ? this.defender : this.attacker);
                 this.stopGame();
             }
-            else{
+            else {
                 // check for cycle if it's attacker's turn. Short circuit evaluation
-                if(choice.to.isDefenderPosition || !this.cycleExists()){
+                if (choice.to.isDefenderPosition || !this.cycleExists()) {
                     this.moveCount++;
                     this.gameLog.printMoveStart(this.moveCount, this.getCurrentConfiguration());
-                    if(choice.to.isDefenderPosition){
+                    if (choice.to.isDefenderPosition) {
                         this.preparePlayer(this.defender);
                     }
-                    else{
+                    else {
                         this.preparePlayer(this.attacker);
                     }
                 }
@@ -730,8 +706,8 @@ module Activity {
             this.gameActivity.centerNode(this.gameActivity.findRightCenterNode(), Move.Right);
         }
 
-        protected preparePlayer(player : Player) {
-            var choices : any = this.getCurrentChoices();
+        private preparePlayer(player: Player) {
+            var choices: any = this.getCurrentChoices();
 
             // determine if game is over
             if (choices.length === 0) {
@@ -755,7 +731,7 @@ module Activity {
             }
         }
 
-        protected cycleExists() : boolean {
+        private cycleExists(): boolean {
             let cacheStr = this.bjn.parsePosition(this.currentLeft, this.currentRight).toString();
 
             if (this.cycleCache[cacheStr]) {
@@ -772,74 +748,63 @@ module Activity {
             }
         }
 
-        public getConfigurationStr(configuration : any) : string {
-            var result = "(";
-
-            result += this.graph.getLabel(configuration.left);
-            result += ", ";
-            result += this.graph.getLabel(configuration.right);
-            result += ")"
-
-            return result;
-        }
-
-        public getCurrentChoices() : any {
+        public getCurrentChoices(): any {
             return this.bjn.getPossibleMoves(this.bjn.parsePosition(this.currentLeft, this.currentRight));
         }
 
-        public getCurrentWinner() : Player {
+        public getCurrentWinner(): Player {
             let choices = this.bjn.getPossibleMoves(this.bjn.parsePosition(this.currentLeft, this.currentRight));
-            if(this.currentRight.qStarSet){ return this.getWinningDefend(choices) ? this.defender : this.attacker }
-            else{ return this.getWinningAttack(choices) ? this.attacker : this.defender }
+            if (this.currentRight.qStarSet) { return this.getWinningDefend(choices) ? this.defender : this.attacker }
+            else { return this.getWinningAttack(choices) ? this.attacker : this.defender }
         }
 
-        public getWinningAttack(choices : BJN.Move[]) : any {
-             for(let i = 0; i < choices.length; i++){
+        public getWinningAttack(choices: BJN.Move[]): any {
+            for (let i = 0; i < choices.length; i++) {
                 // check if position was visited before (cycle avoidance)
-                if(this.cycleCache[choices[i].to.toString()]){ continue; }
-                let newEnergyLeft : number[] = BJN.update(this.energyLeft, choices[i].update);
+                if (this.cycleCache[choices[i].to.toString()]) { continue; }
+                let newEnergyLeft: number[] = BJN.update(this.energyLeft, choices[i].update);
                 let positionAttackerWin = this.attackerWinBudgets.get(choices[i].to);
-                if(!positionAttackerWin){ throw "Something went wrong when selecting a move."; }
-                else{
-                    if(positionAttackerWin.some((budget) => {
+                if (!positionAttackerWin) { throw "Something went wrong when selecting a move."; }
+                else {
+                    if (positionAttackerWin.some((budget) => {
                         return budget.every((dim, index) => {
                             return dim <= newEnergyLeft[index];
                         })
-                    })){
+                    })) {
                         return choices[i];
                     }
                 }
-             }
-             return false;
+            }
+            return false;
         }
-        public getLosingAttack(choices : any) : any {
-            let bestScore : number = -Infinity;
-            let bestChoice : BJN.Move; 
-            for(let i = 0; i < choices.length; i++){
+        public getLosingAttack(choices: any): any {
+            let bestScore: number = -Infinity;
+            let bestChoice: BJN.Move;
+            for (let i = 0; i < choices.length; i++) {
                 // cycle check
-                if(this.cycleCache[choices[i].to.toString()]){
-                    if(i === 0){ bestChoice = choices[0]; }
+                if (this.cycleCache[choices[i].to.toString()]) {
+                    if (i === 0) { bestChoice = choices[0]; }
                     continue;
                 }
-                let newEnergyLeft : number[] = BJN.update(this.energyLeft, choices[i].update);
+                let newEnergyLeft: number[] = BJN.update(this.energyLeft, choices[i].update);
                 // budget excess check
-                if(newEnergyLeft.some((dim) => { return dim < 0; })){
-                    if(i === 0){ bestChoice = choices[0]; }
+                if (newEnergyLeft.some((dim) => { return dim < 0; })) {
+                    if (i === 0) { bestChoice = choices[0]; }
                     continue;
                 }
                 let positionAttackerWin = this.attackerWinBudgets.get(choices[i].to);
-                if(!positionAttackerWin){ throw "Something went wrong when selecting a move."; }
-                if(positionAttackerWin.length === 0){
-                    if(i === 0){ bestChoice = choices[0]; }
+                if (!positionAttackerWin) { throw "Something went wrong when selecting a move."; }
+                if (positionAttackerWin.length === 0) {
+                    if (i === 0) { bestChoice = choices[0]; }
                     continue;
                 }
                 // manhattan-distance as indicator of best possible losing move
                 positionAttackerWin.forEach((budget) => {
-                    let score : number = newEnergyLeft.reduce((acc, curr, i) => {
-                        if(curr === Infinity){ return acc + 100 - budget[i] }
+                    let score: number = newEnergyLeft.reduce((acc, curr, i) => {
+                        if (curr === Infinity) { return acc + 100 - budget[i] }
                         return acc + curr - budget[i];
                     }, 0)
-                    if(score > bestScore){
+                    if (score > bestScore) {
                         bestScore = score;
                         bestChoice = choices[i];
                     }
@@ -847,41 +812,41 @@ module Activity {
             }
             return bestChoice!;
         }
-        public getWinningDefend(choices : BJN.Move[]) : any {
-            for(let i = 0; i < choices.length; i++){
-                let newEnergyLeft : number [] = BJN.update(this.energyLeft, choices[i].update);
+        public getWinningDefend(choices: BJN.Move[]): any {
+            for (let i = 0; i < choices.length; i++) {
+                let newEnergyLeft: number[] = BJN.update(this.energyLeft, choices[i].update);
                 let positionAttackerWin = this.attackerWinBudgets.get(choices[i].to);
-                if(!positionAttackerWin){ throw "Something went wrong when selecting a move."; }
-                else{
-                    if(positionAttackerWin.every((budget) => {
+                if (!positionAttackerWin) { throw "Something went wrong when selecting a move."; }
+                else {
+                    if (positionAttackerWin.every((budget) => {
                         return budget.some((dim, index) => {
-                            return dim  > newEnergyLeft[index];
+                            return dim > newEnergyLeft[index];
                         })
-                    })){
+                    })) {
                         return choices[i];
                     }
                 }
-             }
-             return false;
+            }
+            return false;
         }
-        public getLosingDefend(choices : any) : any {
-            let bestScore : number = Infinity;
-            let bestChoice : BJN.Move; 
-            for(let i = 0; i < choices.length; i++){
-                let newEnergyLeft : number[] = BJN.update(this.energyLeft, choices[i].update);
+        public getLosingDefend(choices: any): any {
+            let bestScore: number = Infinity;
+            let bestChoice: BJN.Move;
+            for (let i = 0; i < choices.length; i++) {
+                let newEnergyLeft: number[] = BJN.update(this.energyLeft, choices[i].update);
                 let positionAttackerWin = this.attackerWinBudgets.get(choices[i].to);
-                if(!positionAttackerWin){ throw "Something went wrong when selecting a move."; }
+                if (!positionAttackerWin) { throw "Something went wrong when selecting a move."; }
                 // manhattan-distance as indicator of best possible losing move
-                let minBudget : number = Infinity;
+                let minBudget: number = Infinity;
                 positionAttackerWin.forEach((budget) => {
-                    minBudget = Math.min(minBudget, budget.reduce((acc, curr) => { return acc + curr}, 0))
+                    minBudget = Math.min(minBudget, budget.reduce((acc, curr) => { return acc + curr }, 0))
                 })
-                let score : number = newEnergyLeft.reduce((acc, curr) => {
-                    if(curr === Infinity) { return acc + 100 }
+                let score: number = newEnergyLeft.reduce((acc, curr) => {
+                    if (curr === Infinity) { return acc + 100 }
                     return acc + curr;
                 }, 0)
                 score -= minBudget;
-                if(score < bestScore){
+                if (score < bestScore) {
                     bestScore = score;
                     bestChoice = choices[i];
                 }
@@ -892,14 +857,13 @@ module Activity {
 
     class Player extends Abstract {
 
-        constructor(private playType : PlayType) {
+        constructor(private playType: PlayType) {
             super();
             this.playType = playType;
         }
 
-        public prepareTurn(choices : any, game : SEGameLogic) : void {
-            switch (this.playType)
-            {
+        public prepareTurn(choices: any, game: SEGameLogic): void {
+            switch (this.playType) {
                 case PlayType.Attacker: {
                     this.prepareAttack(choices, game);
                     break;
@@ -911,15 +875,15 @@ module Activity {
             }
         }
 
-        public getPlayType() : PlayType {
+        public getPlayType(): PlayType {
             return this.playType;
         }
 
-        public abortPlay() : void {
+        public abortPlay(): void {
             // virtual, override
         }
 
-        public playTypeStr(allLower : boolean = false) : string {
+        public playTypeStr(allLower: boolean = false): string {
             if (allLower) {
                 return this.playType == PlayType.Attacker ? "attacker" : "defender";
             } else {
@@ -928,43 +892,43 @@ module Activity {
         }
 
         /* Abstract methods */
-        protected prepareAttack(choices : any, game : SEGameLogic) : void { this.abstract(); }
-        protected prepareDefend(choices : any, game : SEGameLogic) : void { this.abstract(); }
+        protected prepareAttack(choices: any, game: SEGameLogic): void { this.abstract(); }
+        protected prepareDefend(choices: any, game: SEGameLogic): void { this.abstract(); }
     }
 
     class Human extends Player {
 
         private $table;
 
-        constructor(playType : PlayType, private gameActivity : SEGame) {
+        constructor(playType: PlayType, private gameActivity: SEGame) {
             super(playType);
 
             this.$table = $("#se-game-transitions-table").find("tbody");
         }
 
-        protected prepareAttack(choices : any, game : SEGameLogic) : void {
+        protected prepareAttack(choices: any, game: SEGameLogic): void {
             this.fillTable(choices, game);
             game.getGameLog().printPrepareMove();
         }
 
-        protected prepareDefend(choices : any, game : SEGameLogic) : void {
+        protected prepareDefend(choices: any, game: SEGameLogic): void {
             this.fillTable(choices, game);
             game.getGameLog().printPrepareMove();
         }
 
-        private fillTable(choices : any, game : SEGameLogic) : void {
-            var actionTransition : string;
-            
+        private fillTable(choices: any, game: SEGameLogic): void {
+            var actionTransition: string;
+
             this.$table.empty();
-            choices.forEach( (choice) => {
+            choices.forEach((choice) => {
                 var row = $("<tr></tr>");
                 //row.attr("data-target-id", choice.targetProcess.id); // attach targetid on the row
-                // TODO: einheitlich machen/tooltip handling
+                // TODO: einheitlich machen
                 var sourcePositionLabel = choice.from.toString();
                 var $source = this.labelWithTooltip(sourcePositionLabel);
                 var $sourceTd = $("<td id='source'></td>").append($source);
                 actionTransition = choice.updateToString();
-                var $actionTd = $("<td id='action'></td>").append(actionTransition);
+                var $actionTd = $("<td id='update'></td>").append(actionTransition);
                 var $targetTd = $("<td id='target'></td>").append(this.labelWithTooltip(choice.to.toString()));
 
                 // onClick
@@ -977,20 +941,16 @@ module Activity {
             });
         }
 
-        private labelWithTooltip(label : string) : JQuery {
+        private labelWithTooltip(label: string): JQuery {
             return Tooltip.wrapProcess(label);
         }
 
-        private labelFor(process : CCS.Process) : string {
-            return this.gameActivity.labelFor(process);
-        }
-
-        private clickChoice(choice : any, game: SEGameLogic) : void {
+        private clickChoice(choice: any, game: SEGameLogic): void {
             this.$table.empty();
             game.play(this, choice);
         }
 
-        public abortPlay() : void {
+        public abortPlay(): void {
             this.$table.empty();
         }
     }
@@ -998,65 +958,65 @@ module Activity {
     // such ai
     class Computer extends Player {
 
-        static Delay : number = 0;
+        static Delay: number = 0;
 
         private delayedPlay;
 
-        constructor(playType : PlayType) {
+        constructor(playType: PlayType) {
             super(playType);
         }
 
-        public abortPlay() : void {
+        public abortPlay(): void {
             clearTimeout(this.delayedPlay);
         }
 
-        protected prepareAttack(choices : any, game : SEGameLogic) : void {
+        protected prepareAttack(choices: any, game: SEGameLogic): void {
             // select strategy
             if (game.isCurrentWinner(this))
-                this.delayedPlay = setTimeout( () => this.winningAttack(choices, game), Computer.Delay);
+                this.delayedPlay = setTimeout(() => this.winningAttack(choices, game), Computer.Delay);
             else
-                this.delayedPlay = setTimeout( () => this.losingAttack(choices, game), Computer.Delay);
+                this.delayedPlay = setTimeout(() => this.losingAttack(choices, game), Computer.Delay);
         }
 
-        protected prepareDefend(choices : any, game : SEGameLogic) : void {
+        protected prepareDefend(choices: any, game: SEGameLogic): void {
             // select strategy
             if (game.isCurrentWinner(this))
-                this.delayedPlay = setTimeout( () => this.winningDefend(choices, game), Computer.Delay);
+                this.delayedPlay = setTimeout(() => this.winningDefend(choices, game), Computer.Delay);
             else
-                this.delayedPlay = setTimeout( () => this.losingDefend(choices, game), Computer.Delay);
+                this.delayedPlay = setTimeout(() => this.losingDefend(choices, game), Computer.Delay);
         }
 
-        private losingAttack(choices : any, game : SEGameLogic) : void {
+        private losingAttack(choices: any, game: SEGameLogic): void {
             var losingAttack = game.getLosingAttack(choices);
             game.play(this, losingAttack);
         }
 
-        private winningAttack(choices : any, game : SEGameLogic) : void {
-            var choice : any = game.getWinningAttack(choices);
+        private winningAttack(choices: any, game: SEGameLogic): void {
+            var choice: any = game.getWinningAttack(choices);
             game.play(this, choice);
         }
 
-        private losingDefend(choices : any, game : SEGameLogic) : void {
+        private losingDefend(choices: any, game: SEGameLogic): void {
             var choice = game.getLosingDefend(choices);
             game.play(this, choice);
         }
 
-        private winningDefend(choices : any, game : SEGameLogic) : void {
+        private winningDefend(choices: any, game: SEGameLogic): void {
             var choice = game.getWinningDefend(choices);
             game.play(this, choice);
         }
     }
 
     class GameLog extends Abstract {
-        private $log : JQuery;
+        private $log: JQuery;
 
-        constructor(protected time : string, private gameActivity? : SEGame) {
+        constructor(protected time: string) {
             super();
             this.$log = $("#se-game-log");
             this.$log.empty();
         }
 
-        public println(line: string, wrapper? : string) : void {
+        private println(line: string, wrapper?: string): void {
             if (wrapper) {
                 this.$log.append($(wrapper).append(line));
             } else {
@@ -1066,7 +1026,7 @@ module Activity {
             this.$log.scrollTop(this.$log[0].scrollHeight);;
         }
 
-        public render(template : string, context : any) : string {
+        private render(template: string, context: any): string {
             for (var i in context) {
                 var current = context[i].text;
 
@@ -1086,11 +1046,11 @@ module Activity {
             return template;
         }
 
-        public removeLastPrompt() : void {
+        private removeLastPrompt(): void {
             this.$log.find(".se-game-prompt").last().remove();
         }
 
-        public printMoveStart(move : number, configuration : any) : void {
+        public printMoveStart(move: number, configuration: any): void {
             this.println("Move " + move, "<h4 class='se-game-round'>");
             this.printConfiguration(configuration);
         }
@@ -1099,49 +1059,49 @@ module Activity {
             this.println("Pick a move from the table.", "<p class='se-game-prompt'>");
         }
 
-        public printConfiguration(configuration : any) : void {
+        private printConfiguration(configuration: any): void {
             var template = "Current configuration: ({1}, {2}).";
 
             let rightConfig: string = "";
-            if(configuration.right.q){
+            if (configuration.right.q) {
                 rightConfig += configuration.right.q;
             }
-            else{
+            else {
                 rightConfig += "{";
-                for(let i = 0; i < configuration.right.qSet.length; i++){
+                for (let i = 0; i < configuration.right.qSet.length; i++) {
                     rightConfig += configuration.right.qSet[i];
-                    rightConfig += i < configuration.right.qSet.length-1 ? "," : "";
+                    rightConfig += i < configuration.right.qSet.length - 1 ? "," : "";
                 }
                 rightConfig += "}";
-                if(configuration.right.qStarSet){
+                if (configuration.right.qStarSet) {
                     rightConfig += ",{";
-                    for(let i = 0; i < configuration.right.qStarSet.length; i++){
+                    for (let i = 0; i < configuration.right.qStarSet.length; i++) {
                         rightConfig += configuration.right.qStarSet[i];
-                        rightConfig += i < configuration.right.qStarSet.length-1 ? "," : "";
+                        rightConfig += i < configuration.right.qStarSet.length - 1 ? "," : "";
                     }
                     rightConfig += "}";
                 }
             }
 
             var context = {
-                1: {text: configuration.left, tag: "<span>", attr: [{name: "class", value: "monospace"}]},
-                2: {text: rightConfig, tag: "<span>", attr: [{name: "class", value: "monospace"}]}
+                1: { text: configuration.left, tag: "<span>", attr: [{ name: "class", value: "monospace" }] },
+                2: { text: rightConfig, tag: "<span>", attr: [{ name: "class", value: "monospace" }] }
             }
 
             this.println(this.render(template, context), "<p>");
         }
 
-        public printPlay(player : Player, choice : BJN.Move, game : SEGameLogic) : void {
+        public printPlay(player: Player, choice: BJN.Move, game: SEGameLogic): void {
             var template = "{1} played {2} {3} {4}.";
 
             let actionTransition = game.getTransitionStr(choice.updateToString());
-            let actionContext = {text: actionTransition, tag: "<span>", attr: [{name: "class", value: "monospace"}]};
+            let actionContext = { text: actionTransition, tag: "<span>", attr: [{ name: "class", value: "monospace" }] };
 
             var context = {
-                1: {text: (player instanceof Computer) ? player.playTypeStr() : "You (" + player.playTypeStr(true) + ")"},
-                2: {text: choice.from.toString(), tag: "<span>", attr: [{name: "class", value: "monospace"}]},
+                1: { text: (player instanceof Computer) ? player.playTypeStr() : "You (" + player.playTypeStr(true) + ")" },
+                2: { text: choice.from.toString(), tag: "<span>", attr: [{ name: "class", value: "monospace" }] },
                 3: actionContext,
-                4: {text: choice.to.toString(), tag: "<span>", attr: [{name: "class", value: "monospace"}]}
+                4: { text: choice.to.toString(), tag: "<span>", attr: [{ name: "class", value: "monospace" }] }
             };
 
             if (player instanceof Human) {
@@ -1151,53 +1111,53 @@ module Activity {
             this.println(this.render(template, context), "<p>");
         }
 
-        public printStuckWinner(winner : Player) : void {
+        public printStuckWinner(winner: Player): void {
             var template = "{1} no available transitions. You {2}!";
 
             var context = {
-                1: {text: (winner instanceof Computer) ? "You ({3}) have" : (winner.getPlayType() === PlayType.Attacker) ? "Defender has" : "Attacker has"},
-                2: {text: (winner instanceof Computer) ? "lose" : "win"},
-                3: {text: (winner.getPlayType() === PlayType.Attacker) ? "defender" : "attacker"}
+                1: { text: (winner instanceof Computer) ? "You ({3}) have" : (winner.getPlayType() === PlayType.Attacker) ? "Defender has" : "Attacker has" },
+                2: { text: (winner instanceof Computer) ? "lose" : "win" },
+                3: { text: (winner.getPlayType() === PlayType.Attacker) ? "defender" : "attacker" }
             };
 
             this.println(this.render(template, context), "<p class='outro'>");
         }
 
-        public printExcessWinner(winner : Player) : void {
-            if(winner.getPlayType() == PlayType.Attacker) {throw "Defender cannot lose by exceeding the budget"}
+        public printExcessWinner(winner: Player): void {
+            if (winner.getPlayType() == PlayType.Attacker) { throw "Defender cannot lose by exceeding the budget" }
             let template = "{1} exceeded the budget. You {2}!";
             let context = {
-                1: {text: (winner instanceof Human) ? "Attacker has" : "You (attacker) have"},
-                2: {text: (winner instanceof Human) ? "win" : "lose"}
+                1: { text: (winner instanceof Human) ? "Attacker has" : "You (attacker) have" },
+                2: { text: (winner instanceof Human) ? "win" : "lose" }
             };
             this.println(this.render(template, context), "<p class='outro'>");
         }
 
-        public printCycleWinner(winner : Player) : void {
+        public printCycleWinner(winner: Player): void {
             var template = "A cycle has been detected. {1}!";
 
             var context = {
-                1: {text: (winner instanceof Human) ? "You (defender) win" : "You (attacker) lose"}
+                1: { text: (winner instanceof Human) ? "You (defender) win" : "You (attacker) lose" }
             };
 
             this.println(this.render(template, context), "<p class='outro'>");
         }
 
-        public printWinnerChanged(winner : Player) : void {
+        public printWinnerChanged(winner: Player): void {
             var you = winner.getPlayType() === PlayType.Attacker ? "defender" : "attacker";
             this.println("You (" + you + ") made a bad move. " + winner.playTypeStr() + " now has a winning strategy.", "<p>");
         }
 
-        public printIntro(winner : Player, attacker : Player) : void {
+        public printIntro(winner: Player, attacker: Player): void {
             var template = "You are playing {1} in a Spectroscopy Energy Game";
 
             var context = {
-                1: {text: (attacker instanceof Computer ? "defender" : "attacker")},
+                1: { text: (attacker instanceof Computer ? "defender" : "attacker") },
             }
 
             this.println(this.render(template, context), "<p class='intro'>");
 
-            if (winner instanceof Human){
+            if (winner instanceof Human) {
                 this.println("You have a winning strategy.", "<p class='intro'>");
             } else {
                 this.println(winner.playTypeStr() + " has a winning strategy. You are going to lose.", "<p class='intro'>");

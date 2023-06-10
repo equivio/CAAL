@@ -1236,7 +1236,7 @@ module Activity {
                 this.$log.append(line);
             }
 
-            this.$log.scrollTop(this.$log[0].scrollHeight);;
+            this.$log.scrollTop(this.$log[0].scrollHeight);
         }
 
         public render(template : string, context : any) : string {
