@@ -303,7 +303,7 @@ module Activity {
         }
 
         private displayEnergyGauge(energyLeft: number[]): void {
-            let str = "Energy Left: (";
+            let str = "Energy Budget: (";
             for (let i = 0; i < energyLeft.length; i++) {
                 str += energyLeft[i] === Infinity ? "∞" : energyLeft[i];
                 str += i < energyLeft.length - 1 ? ", " : ")";
