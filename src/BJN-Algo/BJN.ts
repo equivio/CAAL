@@ -363,6 +363,10 @@ module BJN {
                         // conjunctional challenges
                         let twoPartitions: Node[][] = findTwoPartitions(pos.qSet!)
                         twoPartitions.forEach((partition) => {
+                            // omit redundant positions with empty qset but non-empty qstarset
+                            if (partition.length === 0 && pos.qSet!.length !== 0){
+                                return;
+                            }
                             let newPos: Position = new Position(pos.p, true, partition, getSetDifference(pos.qSet!, partition), undefined);
                             // check if newPos was already discovered to avoid duplicates
                             if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
