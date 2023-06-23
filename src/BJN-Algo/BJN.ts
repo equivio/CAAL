@@ -353,9 +353,12 @@ module BJN {
                                     todo.push(newPos);
                                 }
                                 else {
-                                    let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
-                                    if (!destPos) { throw new Error("Position does not exist despite check"); }
-                                    this.addMove(new Move(pos, destPos, [-1, 0, 0, 0, 0, 0]))
+                                    // omit redundant loops
+                                    if (!newPos.isEqualTo(pos)){
+                                        let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
+                                        if (!destPos) { throw new Error("Position does not exist despite check"); }
+                                        this.addMove(new Move(pos, destPos, [-1, 0, 0, 0, 0, 0]))
+                                    }
                                 }
                             }
                         })
