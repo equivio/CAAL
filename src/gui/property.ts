@@ -444,11 +444,31 @@ module Property {
     }
 
     export class DistinguishingFormula extends Relation {
+
+        public formula: string
+
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
 
-        public generateDistinguishingFormula(generationEnded : Function) : void { throw "Not implemented by subclass"; }
+        protected workerFinished(event : any, callback : Function) : void {
+            this.formula = event.data.result.formula;
+            event.data.result = event.data.result.isSatisfied;
+            super.workerFinished(event, callback)
+        }
+
+        public generateDistinguishingFormula(generationEnded : Function) : void {
+            // formula should already be generated when the formula was verified
+            if (this.formula) {
+                var properties = {
+                    firstProperty : new HML({process: this.firstProcess, topFormula: this.formula, definitions: ""}),
+                    secondProperty : new HML({process: this.secondProcess, topFormula: this.formula, definitions: ""})
+                }
+                generationEnded(properties);
+            } else {
+                generationEnded();
+            }
+        }
     }
 
     export class Bisimulation extends DistinguishingFormula {
@@ -457,49 +477,59 @@ module Property {
         }
 
         public generateDistinguishingFormula(generationEnded : Function) : void {
-            // start the worker, and make the worker generationEnded with the result.
-            var program = this.project.getCCS();
-            this.worker = new Worker("lib/workers/verifier.js");
-            
-            this.worker.postMessage({
-                type: "program",
-                program: program,
-                inputMode: InputMode[this.project.getInputMode()]
-            });
-            
-            this.worker.postMessage({
-                type: "findDistinguishingFormula",
-                leftProcess: this.getFirstProcess(),
-                rightProcess: this.getSecondProcess(),
-                succGenType: super.getType()
-            });
-            
-            this.worker.addEventListener("error", (error) => {
-                this.worker.terminate();
-                this.worker = null;
-                this.setInvalidateStatus(error.message);
-                this.stopTimer();
-                generationEnded();
-            }, false);
-            
-            this.worker.addEventListener("message", event => {
-                this.worker.terminate();
-                this.worker = null; 
-
-                if (!event.data.result.isBisimilar) { //this should be false, for there to be distinguishing formula
-                    var properties = {
-                        firstProperty : new HML({process: this.firstProcess, topFormula: event.data.result.formula, definitions: ""}),
-                        secondProperty : new HML({process: this.secondProcess, topFormula: event.data.result.formula, definitions: ""})
-                    }
-
-                    generationEnded(properties);
-                    // this.verifyHml(event.data.result.formula);
-                } else {
-                    this.setInvalidateStatus("The two selected processes are bisimilar, and no distinguishing formula exists.");
-                    this.stopTimer()
-                    generationEnded();
+            if (this.formula) {
+                let properties = {
+                    firstProperty : new HML({process: this.firstProcess, topFormula: this.formula, definitions: ""}),
+                    secondProperty : new HML({process: this.secondProcess, topFormula: this.formula, definitions: ""})
                 }
-            });
+
+                generationEnded(properties);
+            }
+            else{
+                // start the worker, and make the worker generationEnded with the result.
+                var program = this.project.getCCS();
+                this.worker = new Worker("lib/workers/verifier.js");
+                
+                this.worker.postMessage({
+                    type: "program",
+                    program: program,
+                    inputMode: InputMode[this.project.getInputMode()]
+                });
+                
+                this.worker.postMessage({
+                    type: "findDistinguishingFormula",
+                    leftProcess: this.getFirstProcess(),
+                    rightProcess: this.getSecondProcess(),
+                    succGenType: super.getType()
+                });
+                
+                this.worker.addEventListener("error", (error) => {
+                    this.worker.terminate();
+                    this.worker = null;
+                    this.setInvalidateStatus(error.message);
+                    this.stopTimer();
+                    generationEnded();
+                }, false);
+                
+                this.worker.addEventListener("message", event => {
+                    this.worker.terminate();
+                    this.worker = null; 
+
+                    if (!event.data.result.isBisimilar) { //this should be false, for there to be distinguishing formula
+                        var properties = {
+                            firstProperty : new HML({process: this.firstProcess, topFormula: event.data.result.formula, definitions: ""}),
+                            secondProperty : new HML({process: this.secondProcess, topFormula: event.data.result.formula, definitions: ""})
+                        }
+
+                        generationEnded(properties);
+                        // this.verifyHml(event.data.result.formula);
+                    } else {
+                        this.setInvalidateStatus("The two selected processes are bisimilar, and no distinguishing formula exists.");
+                        this.stopTimer()
+                        generationEnded();
+                    }
+                });
+            }
         }
 
         public getDescription() : string {
@@ -535,7 +565,7 @@ module Property {
         }
     }
     
-    export class SimulationEquivalence extends Relation {
+    export class SimulationEquivalence extends DistinguishingFormula {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
@@ -559,7 +589,6 @@ module Property {
     }
     
     export class Traces extends DistinguishingFormula {
-        private formula : string = null;
         
         constructor(options : any, status : PropertyStatus) {
             super(options, status);
@@ -567,25 +596,6 @@ module Property {
 
         public getGameConfiguration() : any {
             return null;
-        }
-        
-        protected workerFinished(event : any, callback : Function) : void {
-            this.formula = event.data.result.formula;
-            event.data.result = event.data.result.isSatisfied;
-            super.workerFinished(event, callback)
-        }
-        
-        public generateDistinguishingFormula(generationEnded : Function) : void {
-            // formula should already be generated when the formula was verified
-            if (this.formula !== null) {
-                var properties = {
-                    firstProperty : new HML({process: this.firstProcess, topFormula: this.formula, definitions: ""}),
-                    secondProperty : new HML({process: this.secondProcess, topFormula: this.formula, definitions: ""})
-                }
-                generationEnded(properties);
-            } else {
-                generationEnded();
-            }
         }
     }
     
@@ -638,7 +648,7 @@ module Property {
         }
     }
 
-    export class BJNEquivalence extends Relation{
+    export class BJNEquivalence extends DistinguishingFormula{
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }

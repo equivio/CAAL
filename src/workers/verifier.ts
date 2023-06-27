@@ -40,16 +40,16 @@ messageHandlers.isStronglyBisimilar = data => {
             leftProcess = attackSuccGen.getProcessByName(data.leftProcess),
             rightProcess = defendSuccGen.getProcessByName(data.rightProcess),
             isBisimilar = Equivalence.isBisimilar(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id, graph);
+            data.result = isBisimilar
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
         let parsedGraph = BJN.parseForBJN(attackSuccGen);
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        isBisimilar =  winningBudgets.length == 0;
+        data.result = {isSatisfied: winningBudgets.length === 0, formula: winningBudgets.length !== 0 ? winningBudgets[0].hml : undefined};
     }
     //Add some kind of request id to determine for which problem have result? It is necessary? Right now just add the new data to the result.
-    data.result = isBisimilar;
     self.postMessage(data);
 };
 
@@ -74,12 +74,22 @@ messageHandlers.isStronglySimilar = data => {
 };
 
 messageHandlers.isWeaklySimilar = data => {
-    var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true}),
-        defendSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true}),
-        leftProcess = attackSuccGen.getProcessByName(data.leftProcess),
-        rightProcess = defendSuccGen.getProcessByName(data.rightProcess),
-        isSimilar = Equivalence.isSimilar(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id);
-    data.result = isSimilar;
+    if (inputMode === "TCCS"){
+        var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true}),
+            defendSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true}),
+            leftProcess = attackSuccGen.getProcessByName(data.leftProcess),
+            rightProcess = defendSuccGen.getProcessByName(data.rightProcess),
+            isSimilar = Equivalence.isSimilar(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id);
+            data.result = isSimilar
+    }
+    else{
+        let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let parsedGraph = BJN.parseForBJN(attackSuccGen);
+        let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
+        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
+    }
     self.postMessage(data);
 };
 
@@ -100,8 +110,12 @@ messageHandlers.isStronglySimulationEquivalent = data => {
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
         let parsedGraph = BJN.parseForBJN(attackSuccGen);
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
-        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[4] > 0 || energyLevel[5] > 0});
+        let leftToRightWinningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let leftToRightSimulation = leftToRightWinningBudgets.every((energyLevel) => { return energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
+        gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.rightProcess), parsedGraph.getNodeByLabel(data.leftProcess));
+        let rightToLeftWinningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let rightToLeftSimulation = rightToLeftWinningBudgets.every((energyLevel) => { return energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
+        data.result = {isSatisfied: leftToRightSimulation && rightToLeftSimulation, formula: !leftToRightSimulation ? leftToRightWinningBudgets[0].hml : (!rightToLeftSimulation ? rightToLeftWinningBudgets[0].hml : undefined)};
     }
     self.postMessage(data);
 };
@@ -135,8 +149,8 @@ messageHandlers.isStronglyTraceIncluded = data => {
         let parsedGraph = BJN.parseForBJN(attackSuccGen);
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        var isTraceIncluded = winningBudgets.every(function (energyLevel) { return energyLevel[1] > 1 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0; });
-        data.result = {isSatisfied: isTraceIncluded, formula: null};
+        let isTraceIncluded = winningBudgets.every(function (energyLevel) { return energyLevel.budget[1] > 1 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
+        data.result = {isSatisfied: isTraceIncluded, formula: !isTraceIncluded ? winningBudgets[0].hml : undefined};
     }
     self.postMessage(data);
 };
@@ -179,14 +193,12 @@ messageHandlers.isStronglyTraceEq = data => {
         let parsedGraph = BJN.parseForBJN(attackSuccGen);
 
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
-        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        let leftToRightTraceInclusion = winningBudgets.every(function (energyLevel) { return energyLevel[1] > 1 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0; });
-
+        let leftToRightWinningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let leftToRightTraceInclusion = leftToRightWinningBudgets.every(function (energyLevel) { return energyLevel.budget[1] > 1 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
         gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.rightProcess), parsedGraph.getNodeByLabel(data.leftProcess));
-        winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        var rightToLeftTraceInclusion = winningBudgets.every(function (energyLevel) { return energyLevel[1] > 1 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0; });
-
-        data.result = {isSatisfied: leftToRightTraceInclusion && rightToLeftTraceInclusion, formula: null};
+        let rightToLeftWinningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let rightToLeftTraceInclusion = rightToLeftWinningBudgets.every(function (energyLevel) { return energyLevel.budget[1] > 1 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
+        data.result = {isSatisfied: leftToRightTraceInclusion && rightToLeftTraceInclusion, formula: !leftToRightTraceInclusion ? leftToRightWinningBudgets[0].hml : (!rightToLeftTraceInclusion ? rightToLeftWinningBudgets[0].hml : undefined)};
     }
     self.postMessage(data);
 };
@@ -224,7 +236,8 @@ messageHandlers.isStronglyTwoNestedSimulationEquivalent = data => {
         let parsedGraph = BJN.parseForBJN(attackSuccGen);
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[5] > 1});
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[5] > 1; });
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
     }
     self.postMessage(data);
 };
@@ -238,7 +251,8 @@ messageHandlers.isStronglyReadinessTracesEquivalent = data => {
         let parsedGraph = BJN.parseForBJN(attackSuccGen);
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[3] > 1 || energyLevel[4] > 1 || energyLevel[5] > 1});
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[3] > 1 || energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
     }
     self.postMessage(data);
 };
@@ -252,7 +266,8 @@ messageHandlers.isStronglyPossibleFuturesEquivalent = data => {
         let parsedGraph = BJN.parseForBJN(attackSuccGen);
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[5] > 1});
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 2 || energyLevel.budget[5] > 1; });
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
     }
     self.postMessage(data);
 };
@@ -266,7 +281,8 @@ messageHandlers.isStronglyReadinessEquivalent = data => {
         let parsedGraph = BJN.parseForBJN(attackSuccGen);
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 1 || energyLevel[3] > 1 || energyLevel[4] > 1 || energyLevel[5] > 1});
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 2 || energyLevel.budget[2] > 1 || energyLevel.budget[3] > 1 || energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};;
     }
     self.postMessage(data);
 };
@@ -280,7 +296,8 @@ messageHandlers.isStronglyFailureTracesEquivalent = data => {
         let parsedGraph = BJN.parseForBJN(attackSuccGen);
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[3] > 0 || energyLevel[4] > 1 || energyLevel[5] > 1});
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[3] > 0 || energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
     }
     self.postMessage(data);
 };
@@ -294,7 +311,8 @@ messageHandlers.isStronglyRevivalEquivalent = data => {
         let parsedGraph = BJN.parseForBJN(attackSuccGen);
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 1 || energyLevel[3] > 0 || energyLevel[4] > 1 || energyLevel[5] > 1});
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 2 || energyLevel.budget[2] > 1 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
     }
     self.postMessage(data);
 };
@@ -308,7 +326,8 @@ messageHandlers.isStronglyReadySimulationEquivalent = data => {
         let parsedGraph = BJN.parseForBJN(attackSuccGen);
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[4] > 1 || energyLevel[5] > 1});
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
     }
     self.postMessage(data);
 };
@@ -322,7 +341,8 @@ messageHandlers.isStronglyImpossibleFuturesEquivalent = data => {
         let parsedGraph = BJN.parseForBJN(attackSuccGen);
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[5] > 1});
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 2 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[5] > 1; });
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
     }
     self.postMessage(data);
 };
@@ -336,7 +356,8 @@ messageHandlers.isStronglyFailureEquivalent = data => {
         let parsedGraph = BJN.parseForBJN(attackSuccGen);
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 1 || energyLevel[5] > 1});
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 2 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
     }
     self.postMessage(data);
 };
@@ -350,7 +371,8 @@ messageHandlers.isStronglyEnablednessEquivalent = data => {
         let parsedGraph = BJN.parseForBJN(attackSuccGen);
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        data.result =  winningBudgets.every((energyLevel) => { return energyLevel[0] > 1 || energyLevel[1] > 1 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0});
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[0] > 1 || energyLevel.budget[1] > 1 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};        
     }
     self.postMessage(data);
 };
@@ -364,7 +386,9 @@ messageHandlers.runBJN = data => {
         let parsedGraph = BJN.parseForBJN(attackSuccGen);
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        data.result = BJN.getEqualitiesFromEnergies(winningBudgets);
+        let energies = winningBudgets.map((budget) => { return budget.budget; });
+        let equalities = BJN.getEqualitiesFromEnergies(energies)
+        data.result = {equalities: equalities, formula: !equalities.bisimulation ? winningBudgets[0].hml : undefined};
     }
     self.postMessage(data);
 };

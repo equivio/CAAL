@@ -183,20 +183,21 @@ module Activity {
                         $ul.append($("<li>").append($("<a>").append("Play Game"))
                             .on("click", () => startGame()));
                     }
-
-                    if (status === PropertyStatus.unsatisfied && property instanceof Property.DistinguishingFormula && property.getTime() !== "untimed") {
-                        var generateFormula = (properties) => {
-                            if (properties) {
-                                this.project.addPropertyAfter(property.getId(), properties.secondProperty);
-                                this.project.addPropertyAfter(property.getId(), properties.firstProperty);
-                                this.displayProperties();
-                            }
-                        }
-
-                        $ul.append($("<li>").append($("<a>").append("Generate Distinguishing Formula"))
-                            .on("click", () => property.generateDistinguishingFormula(generateFormula)));
-                    }
                 }
+
+                if (status === PropertyStatus.unsatisfied && property instanceof Property.DistinguishingFormula && property.getTime() !== "untimed") {
+                    var generateFormula = (properties) => {
+                        if (properties) {
+                            this.project.addPropertyAfter(property.getId(), properties.secondProperty);
+                            this.project.addPropertyAfter(property.getId(), properties.firstProperty);
+                            this.displayProperties();
+                        }
+                    }
+
+                    $ul.append($("<li>").append($("<a>").append("Generate Distinguishing Formula"))
+                        .on("click", () => property.generateDistinguishingFormula(generateFormula)));
+                }
+
                 if(gameConfiguration){
                     // check if relation is supported by the Spectroscopy Energy Game
                     let matchflag = false;
@@ -467,12 +468,16 @@ module Activity {
                     let results = event.data.result;
                     properties.forEach((prop) => {
                         // first letter of class name needs to be lowercase
-                        let result = results[prop.getClassName().charAt(0).toLowerCase() + prop.getClassName().slice(1)]
+                        let result = results.equalities[prop.getClassName().charAt(0).toLowerCase() + prop.getClassName().slice(1)]
                         if (result === true){
                             prop.setStatus(PropertyStatus.satisfied);
                         }
                         else if (result === false){
                             prop.setStatus(PropertyStatus.unsatisfied);
+                            // this should always be the case
+                            if (prop instanceof Property.DistinguishingFormula){
+                                prop.formula = results.formula;
+                            }
                         }
                         else {
                             prop.setStatus(result);

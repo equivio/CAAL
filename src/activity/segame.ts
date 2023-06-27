@@ -567,7 +567,7 @@ module Activity {
         private energyLeft: number[];
         private succGen: CCS.SuccessorGenerator;
         private bjn: BJN.Game;
-        private attackerWinBudgets: Map<BJN.Position, number[][]>;
+        private attackerWinBudgets: Map<BJN.Position, {budget: number[], hml: string}[]>;
 
         private gameActivity: SEGame;
         private gameLog: GameLog;
@@ -767,7 +767,7 @@ module Activity {
                 if (!positionAttackerWin) { throw "Something went wrong when selecting a move."; }
                 else {
                     if (positionAttackerWin.some((budget) => {
-                        return budget.every((dim, index) => {
+                        return budget.budget.every((dim, index) => {
                             return dim <= newEnergyLeft[index];
                         })
                     })) {
@@ -801,8 +801,8 @@ module Activity {
                 // manhattan-distance as indicator of best possible losing move
                 positionAttackerWin.forEach((budget) => {
                     let score: number = newEnergyLeft.reduce((acc, curr, i) => {
-                        if (curr === Infinity) { return acc + 100 - budget[i] }
-                        return acc + curr - budget[i];
+                        if (curr === Infinity) { return acc + 100 - budget.budget[i] }
+                        return acc + curr - budget.budget[i];
                     }, 0)
                     if (score > bestScore) {
                         bestScore = score;
@@ -819,7 +819,7 @@ module Activity {
                 if (!positionAttackerWin) { throw "Something went wrong when selecting a move."; }
                 else {
                     if (positionAttackerWin.every((budget) => {
-                        return budget.some((dim, index) => {
+                        return budget.budget.some((dim, index) => {
                             return dim > newEnergyLeft[index];
                         })
                     })) {
@@ -839,7 +839,7 @@ module Activity {
                 // manhattan-distance as indicator of best possible losing move
                 let minBudget: number = Infinity;
                 positionAttackerWin.forEach((budget) => {
-                    minBudget = Math.min(minBudget, budget.reduce((acc, curr) => { return acc + curr }, 0))
+                    minBudget = Math.min(minBudget, budget.budget.reduce((acc, curr) => { return acc + curr }, 0))
                 })
                 let score: number = newEnergyLeft.reduce((acc, curr) => {
                     if (curr === Infinity) { return acc + 100 }

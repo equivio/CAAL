@@ -185,11 +185,13 @@ module BJN {
         public from: Position;
         public to: Position;
         public update: (number | number[])[];
+        public actionName?: string
 
-        constructor(from: Position, to: Position, update: (number | number[])[]) {
+        constructor(from: Position, to: Position, update: (number | number[])[], actionName?: string) {
             this.from = from;
             this.to = to;
             this.update = update
+            this.actionName = actionName;
         }
 
         public updateToString(): string {
@@ -349,7 +351,7 @@ module BJN {
                                 // check if newPos was already discovered to avoid duplicates
                                 if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
                                     this.addPosition(newPos);
-                                    this.addMove(new Move(pos, newPos, [-1, 0, 0, 0, 0, 0]));
+                                    this.addMove(new Move(pos, newPos, [-1, 0, 0, 0, 0, 0], edge.label));
                                     todo.push(newPos);
                                 }
                                 else {
@@ -357,7 +359,7 @@ module BJN {
                                     if (!newPos.isEqualTo(pos)){
                                         let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
                                         if (!destPos) { throw new Error("Position does not exist despite check"); }
-                                        this.addMove(new Move(pos, destPos, [-1, 0, 0, 0, 0, 0]))
+                                        this.addMove(new Move(pos, destPos, [-1, 0, 0, 0, 0, 0], edge.label))
                                     }
                                 }
                             }
@@ -433,7 +435,15 @@ module BJN {
         return updatedBudget;
     }
 
-    function inverseUpdate(energyLevel: number[], update: (number | number[])[]) {
+    function updateHML(hml: string, update: (number | number[])[], actionName: string) : string {
+        if (update[0] === -1) { return "<" + actionName + ">" + hml; }
+        if (update[0][1] === 3) { throw "revivals not implemented yet"; }
+        if (update[3][0] === 3) { return "∧{" + hml + "}"; }
+        if (update[5] === -1) { return "¬" + hml; }
+        return hml;
+    }
+
+    function inverseUpdate(energyLevel: number[], update: (number | number[])[]) : number[] {
         let parts: number[][] = [[...energyLevel]];
         update.forEach((u_i, i) => {
             //relative updates
@@ -458,7 +468,7 @@ module BJN {
     }
 
 
-    function computeMinimumBudgets(newAttackerWin: number[][], budgets: number[][]) {
+    function computeMinimumBudgets(newAttackerWin: {budget: number[], hml: string}[], budgets: {budget: number[], hml: string}[]) {
         newAttackerWin.push(budgets.pop()!);
         budgets.forEach((budget) => {
             // flag to prohibit budgets being pushed multiple times
@@ -467,13 +477,13 @@ module BJN {
             let dominated: boolean = false;
             for (let minBudget of newAttackerWin) {
                 // budget is dominated by minbudget
-                if (budget.every((e_n, i) => { return e_n >= minBudget[i] })) {
+                if (budget.budget.every((e_n, i) => { return e_n >= minBudget.budget[i] })) {
                     dominated = true;
                     break;
                 }
                 // budget dominates minbudget
                 else {
-                    if (budget.every((e_n, i) => { return e_n <= minBudget[i] })) {
+                    if (budget.budget.every((e_n, i) => { return e_n <= minBudget.budget[i] })) {
                         newAttackerWin.splice(newAttackerWin.indexOf(minBudget), 1);
                         if (!pushed) {
                             newAttackerWin.push(budget);
@@ -492,7 +502,7 @@ module BJN {
 
     export function computeWinningBudgets(game: Game) {
         // ln 2
-        let attackerWin = new Map<Position, number[][]>();
+        let attackerWin = new Map<Position, {budget: number[], hml: string}[]>();
         game.positions.forEach((pos) => {
             attackerWin.set(pos, []);
         })
@@ -501,7 +511,7 @@ module BJN {
         game.defenderPositions.forEach((pos) => {
             if (pos.defenderStuck()) {
                 todo.push(pos);
-                attackerWin.set(pos, [Array(6).fill(0)]);
+                attackerWin.set(pos, [{budget: Array(6).fill(0), hml: "tt"}]);
             }
         })
 
@@ -509,15 +519,16 @@ module BJN {
         while (todo.length > 0) {
             //ln 5 and 6
             let g = todo.pop()!;
-            let newAttackerWin: number[][] = [];
+            let newAttackerWin: {budget: number[], hml: string}[] = [];
             // ln 7
             if (!g.isDefenderPosition) {
                 // ln 8
-                let minToFind: number[][] = [...attackerWin.get(g)!];
+                let minToFind: {budget: number[], hml: string}[] = [...attackerWin.get(g)!];
                 game.moves.forEach((move) => {
                     if (move.from == g) {
                         attackerWin.get(move.to)?.forEach((edash) => {
-                            minToFind.push(inverseUpdate(edash, move.update));
+                            let newHML: string = updateHML(edash.hml, move.update, move.actionName!);
+                            minToFind.push({budget: inverseUpdate(edash.budget, move.update), hml: newHML});
                         })
                     }
                 })
@@ -535,7 +546,7 @@ module BJN {
                 }
                 // ln 10
                 let defenderPost: Position[] = [];
-                let options = new Map<Position, number[][]>();
+                let options = new Map<Position, {budget: number[], hml: string}[]>();
                 // ln 10 and 11
                 game.moves.forEach((move) => {
                     if (move.from == g) {
@@ -544,7 +555,7 @@ module BJN {
                             if (!options.has(move.to)) {
                                 options.set(move.to, []);
                             }
-                            options.get(move.to)!.push(inverseUpdate(energyLevel, move.update));
+                            options.get(move.to)!.push({budget: inverseUpdate(energyLevel.budget, move.update), hml: energyLevel.hml});
                         })
                     }
                 })
@@ -552,13 +563,14 @@ module BJN {
                 // comparing cardinality should also be correct and more efficient
                 if (defenderPost.every((gdash) => { return options.has(gdash) })) {
                     // ln 13
-                    let optionsArray: number[][][] = [];
+                    let optionsArray: {budget: number[], hml: string}[][] = [];
                     for (let strats of options.values()) {
                         optionsArray.push(strats);
                     }
-                    let minToFind: number[][] = []
+                    let minToFind: {budget: number[], hml: string}[] = []
                     if (optionsArray.length == 1) {
                         minToFind.push(...optionsArray[0]);
+                        minToFind.forEach((budget) => { budget.hml = "∧{" + budget.hml + "}" });
                     }
                     optionsArray.forEach((gdashValues) => {
                         optionsArray.forEach((otherGdashValues) => {
@@ -568,9 +580,10 @@ module BJN {
                             else {
                                 gdashValues.forEach((energyLevel) => {
                                     otherGdashValues.forEach((otherEnergyLevel) => {
-                                        let sup: number[] = [];
+                                        // TODO: conj. revivals assumed to be same as conj. answers in building hml-formula
+                                        let sup: {budget: number[], hml: string} = {budget: [], hml: "∧{" + energyLevel.hml + "," + otherEnergyLevel.hml + "}"};
                                         for (let k = 0; k < 6; k++) {
-                                            sup[k] = Math.max(energyLevel[k], otherEnergyLevel[k]);
+                                            sup.budget[k] = Math.max(energyLevel.budget[k], otherEnergyLevel.budget[k]);
                                         }
                                         minToFind.push(sup);
                                     })
@@ -586,8 +599,8 @@ module BJN {
             if (!(newAttackerWin.length == attackerWin.get(g)?.length &&
                 newAttackerWin.every((energyLevel) => {
                     return attackerWin.get(g)?.some((otherEnergylevel) => {
-                        return energyLevel.every((e_i, i) => {
-                            return e_i == otherEnergylevel[i]
+                        return energyLevel.budget.every((e_i, i) => {
+                            return e_i == otherEnergylevel.budget[i];
                         })
                     })
                 })
