@@ -49,11 +49,9 @@ module HML {
         propagateNegation(hasNegationPrefix : boolean) : HML.Formula{
             if (hasNegationPrefix) {
                 this.subFormulas = this.subFormulas.map((subFormula) => { return (subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(true); })
-                //this.subFormulas = this.subFormulas.map((subFormula) => { return subFormula.propagateNegation(true); });
                 return new ConjFormula(this.subFormulas);
             }
             this.subFormulas = this.subFormulas.map((subFormula) => { return (subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(false); })
-            //this.subFormulas = this.subFormulas.map((subFormula) => { return subFormula.propagateNegation(false); });
             return this;
         }
     }
@@ -76,11 +74,9 @@ module HML {
         propagateNegation(hasNegationPrefix : boolean) : HML.Formula{
             if (hasNegationPrefix) {
                 this.subFormulas = this.subFormulas.map((subFormula) => { return (subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(true); })
-                //this.subFormulas = this.subFormulas.map((subFormula) => { return subFormula.propagateNegation(true); });
                 return new DisjFormula(this.subFormulas);
             }
             this.subFormulas = this.subFormulas.map((subFormula) => { return (subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(false); })
-            //this.subFormulas = this.subFormulas.map((subFormula) => { return subFormula.propagateNegation(false); });
             return this;
         }
     }
@@ -134,11 +130,9 @@ module HML {
         propagateNegation(hasNegationPrefix : boolean) : HML.Formula{
             if (hasNegationPrefix) {
                 this.subFormula = (this.subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(true);
-                //this.subFormula.propagateNegation(true);
                 return new StrongForAllFormula(this.actionMatcher, this.subFormula);
             }
             this.subFormula = (this.subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(false);
-            //this.subFormula.propagateNegation(false);
             return this;
         }
     }
@@ -160,11 +154,9 @@ module HML {
         propagateNegation(hasNegationPrefix : boolean) : HML.Formula{
             if (hasNegationPrefix) {
                 this.subFormula = (this.subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(true);
-                //this.subFormula.propagateNegation(true);
                 return new StrongExistsFormula(this.actionMatcher, this.subFormula);
             }
             this.subFormula = (this.subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(false);
-            //this.subFormula.propagateNegation(false);
             return this;
         }
     }
@@ -263,7 +255,6 @@ module HML {
         }
         propagateNegation(hasNegationPrefix : boolean) : HML.Formula{
             this.subFormula = (this.subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(!hasNegationPrefix)
-            //this.subFormula.propagateNegation(!hasNegationPrefix);
             return this.subFormula;
         }
     }

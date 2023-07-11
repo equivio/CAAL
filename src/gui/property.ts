@@ -452,8 +452,10 @@ module Property {
         }
 
         protected workerFinished(event : any, callback : Function) : void {
-            this.formula = event.data.result.formula + ";";
-            event.data.result = event.data.result.isSatisfied;
+            if (!(typeof event.data.result === "boolean")){
+                this.formula = event.data.result.formula + ";";
+                event.data.result = event.data.result.isSatisfied;
+            }
             super.workerFinished(event, callback)
         }
 
@@ -546,7 +548,7 @@ module Property {
         }
     }
     
-    export class Simulation extends Relation {
+    export class Simulation extends DistinguishingFormula {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }

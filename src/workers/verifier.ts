@@ -64,23 +64,13 @@ messageHandlers.isWeaklyBisimilar = data => {
 };
 
 messageHandlers.isStronglySimilar = data => {
-    var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true}),
-        defendSuccGen = attackSuccGen,
-        leftProcess = attackSuccGen.getProcessByName(data.leftProcess),
-        rightProcess = defendSuccGen.getProcessByName(data.rightProcess),
-        isSimilar = Equivalence.isSimilar(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id);
-    data.result = isSimilar;
-    self.postMessage(data);
-};
-
-messageHandlers.isWeaklySimilar = data => {
     if (inputMode === "TCCS"){
         var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true}),
-            defendSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true}),
+            defendSuccGen = attackSuccGen,
             leftProcess = attackSuccGen.getProcessByName(data.leftProcess),
             rightProcess = defendSuccGen.getProcessByName(data.rightProcess),
             isSimilar = Equivalence.isSimilar(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id);
-            data.result = isSimilar
+        data.result = isSimilar;
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
@@ -93,6 +83,16 @@ messageHandlers.isWeaklySimilar = data => {
     self.postMessage(data);
 };
 
+messageHandlers.isWeaklySimilar = data => {
+    var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true}),
+        defendSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true}),
+        leftProcess = attackSuccGen.getProcessByName(data.leftProcess),
+        rightProcess = defendSuccGen.getProcessByName(data.rightProcess),
+        isSimilar = Equivalence.isSimilar(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id);
+    data.result = isSimilar
+    self.postMessage(data);
+};
+
 messageHandlers.isStronglySimulationEquivalent = data => {
     if(inputMode === "TCCS"){
         var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true}),
@@ -101,10 +101,10 @@ messageHandlers.isStronglySimulationEquivalent = data => {
             rightProcess = defendSuccGen.getProcessByName(data.rightProcess),
             isSimilarFromLeft = Equivalence.isSimilar(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id),
             isSimilarFromRight = false;
-            if (isSimilarFromLeft) {
-                isSimilarFromRight = Equivalence.isSimilar(attackSuccGen, defendSuccGen, rightProcess.id, leftProcess.id);
-            }
-            data.result = isSimilarFromLeft && isSimilarFromRight;
+        if (isSimilarFromLeft) {
+            isSimilarFromRight = Equivalence.isSimilar(attackSuccGen, defendSuccGen, rightProcess.id, leftProcess.id);
+        }
+        data.result = isSimilarFromLeft && isSimilarFromRight;
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
