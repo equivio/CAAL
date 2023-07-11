@@ -567,7 +567,7 @@ module Activity {
         private energyLeft: number[];
         private succGen: CCS.SuccessorGenerator;
         private bjn: BJN.Game;
-        private attackerWinBudgets: Map<BJN.Position, {budget: number[], hml: string}[]>;
+        private attackerWinBudgets: Map<BJN.Position, {budget: number[], hml: HML.Formula}[]>;
 
         private gameActivity: SEGame;
         private gameLog: GameLog;

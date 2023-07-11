@@ -46,6 +46,16 @@ module HML {
         get id() : string {
             return this.toString();
         }
+        propagateNegation(hasNegationPrefix : boolean) : HML.Formula{
+            if (hasNegationPrefix) {
+                this.subFormulas = this.subFormulas.map((subFormula) => { return (subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(true); })
+                //this.subFormulas = this.subFormulas.map((subFormula) => { return subFormula.propagateNegation(true); });
+                return new ConjFormula(this.subFormulas);
+            }
+            this.subFormulas = this.subFormulas.map((subFormula) => { return (subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(false); })
+            //this.subFormulas = this.subFormulas.map((subFormula) => { return subFormula.propagateNegation(false); });
+            return this;
+        }
     }
 
     export class ConjFormula implements Formula {
@@ -63,6 +73,16 @@ module HML {
         get id() : string {
             return this.toString();
         }
+        propagateNegation(hasNegationPrefix : boolean) : HML.Formula{
+            if (hasNegationPrefix) {
+                this.subFormulas = this.subFormulas.map((subFormula) => { return (subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(true); })
+                //this.subFormulas = this.subFormulas.map((subFormula) => { return subFormula.propagateNegation(true); });
+                return new DisjFormula(this.subFormulas);
+            }
+            this.subFormulas = this.subFormulas.map((subFormula) => { return (subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(false); })
+            //this.subFormulas = this.subFormulas.map((subFormula) => { return subFormula.propagateNegation(false); });
+            return this;
+        }
     }
 
     export class TrueFormula implements Formula {
@@ -75,6 +95,10 @@ module HML {
         get id() : string {
             return this.toString();
         }
+        propagateNegation(hasNegationPrefix : boolean) : HML.Formula{
+            if (hasNegationPrefix) { return new FalseFormula(); }
+            return this;
+        }
     }
 
     export class FalseFormula implements Formula {
@@ -86,6 +110,10 @@ module HML {
         }
         get id() : string {
             return this.toString();
+        }
+        propagateNegation(hasNegationPrefix : boolean) : HML.Formula{
+            if (hasNegationPrefix) { return new TrueFormula(); }
+            return this;
         }
     }
 
@@ -103,6 +131,16 @@ module HML {
         get id() : string {
             return this.toString();
         }
+        propagateNegation(hasNegationPrefix : boolean) : HML.Formula{
+            if (hasNegationPrefix) {
+                this.subFormula = (this.subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(true);
+                //this.subFormula.propagateNegation(true);
+                return new StrongForAllFormula(this.actionMatcher, this.subFormula);
+            }
+            this.subFormula = (this.subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(false);
+            //this.subFormula.propagateNegation(false);
+            return this;
+        }
     }
 
     export class StrongForAllFormula implements Formula {
@@ -118,6 +156,16 @@ module HML {
         }
         get id() : string {
             return this.toString();
+        }
+        propagateNegation(hasNegationPrefix : boolean) : HML.Formula{
+            if (hasNegationPrefix) {
+                this.subFormula = (this.subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(true);
+                //this.subFormula.propagateNegation(true);
+                return new StrongExistsFormula(this.actionMatcher, this.subFormula);
+            }
+            this.subFormula = (this.subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(false);
+            //this.subFormula.propagateNegation(false);
+            return this;
         }
     }
 
@@ -196,6 +244,27 @@ module HML {
         }
         get id() : string {
             return this.toString();
+        }
+    }
+
+    export class NegationFormula implements Formula {
+        private hmlStr : string;
+        constructor(public subFormula : Formula) {
+        }
+        dispatchOn<T>(dispatcher : FormulaDispatchHandler<T>) : T {
+            throw new Error("Class NegationFormula has no dispacher");
+        }
+        toString() {
+            if (this.hmlStr) return this.hmlStr;
+            return this.hmlStr = "¬" + this.subFormula.toString();
+        }
+        get id() : string {
+            return this.toString();
+        }
+        propagateNegation(hasNegationPrefix : boolean) : HML.Formula{
+            this.subFormula = (this.subFormula as Formula & {propagateNegation: (hasNegationPrefix : boolean) => Formula}).propagateNegation(!hasNegationPrefix)
+            //this.subFormula.propagateNegation(!hasNegationPrefix);
+            return this.subFormula;
         }
     }
 

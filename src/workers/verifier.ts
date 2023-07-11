@@ -47,7 +47,7 @@ messageHandlers.isStronglyBisimilar = data => {
         let parsedGraph = BJN.parseForBJN(attackSuccGen);
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
-        data.result = {isSatisfied: winningBudgets.length === 0, formula: winningBudgets.length !== 0 ? winningBudgets[0].hml : undefined};
+        data.result = {isSatisfied: winningBudgets.length === 0, formula: winningBudgets.length !== 0 ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
     //Add some kind of request id to determine for which problem have result? It is necessary? Right now just add the new data to the result.
     self.postMessage(data);
@@ -88,7 +88,7 @@ messageHandlers.isWeaklySimilar = data => {
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
-        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
     self.postMessage(data);
 };
@@ -115,7 +115,7 @@ messageHandlers.isStronglySimulationEquivalent = data => {
         gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.rightProcess), parsedGraph.getNodeByLabel(data.leftProcess));
         let rightToLeftWinningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
         let rightToLeftSimulation = rightToLeftWinningBudgets.every((energyLevel) => { return energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
-        data.result = {isSatisfied: leftToRightSimulation && rightToLeftSimulation, formula: !leftToRightSimulation ? leftToRightWinningBudgets[0].hml : (!rightToLeftSimulation ? rightToLeftWinningBudgets[0].hml : undefined)};
+        data.result = {isSatisfied: leftToRightSimulation && rightToLeftSimulation, formula: !leftToRightSimulation ? leftToRightWinningBudgets[0].hml.propagateNegation(false).toString() : (!rightToLeftSimulation ? rightToLeftWinningBudgets[0].hml.propagateNegation(false).toString() : undefined)};
     }
     self.postMessage(data);
 };
@@ -150,7 +150,7 @@ messageHandlers.isStronglyTraceIncluded = data => {
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
         let isTraceIncluded = winningBudgets.every(function (energyLevel) { return energyLevel.budget[1] > 1 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
-        data.result = {isSatisfied: isTraceIncluded, formula: !isTraceIncluded ? winningBudgets[0].hml : undefined};
+        data.result = {isSatisfied: isTraceIncluded, formula: !isTraceIncluded ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
     self.postMessage(data);
 };
@@ -198,7 +198,7 @@ messageHandlers.isStronglyTraceEq = data => {
         gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.rightProcess), parsedGraph.getNodeByLabel(data.leftProcess));
         let rightToLeftWinningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
         let rightToLeftTraceInclusion = rightToLeftWinningBudgets.every(function (energyLevel) { return energyLevel.budget[1] > 1 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
-        data.result = {isSatisfied: leftToRightTraceInclusion && rightToLeftTraceInclusion, formula: !leftToRightTraceInclusion ? leftToRightWinningBudgets[0].hml : (!rightToLeftTraceInclusion ? rightToLeftWinningBudgets[0].hml : undefined)};
+        data.result = {isSatisfied: leftToRightTraceInclusion && rightToLeftTraceInclusion, formula: !leftToRightTraceInclusion ? leftToRightWinningBudgets[0].hml.propagateNegation(false).toString() : (!rightToLeftTraceInclusion ? rightToLeftWinningBudgets[0].hml.propagateNegation(false).toString() : undefined)};
     }
     self.postMessage(data);
 };
@@ -237,7 +237,7 @@ messageHandlers.isStronglyTwoNestedSimulationEquivalent = data => {
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[5] > 1; });
-        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
     self.postMessage(data);
 };
@@ -252,7 +252,7 @@ messageHandlers.isStronglyReadinessTracesEquivalent = data => {
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[3] > 1 || energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
-        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
     self.postMessage(data);
 };
@@ -267,7 +267,7 @@ messageHandlers.isStronglyPossibleFuturesEquivalent = data => {
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 2 || energyLevel.budget[5] > 1; });
-        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
     self.postMessage(data);
 };
@@ -282,7 +282,7 @@ messageHandlers.isStronglyReadinessEquivalent = data => {
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 2 || energyLevel.budget[2] > 1 || energyLevel.budget[3] > 1 || energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
-        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};;
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};;
     }
     self.postMessage(data);
 };
@@ -297,7 +297,7 @@ messageHandlers.isStronglyFailureTracesEquivalent = data => {
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[3] > 0 || energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
-        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
     self.postMessage(data);
 };
@@ -312,7 +312,7 @@ messageHandlers.isStronglyRevivalEquivalent = data => {
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 2 || energyLevel.budget[2] > 1 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
-        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
     self.postMessage(data);
 };
@@ -327,7 +327,7 @@ messageHandlers.isStronglyReadySimulationEquivalent = data => {
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
-        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
     self.postMessage(data);
 };
@@ -342,7 +342,7 @@ messageHandlers.isStronglyImpossibleFuturesEquivalent = data => {
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 2 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[5] > 1; });
-        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
     self.postMessage(data);
 };
@@ -357,7 +357,7 @@ messageHandlers.isStronglyFailureEquivalent = data => {
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 2 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
-        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
     self.postMessage(data);
 };
@@ -372,7 +372,7 @@ messageHandlers.isStronglyEnablednessEquivalent = data => {
         let gameBJN = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(data.leftProcess), parsedGraph.getNodeByLabel(data.rightProcess));
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[0] > 1 || energyLevel.budget[1] > 1 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
-        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml : undefined};        
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};        
     }
     self.postMessage(data);
 };
@@ -388,7 +388,7 @@ messageHandlers.runBJN = data => {
         let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
         let energies = winningBudgets.map((budget) => { return budget.budget; });
         let equalities = BJN.getEqualitiesFromEnergies(energies)
-        data.result = {equalities: equalities, formula: !equalities.bisimulation ? winningBudgets[0].hml : undefined};
+        data.result = {equalities: equalities, formula: !equalities.bisimulation ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
     self.postMessage(data);
 };

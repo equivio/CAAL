@@ -435,11 +435,12 @@ module BJN {
         return updatedBudget;
     }
 
-    function updateHML(hml: string, update: (number | number[])[], actionName: string) : string {
-        if (update[0] === -1) { return "<" + actionName + ">" + hml; }
-        if (update[0][1] === 3) { throw "revivals not implemented yet"; }
-        if (update[3][0] === 3) { return "∧{" + hml + "}"; }
-        if (update[5] === -1) { return "¬" + hml; }
+    function updateHML(hml: HML.Formula, update: (number | number[])[], actionName: string) : HML.Formula {
+        let actionMatcher = new HML.SingleActionMatcher(new CCS.Action(actionName, false));
+        if (update[0] === -1) { return new HML.StrongExistsFormula(actionMatcher, hml); }
+        if (update[0][1] === 3) { return new HML.ConjFormula([hml]); }
+        if (update[3][0] === 3) { return new HML.ConjFormula([hml]); }
+        if (update[5] === -1) { return new HML.NegationFormula(hml); }
         return hml;
     }
 
@@ -468,7 +469,7 @@ module BJN {
     }
 
 
-    function computeMinimumBudgets(newAttackerWin: {budget: number[], hml: string}[], budgets: {budget: number[], hml: string}[]) {
+    function computeMinimumBudgets(newAttackerWin: {budget: number[], hml: HML.Formula}[], budgets: {budget: number[], hml: HML.Formula}[]) {
         newAttackerWin.push(budgets.pop()!);
         budgets.forEach((budget) => {
             // flag to prohibit budgets being pushed multiple times
@@ -502,7 +503,7 @@ module BJN {
 
     export function computeWinningBudgets(game: Game) {
         // ln 2
-        let attackerWin = new Map<Position, {budget: number[], hml: string}[]>();
+        let attackerWin = new Map<Position, {budget: number[], hml: HML.Formula}[]>();
         game.positions.forEach((pos) => {
             attackerWin.set(pos, []);
         })
@@ -511,7 +512,7 @@ module BJN {
         game.defenderPositions.forEach((pos) => {
             if (pos.defenderStuck()) {
                 todo.push(pos);
-                attackerWin.set(pos, [{budget: Array(6).fill(0), hml: "tt"}]);
+                attackerWin.set(pos, [{budget: Array(6).fill(0), hml: new HML.TrueFormula()}]);
             }
         })
 
@@ -519,15 +520,15 @@ module BJN {
         while (todo.length > 0) {
             //ln 5 and 6
             let g = todo.pop()!;
-            let newAttackerWin: {budget: number[], hml: string}[] = [];
+            let newAttackerWin: {budget: number[], hml: HML.Formula}[] = [];
             // ln 7
             if (!g.isDefenderPosition) {
                 // ln 8
-                let minToFind: {budget: number[], hml: string}[] = [...attackerWin.get(g)!];
+                let minToFind: {budget: number[], hml: HML.Formula}[] = [...attackerWin.get(g)!];
                 game.moves.forEach((move) => {
                     if (move.from == g) {
                         attackerWin.get(move.to)?.forEach((edash) => {
-                            let newHML: string = updateHML(edash.hml, move.update, move.actionName!);
+                            let newHML: HML.Formula = updateHML(edash.hml, move.update, move.actionName!);
                             minToFind.push({budget: inverseUpdate(edash.budget, move.update), hml: newHML});
                         })
                     }
@@ -546,7 +547,7 @@ module BJN {
                 }
                 // ln 10
                 let defenderPost: Position[] = [];
-                let options = new Map<Position, {budget: number[], hml: string}[]>();
+                let options = new Map<Position, {budget: number[], hml: HML.Formula}[]>();
                 // ln 10 and 11
                 game.moves.forEach((move) => {
                     if (move.from == g) {
@@ -563,14 +564,14 @@ module BJN {
                 // comparing cardinality should also be correct and more efficient
                 if (defenderPost.every((gdash) => { return options.has(gdash) })) {
                     // ln 13
-                    let optionsArray: {budget: number[], hml: string}[][] = [];
+                    let optionsArray: {budget: number[], hml: HML.Formula}[][] = [];
                     for (let strats of options.values()) {
                         optionsArray.push(strats);
                     }
-                    let minToFind: {budget: number[], hml: string}[] = []
+                    let minToFind: {budget: number[], hml: HML.Formula}[] = []
                     if (optionsArray.length == 1) {
                         minToFind.push(...optionsArray[0]);
-                        minToFind.forEach((budget) => { budget.hml = "∧{" + budget.hml + "}" });
+                        minToFind.forEach((budget) => { budget.hml = new HML.ConjFormula([budget.hml]) });
                     }
                     optionsArray.forEach((gdashValues) => {
                         optionsArray.forEach((otherGdashValues) => {
@@ -581,7 +582,7 @@ module BJN {
                                 gdashValues.forEach((energyLevel) => {
                                     otherGdashValues.forEach((otherEnergyLevel) => {
                                         // TODO: conj. revivals assumed to be same as conj. answers in building hml-formula
-                                        let sup: {budget: number[], hml: string} = {budget: [], hml: "∧{" + energyLevel.hml + "," + otherEnergyLevel.hml + "}"};
+                                        let sup: {budget: number[], hml: HML.Formula} = {budget: [], hml: new HML.ConjFormula([energyLevel.hml, otherEnergyLevel.hml])};
                                         for (let k = 0; k < 6; k++) {
                                             sup.budget[k] = Math.max(energyLevel.budget[k], otherEnergyLevel.budget[k]);
                                         }

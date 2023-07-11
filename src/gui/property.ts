@@ -452,7 +452,7 @@ module Property {
         }
 
         protected workerFinished(event : any, callback : Function) : void {
-            this.formula = event.data.result.formula;
+            this.formula = event.data.result.formula + ";";
             event.data.result = event.data.result.isSatisfied;
             super.workerFinished(event, callback)
         }

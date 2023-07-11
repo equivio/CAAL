@@ -476,7 +476,7 @@ module Activity {
                             prop.setStatus(PropertyStatus.unsatisfied);
                             // this should always be the case
                             if (prop instanceof Property.DistinguishingFormula){
-                                prop.formula = results.formula;
+                                prop.formula = results.formula + ";";
                             }
                         }
                         else {
