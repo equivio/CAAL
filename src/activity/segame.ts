@@ -387,7 +387,7 @@ module Activity {
                     return [Infinity, 2, 1, 0, 1, 1];
                 case "Failures":
                     return [Infinity, 2, 0, 0, 1, 1];
-                case "TraceEquivalence":
+                case "TraceInclusion":
                     return [Infinity, 1, 0, 0, 0, 0];
                 case "Enabledness":
                     return [1, 1, 0, 0, 0, 0];

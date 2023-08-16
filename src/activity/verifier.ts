@@ -15,6 +15,7 @@ module Activity {
 
             $("#add-property").on("click", () => this.showPropertyModal());
             $("#verify-bjn").on("click", () => this.verifyBJN());
+            $("#delete-all").on("click", () => this.deleteAllProperties());
             $("#verify-all").on("click", () => this.verifyAll());
             $("#verify-stop").on("click", () => this.stopVerify());
             $("input[name=property-type]").on("change", () => this.showSelectedPropertyType());
@@ -171,7 +172,7 @@ module Activity {
                 let gameConfiguration = property.getGameConfiguration();
                 // check if property is supported by equivalence/hml game
                 if (!(property instanceof Property.BJNEquivalence)){
-                    if (gameConfiguration && !(property instanceof Property.TraceEquivalence)) {
+                    if (gameConfiguration && !(property instanceof Property.TraceInclusion)) {
                         var startGame = () => {
                             if (property instanceof Property.HML) {
                                 Main.activityHandler.selectActivity("hmlgame", gameConfiguration);
@@ -345,7 +346,7 @@ module Activity {
                     "ImpossibleFutures",
                     "Revivals",
                     "Failures",
-                    "TraceEquivalence",
+                    "TraceInclusion",
                     "Enabledness"
                 ];
                 options["forBJN"] = true;
@@ -378,6 +379,15 @@ module Activity {
         private deleteProperty(e) : void {
             this.project.deleteProperty(e.data.property);
             e.data.property.getRow().fadeOut(200, function() {$(this).remove()});
+        }
+        private deleteAllProperties() : void {
+            let props = this.project.getProperties();
+            while(props.length > 0){
+                props.forEach((prop) => {
+                    this.deleteProperty({data: {property: prop}});
+                })
+                props = this.project.getProperties();
+            }
         }
 
         private verify(e) : void {

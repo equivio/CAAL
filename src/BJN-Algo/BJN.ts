@@ -581,7 +581,6 @@ module BJN {
                             else {
                                 gdashValues.forEach((energyLevel) => {
                                     otherGdashValues.forEach((otherEnergyLevel) => {
-                                        // TODO: conj. revivals assumed to be same as conj. answers in building hml-formula
                                         let sup: {budget: number[], hml: HML.Formula} = {budget: [], hml: new HML.ConjFormula([energyLevel.hml, otherEnergyLevel.hml])};
                                         for (let k = 0; k < 6; k++) {
                                             sup.budget[k] = Math.max(energyLevel.budget[k], otherEnergyLevel.budget[k]);
@@ -634,7 +633,7 @@ module BJN {
             impossibleFutures: false,
             revivals: false,
             failures: false,
-            traceEquivalence: false,
+            traceInclusion: false,
             enabledness: false
         };
         // if there exists no distinguishing HML-formula, bisimulation applies
@@ -668,13 +667,13 @@ module BJN {
                     // simulation
                     if (energyLevels.every((energyLevel) => { return energyLevel[4] > 0 || energyLevel[5] > 0 })) {
                         equalities["simulation"] = true;
-                        equalities["traceEquivalence"] = true;
+                        equalities["traceInclusion"] = true;
                         equalities["enabledness"] = true;
                     }
                     else {
                         // trace equivalence
                         if (energyLevels.every((energyLevel) => { return energyLevel[1] > 1 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0 })) {
-                            equalities["traceEquivalence"] = true;
+                            equalities["traceInclusion"] = true;
                             equalities["enabledness"] = true;
                         }
                         // enabledness
@@ -699,7 +698,7 @@ module BJN {
                             equalities["failureTraces"] = true;
                             equalities["revivals"] = true;
                             equalities["failures"] = true;
-                            equalities["traceEquivalence"] = true;
+                            equalities["traceInclusion"] = true;
                             equalities["enabledness"] = true;
                         }
                     }
@@ -718,14 +717,14 @@ module BJN {
                     if (energyLevels.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[5] > 1 })) {
                         equalities["impossibleFutures"] = true;
                         equalities["failures"] = true;
-                        equalities["traces"] = true;
+                        equalities["traceInclusion"] = true;
                         equalities["enabledness"] = true;
                     }
                     else {
                         // failures
                         if (energyLevels.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 1 || energyLevel[5] > 1 })) {
                             equalities["failures"] = true;
-                            equalities["traces"] = true;
+                            equalities["traceInclusion"] = true;
                             equalities["enabledness"] = true;
                         }
                     }
@@ -734,14 +733,14 @@ module BJN {
                         equalities["readiness"] = true;
                         equalities["revivals"] = true;
                         equalities["failures"] = true;
-                        equalities["traces"] = true;
+                        equalities["traceInclusion"] = true;
                         equalities["enabledness"] = true;
                     }
                     else {
                         if (energyLevels.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 1 || energyLevel[3] > 0 || energyLevel[4] > 1 || energyLevel[5] > 1 })) {
                             equalities["revivals"] = true;
                             equalities["failures"] = true;
-                            equalities["traces"] = true;
+                            equalities["traceInclusion"] = true;
                             equalities["enabledness"] = true;
                         }
                     }

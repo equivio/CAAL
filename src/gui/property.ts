@@ -610,17 +610,6 @@ module Property {
             var symbol = super.getType() === "strong" ? "&#8594;" : "&#8658;";
             return "Traces<sub>" + symbol + super.getTimeSubscript() + "</sub>(" + this.firstProcess + ") = Traces<sub>" + symbol + super.getTimeSubscript() + "</sub>(" + this.secondProcess + ")";
         }
-
-        public getGameConfiguration() {
-            return {
-                leftProcess: this.firstProcess,
-                rightProcess: this.secondProcess,
-                type: this.type,
-                time: this.time ? this.time : "",
-                relation: this.getClassName(),
-                playerType: this.status === PropertyStatus.satisfied ? "attacker" : "defender"
-            };
-        }
         
         public getClassName() : string {
             return "TraceEquivalence";
@@ -647,6 +636,17 @@ module Property {
 
         protected getWorkerHandler() : string {
             return super.getType() === "strong" ? "isStronglyTraceIncluded" : "isWeaklyTraceIncluded";
+        }
+
+        public getGameConfiguration() {
+            return {
+                leftProcess: this.firstProcess,
+                rightProcess: this.secondProcess,
+                type: this.type,
+                time: this.time ? this.time : "",
+                relation: this.getClassName(),
+                playerType: this.status === PropertyStatus.satisfied ? "attacker" : "defender"
+            };
         }
     }
 
@@ -695,8 +695,8 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "2n"
-            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>2n</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
         }
         
         public getClassName() : string {
@@ -714,8 +714,8 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "RS"
-            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>RS</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
         }
         
         public getClassName() : string {
@@ -733,8 +733,8 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "RT"
-            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>RT</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
         }
 
         public getClassName() : string {
@@ -752,8 +752,8 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "PF"
-            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>PF</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
         }
 
         public getClassName() : string {
@@ -771,8 +771,8 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "FT"
-            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>FT</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
         }
 
         public getClassName() : string {
@@ -790,8 +790,8 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "R"
-            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>R</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
         }
 
         public getClassName() : string {
@@ -809,8 +809,8 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "RV"
-            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>RV</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
         }
 
         public getClassName() : string {
@@ -828,8 +828,8 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "IF"
-            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>IF</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
         }
 
         public getClassName() : string {
@@ -847,8 +847,8 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "F"
-            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>F</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
         }
 
         public getClassName() : string {
@@ -866,8 +866,8 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "E"
-            return this.firstProcess + " " + symbol + super.getTimeSubscript() + " " + this.secondProcess;
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>E</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
         }
 
         public getClassName() : string {
