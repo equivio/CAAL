@@ -66,7 +66,7 @@ module HML {
         toString() : string {
             if (this.hmlStr) return this.hmlStr;
             var subStrs = this.subFormulas.map(f => f.toString());
-            return this.hmlStr = subStrs.map(f => "(" + f + ")").join(" and ");
+            return this.hmlStr = "(" + subStrs.join(" and ")+ ")";
         }
         get id() : string {
             return this.toString();
