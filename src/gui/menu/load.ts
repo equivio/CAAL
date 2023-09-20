@@ -104,7 +104,7 @@ class Load extends MenuItem {
 
             for (var i = 0; i < examples.length; i++) {
                 if (examples[i].title === title) {
-                    this.project.update(null, examples[i].title, examples[i].ccs, examples[i].properties, examples[i].inputMode);
+                    this.project.update(null, examples[i].title, examples[i].ccs, examples[i].properties, examples[i].inputMode.toLowerCase() === "tccs" ? "TCCS" : "CCS");
                     this.activityHandler.selectActivity("editor");
                     Main.showNotification("Example loaded!", 2000);
                     break;
@@ -169,8 +169,10 @@ class Load extends MenuItem {
     private showExamples() : void {
         var $ccsExamples = $("#ccs-examples-list");
         var $tccsExamples = $("#tccs-examples-list");
+        var $bachelorThesisExamples = $("#bachelorthesis-examples-list");
         var ccsFound = false;
         var tccsFound = false;
+        var bachelorThesisFound = false;
 
         if (examples) {
             examples.sort(function(a, b) {return b.title.localeCompare(a.title)});
@@ -184,6 +186,9 @@ class Load extends MenuItem {
                 } else if (examples[i].inputMode.toLowerCase() === "tccs") {
                     tccsFound = true;
                     $tccsExamples.after(html);
+                } else if (examples[i].inputMode.toLowerCase() === "bachelorthesis") {
+                    bachelorThesisFound = true;
+                    $bachelorThesisExamples.after(html);
                 }
 
                 html.on("click", {title: examples[i].title}, e => this.loadExample(e));
@@ -192,5 +197,6 @@ class Load extends MenuItem {
 
         $ccsExamples.toggle(ccsFound).prev().toggle(ccsFound);
         $tccsExamples.toggle(tccsFound).prev().toggle(tccsFound);
+        $bachelorThesisExamples.toggle(bachelorThesisFound).prev().toggle(bachelorThesisFound);
     }
 }

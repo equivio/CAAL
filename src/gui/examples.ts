@@ -382,5 +382,235 @@ var examples : any[] = [
             }
         ],
         inputMode: "CCS"
-    }
+    },
+    {
+        title: "CCS Example",
+        ccs: [
+            "Plattenspieler = abspielen.(Plattenspieler + 'haengen.beheben.Plattenspieler);",
+            "Person = haengen.'beheben.0;",
+            String.raw`Musiksession = (Plattenspieler | Person) \ {haengen,beheben};`
+        ].join("\n"),
+        properties: [],
+        inputMode: "bachelorThesis"
+    },
+    {
+        title: "HML Example",
+        ccs: [
+            "P1 = a.b.0;",
+            "P2 = a.b.0 + a.c.0;",
+        ].join("\n"),
+        properties: [
+            {
+                className: "HML",
+                status: 0,
+                options: {
+                    process: "P1",
+                    definitions: "",
+                    topFormula: "<a><b>tt;",
+                    comment: ""
+                }
+            },
+            {
+                className: "HML",
+                status: 0,
+                options: {
+                    process: "P2",
+                    definitions: "",
+                    topFormula: "<a><b>tt;",
+                    comment: ""
+                }
+            },
+            {
+                className: "HML",
+                status: 0,
+                options: {
+                    process: "P1",
+                    definitions: "",
+                    topFormula: "<a><c>tt;",
+                    comment: ""
+                }
+            },
+            {
+                className: "HML",
+                status: 0,
+                options: {
+                    process: "P2",
+                    definitions: "",
+                    topFormula: "<a><c>tt;",
+                    comment: ""
+                }
+            },
+        ],
+        inputMode: "bachelorThesis"
+    },
+    {
+        title: "Simulation and Bisimulation Example",
+        ccs: [
+            "P1 = a.P1 + a.0 + b.0;",
+            "P2 = a.P2 + b.0;"
+        ].join("\n"),
+        properties: [
+            {
+                className: "Simulation",
+                status: 0,
+                options: {
+                    type: "strong",
+                    firstProcess: "P1",
+                    secondProcess: "P2",
+                    comment: ""
+                }
+            },
+            {
+                className: "Simulation",
+                status: 0,
+                options: {
+                    type: "strong",
+                    firstProcess: "P2",
+                    secondProcess: "P1",
+                    comment: ""
+                }
+            },
+            {
+                className: "SimulationEquivalence",
+                status: 0,
+                options: {
+                    type: "strong",
+                    firstProcess: "P1",
+                    secondProcess: "P2",
+                    comment: ""
+                }
+            },
+            {
+                className: "Bisimulation",
+                status: 0,
+                options: {
+                    type: "strong",
+                    firstProcess: "P1",
+                    secondProcess: "P2",
+                    comment: ""
+                }
+            }
+        ],
+        inputMode: "bachelorThesis"
+    },
+    {
+        title: "Failures Second Example",
+        ccs: [
+            "P1 = a.(b.0 + c.d.0) + a.(c.e.0 + f.0);",
+            "P2 = a.(b.0 + c.e.0) + a.(c.d.0 + f.0);"
+        ].join("\n"),
+        properties: [
+            {
+                className: "Failures",
+                status: 0,
+                options: {
+                    type: "strong",
+                    firstProcess: "P1",
+                    secondProcess: "P2",
+                    comment: ""
+                }
+            },
+            {
+                className: "Failures",
+                status: 0,
+                options: {
+                    type: "strong",
+                    firstProcess: "P2",
+                    secondProcess: "P1",
+                    comment: ""
+                }
+            },
+        ],
+        inputMode: "bachelorThesis"
+    },
+    {
+        title: "Traces Example",
+        ccs: [
+            "P1 = a.b.0;",
+            "P2 = a.b.0 + a.c.0;",
+        ].join("\n"),
+        properties: [
+            {
+                className: "TraceInclusion",
+                status: 0,
+                options: {
+                    type: "strong",
+                    firstProcess: "P1",
+                    secondProcess: "P2",
+                    comment: ""
+                }
+            },
+            {
+                className: "TraceInclusion",
+                status: 0,
+                options: {
+                    type: "strong",
+                    firstProcess: "P2",
+                    secondProcess: "P1",
+                    comment: ""
+                }
+            },
+            {
+                className: "TraceEquivalence",
+                status: 0,
+                options: {
+                    type: "strong",
+                    firstProcess: "P1",
+                    secondProcess: "P2",
+                    comment: ""
+                }
+            },
+            {
+                className: "Enabledness",
+                status: 0,
+                options: {
+                    type: "strong",
+                    firstProcess: "P1",
+                    secondProcess: "P2",
+                    comment: ""
+                }
+            },
+            {
+                className: "Enabledness",
+                status: 0,
+                options: {
+                    type: "strong",
+                    firstProcess: "P2",
+                    secondProcess: "P1",
+                    comment: ""
+                }
+            }
+        ],
+        inputMode: "bachelorThesis"
+    },
+    {
+        title: "Failures First Example",
+        ccs: [
+            "P1 = a.b.0;",
+            "P2 = a.b.0 + a.c.0;",
+        ].join("\n"),
+        properties: [
+            {
+                className: "Failures",
+                status: 0,
+                options: {
+                    type: "strong",
+                    firstProcess: "P1",
+                    secondProcess: "P2",
+                    comment: ""
+                }
+            },
+            {
+                className: "Failures",
+                status: 0,
+                options: {
+                    type: "strong",
+                    firstProcess: "P2",
+                    secondProcess: "P1",
+                    comment: ""
+                }
+            }
+        ],
+        inputMode: "bachelorThesis"
+    },
 ]
