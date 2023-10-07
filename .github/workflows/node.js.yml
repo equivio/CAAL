@@ -5,9 +5,9 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ "ace-update" ]
+    branches: [ "spectroscopy" ]
   pull_request:
-    branches: [ "ace-update" ]
+    branches: [ "spectroscopy" ]
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
