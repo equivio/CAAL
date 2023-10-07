@@ -384,7 +384,7 @@ var examples : any[] = [
         inputMode: "CCS"
     },
     {
-        title: "CCS Example",
+        title: "Plattenspieler Example",
         ccs: [
             "Plattenspieler = abspielen.(Plattenspieler + 'haengen.beheben.Plattenspieler);",
             "Person = haengen.'beheben.0;",
