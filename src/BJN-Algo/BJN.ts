@@ -77,7 +77,7 @@ module BJN {
                     graphForBJN.addNode(targetProcessName);
                     todo.push(transition.targetProcess);
                 }
-                graphForBJN.addEdge(graphForBJN.getNodeByLabel(currentProc.toString())!, graphForBJN.getNodeByLabel(targetProcessName)!, transition.action.getLabel());
+                graphForBJN.addEdge(graphForBJN.getNodeByLabel(currentProc.toString())!, graphForBJN.getNodeByLabel(targetProcessName)!, transition.action.toString());
             })
         }
         return graphForBJN;
