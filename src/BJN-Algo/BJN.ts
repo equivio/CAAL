@@ -12,86 +12,86 @@ module BJN {
         }
     }
 
-    class Node {
-        public label: string;
+    // class Node {
+    //     public label: string;
 
-        constructor(label: string) {
-            this.label = label;
-        }
-    }
+    //     constructor(label: string) {
+    //         this.label = label;
+    //     }
+    // }
 
-    class Edge {
-        public from: Node;
-        public to: Node;
-        public label: string;
+    // class Edge {
+    //     public from: Node;
+    //     public to: Node;
+    //     public label: string;
 
-        constructor(from: Node, to: Node, label: string) {
-            this.from = from;
-            this.to = to;
-            this.label = label;
-        }
-    }
+    //     constructor(from: Node, to: Node, label: string) {
+    //         this.from = from;
+    //         this.to = to;
+    //         this.label = label;
+    //     }
+    // }
 
-    class Graph {
-        private nodes: Node[];
-        public edges: Edge[];
+    // class Graph {
+    //     private nodes: Node[];
+    //     public edges: Edge[];
 
-        constructor() {
-            this.nodes = [];
-            this.edges = [];
-        }
+    //     constructor() {
+    //         this.nodes = [];
+    //         this.edges = [];
+    //     }
 
-        public addNode(label: string): Node {
-            let node = new Node(label);
-            this.nodes.push(node);
-            return node;
-        }
+    //     public addNode(label: string): Node {
+    //         let node = new Node(label);
+    //         this.nodes.push(node);
+    //         return node;
+    //     }
 
-        public addEdge(from: Node, to: Node, label: string): Edge {
-            let edge = new Edge(from, to, label);
-            this.edges.push(edge);
-            return edge;
-        }
-        public getNodeByLabel(label: String) {
-            return this.nodes.find((node) => {
-                return node.label === label;
-            })
-        }
-    }
+    //     public addEdge(from: Node, to: Node, label: string): Edge {
+    //         let edge = new Edge(from, to, label);
+    //         this.edges.push(edge);
+    //         return edge;
+    //     }
+    //     public getNodeByLabel(label: String) {
+    //         return this.nodes.find((node) => {
+    //             return node.label === label;
+    //         })
+    //     }
+    // }
 
-    export function parseForBJN(succGen: CCS.SuccessorGenerator): Graph {
-        let graphForBJN = new Graph();
-        let todo: CCS.Process[] = [];
-        // named processes are root node of tree
-        succGen.getGraph().getNamedProcesses().forEach((name) => {
-            graphForBJN.addNode(name);
-            todo.push(succGen.getGraph().processByName(name));
-        })
-        // DFS
-        while (todo.length > 0) {
-            let currentProc = todo.pop()!;
-            let transitions = succGen.getSuccessors(currentProc.id);
-            transitions.forEach((transition) => {
-                let targetProcessName = transition.targetProcess.toString();
-                if (!graphForBJN.getNodeByLabel(targetProcessName)) {
-                    graphForBJN.addNode(targetProcessName);
-                    todo.push(transition.targetProcess);
-                }
-                graphForBJN.addEdge(graphForBJN.getNodeByLabel(currentProc.toString())!, graphForBJN.getNodeByLabel(targetProcessName)!, transition.action.toString());
-            })
-        }
-        return graphForBJN;
-    }
+    // export function parseForBJN(succGen: CCS.SuccessorGenerator): Graph {
+    //     let graphForBJN = new Graph();
+    //     let todo: CCS.Process[] = [];
+    //     // named processes are root node of tree
+    //     succGen.getGraph().getNamedProcesses().forEach((name) => {
+    //         graphForBJN.addNode(name);
+    //         todo.push(succGen.getGraph().processByName(name));
+    //     })
+    //     // DFS
+    //     while (todo.length > 0) {
+    //         let currentProc = todo.pop()!;
+    //         let transitions = succGen.getSuccessors(currentProc.id);
+    //         transitions.forEach((transition) => {
+    //             let targetProcessName = transition.targetProcess.toString();
+    //             if (!graphForBJN.getNodeByLabel(targetProcessName)) {
+    //                 graphForBJN.addNode(targetProcessName);
+    //                 todo.push(transition.targetProcess);
+    //             }
+    //             graphForBJN.addEdge(graphForBJN.getNodeByLabel(currentProc.toString())!, graphForBJN.getNodeByLabel(targetProcessName)!, transition.action.toString());
+    //         })
+    //     }
+    //     return graphForBJN;
+    // }
 
 
     export class Position extends WithAutoIncrementedId {
-        public p: Node;
-        public qSet?: Node[]
-        public qStarSet?: Node[]
-        public q?: Node;
+        public p: CCS.Process;
+        public qSet?: CCS.Process[]
+        public qStarSet?: CCS.Process[]
+        public q?: CCS.Process;
         public isDefenderPosition: boolean
 
-        constructor(p: Node, isDefenderPosition: boolean, qSet?: Node[], qStarSet?: Node[], q?: Node) {
+        constructor(p: CCS.Process, isDefenderPosition: boolean, qSet?: CCS.Process[], qStarSet?: CCS.Process[], q?: CCS.Process) {
             // assign index
             super();
             this.p = p;
@@ -110,15 +110,15 @@ module BJN {
 
         public isEqualTo(otherPos: Position) {
             // check for equality of p
-            if (!(this.p.label === otherPos.p.label)) { return false; }
+            if (!(this.p.id === otherPos.p.id)) { return false; }
 
             // check for set equality of qSet
             if ((this.qSet && otherPos.qSet)) {
                 if (!(this.qSet.every((q) => {
-                    return otherPos.qSet!.some((otherq) => { return q.label === otherq.label })
+                    return otherPos.qSet!.some((otherq) => { return q.id === otherq.id })
                 })
                     && otherPos.qSet.every((otherq) => {
-                        return this.qSet!.some((q) => { return otherq.label === q.label })
+                        return this.qSet!.some((q) => { return otherq.id === q.id })
                     }))) {
                     return false;
                 }
@@ -130,10 +130,10 @@ module BJN {
             // check for set equality of qStarSet
             if ((this.qStarSet && otherPos.qStarSet)) {
                 if (!(this.qStarSet.every((q) => {
-                    return otherPos.qStarSet!.some((otherq) => { return q.label === otherq.label })
+                    return otherPos.qStarSet!.some((otherq) => { return q.id === otherq.id })
                 })
                     && otherPos.qStarSet.every((otherq) => {
-                        return this.qStarSet!.some((q) => { return otherq.label === q.label })
+                        return this.qStarSet!.some((q) => { return otherq.id === q.id })
                     }))) {
                     return false;
                 }
@@ -144,7 +144,7 @@ module BJN {
 
             // check for equality of q
             if (this.q && otherPos.q) {
-                if (!(this.q.label === otherPos.q.label)) { return false; }
+                if (!(this.q.id === otherPos.q.id)) { return false; }
             }
             else {
                 if (this.q || otherPos.q) { return false; }
@@ -154,21 +154,21 @@ module BJN {
         }
 
         public toString(): string {
-            let str = "(" + this.p.label + ",";
+            let str = "(" + this.p.toString() + ",";
             if (this.q) {
-                str += this.q.label
+                str += this.q.toString()
             }
             else {
                 str += "{"
                 for (let i = 0; i < this.qSet!.length; i++) {
-                    str += this.qSet![i].label;
+                    str += this.qSet![i].toString();
                     str += i < this.qSet!.length - 1 ? "," : ""
                 }
                 str += "}";
                 if (this.qStarSet) {
                     str += ",{";
                     for (let i = 0; i < this.qStarSet!.length; i++) {
-                        str += this.qStarSet![i].label;
+                        str += this.qStarSet![i].toString();
                         str += i < this.qStarSet!.length - 1 ? "," : ""
                     }
                     str += "}";
@@ -211,10 +211,10 @@ module BJN {
         }
     }
 
-    function findTwoPartitions(set: Node[]) {
-        let combinations: Node[][] = [[]];
+    function findTwoPartitions(set: CCS.Process[]) {
+        let combinations: CCS.Process[][] = [[]];
         for (let i = 0; i < Math.pow(2, set.length); i++) {
-            let combination: Node[] = [];
+            let combination: CCS.Process[] = [];
             for (let j = 0; j < set.length; j++) {
                 if ((i & Math.pow(2, j))) {
                     combination.push(set[j]);
@@ -227,7 +227,7 @@ module BJN {
         return combinations;
     }
 
-    function getSetDifference(set: Node[], subset: Node[]) {
+    function getSetDifference(set: CCS.Process[], subset: CCS.Process[]) {
         if (subset.length == 0) {
             return set;
         }
@@ -242,11 +242,11 @@ module BJN {
         public defenderPositions: Position[];
         public moves: Move[];
 
-        constructor(g: Graph, firstNode: Node, secondNode: Node) {
+        constructor(succGen: CCS.SuccessorGenerator, firstProcess: CCS.Process, secondProcess: CCS.Process) {
             this.positions = [];
             this.defenderPositions = [];
             this.moves = [];
-            this.createGameGraph(g, firstNode, secondNode);
+            this.createGameGraph(succGen, firstProcess, secondProcess);
         }
 
         private addPosition(position: Position) {
@@ -261,9 +261,9 @@ module BJN {
             this.moves.push(move);
         }
 
-        private createGameGraph(g: Graph, firstNode: Node, secondNode: Node) {
+        private createGameGraph(succGen: CCS.SuccessorGenerator, firstProcess: CCS.Process, secondProcess: CCS.Process) {
             // initialize stack with start position
-            let startPosition = new Position(firstNode, false, [secondNode], undefined, undefined);
+            let startPosition = new Position(firstProcess, false, [secondProcess], undefined, undefined);
             this.addPosition(startPosition);
             let todo: Position[] = [startPosition];
             while (todo.length > 0) {
@@ -317,7 +317,7 @@ module BJN {
                             this.addMove(new Move(pos, destPos, [[1, 4], 0, 0, 0, 0, 0]))
                         }
                         // negative decisions
-                        if (pos.p.label != pos.q.label) {
+                        if (pos.p.id != pos.q.id) {
                             let newPos: Position = new Position(pos.q, false, [pos.p], undefined, undefined);
                             // check if newPos was already discovered to avoid duplicates
                             if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
@@ -334,39 +334,74 @@ module BJN {
                     }
                     else {
                         // observation moves
-                        g.edges.forEach((edge) => {
-                            if (edge.from.label === pos.p.label) {
-                                let newQSet: Node[] = [];
-                                g.edges.forEach((e) => {
-                                    if (e.label === edge.label) {
-                                        pos.qSet!.forEach((q) => {
-                                            if (e.from.label === q.label) {
-                                                // duplicates?
-                                                newQSet.push(e.to);
-                                            }
-                                        })
-                                    }
+                        let pTransitions: CCS.TransitionSet = succGen.getSuccessors(pos.p.id);
+                        let qTransitions: CCS.TransitionSet[] = [];
+                        let qPrimes = {}
+                        pos.qSet!.forEach((q) => {
+                            qTransitions.push(succGen.getSuccessors(q.id));
+                        })
+
+                        pTransitions.forEach((pTransition) => {
+                            let actionName: string = pTransition.action.getLabel();
+                            if (!qPrimes[actionName]){
+                                let qPrimesForAction: CCS.Process[] = []
+                                qTransitions.forEach((qTrans) => {
+                                    qTrans.transitionsForAction(pTransition.action).forEach((qTransition) => {
+                                        qPrimesForAction.push(qTransition.targetProcess)
+                                    })
                                 })
-                                let newPos: Position = new Position(edge.to, false, newQSet, undefined, undefined);
-                                // check if newPos was already discovered to avoid duplicates
-                                if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
-                                    this.addPosition(newPos);
-                                    this.addMove(new Move(pos, newPos, [-1, 0, 0, 0, 0, 0], edge.label));
-                                    todo.push(newPos);
-                                }
-                                else {
-                                    // omit redundant loops
-                                    if (!newPos.isEqualTo(pos)){
-                                        let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
-                                        if (!destPos) { throw new Error("Position does not exist despite check"); }
-                                        this.addMove(new Move(pos, destPos, [-1, 0, 0, 0, 0, 0], edge.label))
-                                    }
+                                qPrimes[actionName] = qPrimesForAction;
+                            }
+                            let newPos: Position = new Position(pTransition.targetProcess, false, qPrimes[actionName], undefined, undefined)
+                            // check if newPos was already discovered to avoid duplicates
+                            if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
+                                this.addPosition(newPos);
+                                this.addMove(new Move(pos, newPos, [-1, 0, 0, 0, 0, 0], actionName));
+                                todo.push(newPos);
+                            }
+                            else {
+                                // omit redundant loops
+                                if (!newPos.isEqualTo(pos)){
+                                    let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
+                                    if (!destPos) { throw new Error("Position does not exist despite check"); }
+                                    this.addMove(new Move(pos, destPos, [-1, 0, 0, 0, 0, 0], actionName))
                                 }
                             }
                         })
 
+                        // g.edges.forEach((edge) => {
+                        //     if (edge.from.label === pos.p.label) {
+                        //         let newQSet: Node[] = [];
+                        //         g.edges.forEach((e) => {
+                        //             if (e.label === edge.label) {
+                        //                 pos.qSet!.forEach((q) => {
+                        //                     if (e.from.label === q.label) {
+                        //                         // duplicates?
+                        //                         newQSet.push(e.to);
+                        //                     }
+                        //                 })
+                        //             }
+                        //         })
+                        //         let newPos: Position = new Position(edge.to, false, newQSet, undefined, undefined);
+                        //         // check if newPos was already discovered to avoid duplicates
+                        //         if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
+                        //             this.addPosition(newPos);
+                        //             this.addMove(new Move(pos, newPos, [-1, 0, 0, 0, 0, 0], edge.label));
+                        //             todo.push(newPos);
+                        //         }
+                        //         else {
+                        //             // omit redundant loops
+                        //             if (!newPos.isEqualTo(pos)){
+                        //                 let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
+                        //                 if (!destPos) { throw new Error("Position does not exist despite check"); }
+                        //                 this.addMove(new Move(pos, destPos, [-1, 0, 0, 0, 0, 0], edge.label))
+                        //             }
+                        //         }
+                        //     }
+                        // })
+
                         // conjunctional challenges
-                        let twoPartitions: Node[][] = findTwoPartitions(pos.qSet!)
+                        let twoPartitions: CCS.Process[][] = findTwoPartitions(pos.qSet!)
                         twoPartitions.forEach((partition) => {
                             // omit redundant positions with empty qset but non-empty qstarset
                             if (partition.length === 0 && pos.qSet!.length !== 0){
@@ -390,24 +425,8 @@ module BJN {
             }
         }
 
-        public parsePosition(left: string, right: { q: string | undefined, qSet: string[] | undefined, qStarSet: string[] | undefined }): Position {
-            let p = new Node(left);
-            let q = right.q ? new Node(right.q) : undefined;
-
-            let qSet: Node[] | undefined;
-            if (right.qSet) {
-                qSet = [];
-                right.qSet.forEach((e) => { qSet!.push(new Node(e)) })
-            }
-            else { qSet = undefined; }
-
-            let qStarSet: Node[] | undefined;
-            if (right.qStarSet) {
-                qStarSet = [];
-                right.qStarSet.forEach((e) => { qStarSet!.push(new Node(e)) })
-            }
-            else { qStarSet = undefined; }
-            return new Position(p, false, qSet, qStarSet, q);
+        public parsePosition(left: CCS.Process, right: { q: CCS.Process | undefined, qSet: CCS.Process[] | undefined, qStarSet: CCS.Process[] | undefined }): Position {
+            return new Position(left, false, right.qSet, right.qStarSet, right.q);
         }
 
         public getPossibleMoves(position: Position): Move[] {

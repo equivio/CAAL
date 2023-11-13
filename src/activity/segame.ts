@@ -432,18 +432,18 @@ module Activity {
         }
 
         public onPlay(position: BJN.Position): void {
-            this.draw(this.graph.processById(position.p.label), this.leftGraph, this.$leftDepth.val(), false);
+            this.draw(position.p, this.leftGraph, this.$leftDepth.val(), false);
             let rightDepth = this.$rightDepth.val();
             if (position.q) {
-                this.draw(this.graph.processById(position.q.label), this.rightGraph, rightDepth, false);
+                this.draw(position.q, this.rightGraph, rightDepth, false);
             }
             else {
                 position.qSet!.forEach((process) => {
-                    this.draw(this.graph.processById(process.label), this.rightGraph, rightDepth, false);
+                    this.draw(process, this.rightGraph, rightDepth, false);
                 })
                 if (position.qStarSet) {
                     position.qStarSet.forEach((process) => {
-                        this.draw(this.graph.processById(process.label), this.rightGraph, rightDepth, false);
+                        this.draw(process, this.rightGraph, rightDepth, false);
                     })
                 }
             }
@@ -488,7 +488,7 @@ module Activity {
             return this.graph.getLabel(process);
         }
 
-        public findRightCenterNode(): string {
+        public findRightCenterNode(): CCS.Process | undefined {
             let rightConfig = this.SEGameLogic.getCurrentConfiguration().right;
             if (rightConfig.q) {
                 return rightConfig.q;
@@ -500,12 +500,11 @@ module Activity {
                 return rightConfig.qStarSet[0];
             }
             // if there are only empty sets, signal to not center anything
-            return "";
+            return undefined;
         }
 
-        public centerNode(processId: string, move: Move): void {
-            if (!processId) { return; }
-            let process = this.graph.processById(processId);
+        public centerNode(process: CCS.Process | undefined, move: Move): void {
+            if (!process) { return; }
             if (move === Move.Left) {
                 var position = this.leftGraph.getPosition(process.id.toString());
                 this.$leftContainer.scrollLeft(position.x - (this.$leftContainer.width() / 2));
@@ -572,8 +571,8 @@ module Activity {
         private gameActivity: SEGame;
         private gameLog: GameLog;
 
-        private currentLeft: string;
-        private currentRight: { q: string | undefined, qSet: string[] | undefined, qStarSet: string[] | undefined };
+        private currentLeft: CCS.Process;
+        private currentRight: { q: CCS.Process | undefined, qSet: CCS.Process[] | undefined, qStarSet: CCS.Process[] | undefined };
 
         private attacker: Player;
         private defender: Player;
@@ -593,9 +592,8 @@ module Activity {
             this.energyLeft = energyBudget;
             this.currentLeft = currentLeft;
             this.currentRight = currentRight;
-            let parsedGraph = BJN.parseForBJN(this.succGen);
-            this.bjn = new BJN.Game(parsedGraph, parsedGraph.getNodeByLabel(this.currentLeft)!,
-                parsedGraph.getNodeByLabel(this.currentRight.qSet![0])!);
+            this.bjn = new BJN.Game(this.succGen, this.currentLeft,
+                this.currentRight.qSet![0]!);
             this.attackerWinBudgets = BJN.computeWinningBudgets(this.bjn);
         }
 
@@ -660,22 +658,22 @@ module Activity {
             this.defender = defender;
         }
         private saveCurrentConfig(position: BJN.Position): void {
-            this.currentLeft = position.p.label;
-            let qSet: string[] | undefined = undefined;
+            this.currentLeft = position.p;
+            let qSet: CCS.Process[] | undefined = undefined;
             if (position.qSet) {
                 qSet = [];
-                position.qSet.forEach((e) => {
-                    qSet!.push(e.label);
+                position.qSet.forEach((q) => {
+                    qSet!.push(q);
                 })
             }
-            let qStarSet: string[] | undefined = undefined;
+            let qStarSet: CCS.Process[] | undefined = undefined;
             if (position.qStarSet) {
                 qStarSet = [];
-                position.qStarSet.forEach((e) => {
-                    qStarSet!.push(e.label);
+                position.qStarSet.forEach((q) => {
+                    qStarSet!.push(q);
                 })
             }
-            this.currentRight = { q: position.q?.label, qSet: qSet, qStarSet: qStarSet };
+            this.currentRight = { q: position.q, qSet: qSet, qStarSet: qStarSet };
 
         }
 
@@ -702,7 +700,7 @@ module Activity {
                 }
             }
             this.gameActivity.onPlay(choice.to);
-            this.gameActivity.centerNode(choice.to.p.label, Move.Left);
+            this.gameActivity.centerNode(choice.to.p, Move.Left);
             this.gameActivity.centerNode(this.gameActivity.findRightCenterNode(), Move.Right);
         }
 
