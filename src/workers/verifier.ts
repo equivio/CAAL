@@ -5,9 +5,9 @@ declare var CCSParser;
 declare var TCCSParser;
 declare var HMLParser;
 declare var THMLParser;
-declare var BJN;
+declare var StrongSpectroscopy;
 
-importScripts("../ccs_grammar.js", "../tccs_grammar.js", "../hml_grammar.js", "../thml_grammar.js", "../data.js", "../util.js", "../ccs.js", "../BJN.js");
+importScripts("../ccs_grammar.js", "../tccs_grammar.js", "../hml_grammar.js", "../thml_grammar.js", "../data.js", "../util.js", "../ccs.js", "../strong-spectroscopy.js");
 
 var messageHandlers : any = {};
 var graph;
@@ -44,8 +44,8 @@ messageHandlers.isStronglyBisimilar = data => {
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess));
-        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess));
+        let winningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         data.result = {isSatisfied: winningBudgets.length === 0, formula: winningBudgets.length !== 0 ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
     //Add some kind of request id to determine for which problem have result? It is necessary? Right now just add the new data to the result.
@@ -73,8 +73,8 @@ messageHandlers.isStronglySimilar = data => {
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess));
-        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess));
+        let winningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
         data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
@@ -106,11 +106,11 @@ messageHandlers.isStronglySimulationEquivalent = data => {
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
-        let leftToRightWinningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let leftToRightWinningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let leftToRightSimulation = leftToRightWinningBudgets.every((energyLevel) => { return energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
-        gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.rightProcess), graph.processByName(data.leftProcess));
-        let rightToLeftWinningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.rightProcess), graph.processByName(data.leftProcess));
+        let rightToLeftWinningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let rightToLeftSimulation = rightToLeftWinningBudgets.every((energyLevel) => { return energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
         data.result = {isSatisfied: leftToRightSimulation && rightToLeftSimulation, formula: !leftToRightSimulation ? leftToRightWinningBudgets[0].hml.propagateNegation(false).toString() : (!rightToLeftSimulation ? rightToLeftWinningBudgets[0].hml.propagateNegation(false).toString() : undefined)};
     }
@@ -143,8 +143,8 @@ messageHandlers.isStronglyTraceIncluded = data => {
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess));
-        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess));
+        let winningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let isTraceIncluded = winningBudgets.every(function (energyLevel) { return energyLevel.budget[1] > 1 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
         data.result = {isSatisfied: isTraceIncluded, formula: !isTraceIncluded ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
@@ -186,11 +186,11 @@ messageHandlers.isStronglyTraceEq = data => {
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
-        let leftToRightWinningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let leftToRightWinningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let leftToRightTraceInclusion = leftToRightWinningBudgets.every(function (energyLevel) { return energyLevel.budget[1] > 1 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
-        gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.rightProcess), graph.processByName(data.leftProcess))
-        let rightToLeftWinningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.rightProcess), graph.processByName(data.leftProcess))
+        let rightToLeftWinningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let rightToLeftTraceInclusion = rightToLeftWinningBudgets.every(function (energyLevel) { return energyLevel.budget[1] > 1 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
         data.result = {isSatisfied: leftToRightTraceInclusion && rightToLeftTraceInclusion, formula: !leftToRightTraceInclusion ? leftToRightWinningBudgets[0].hml.propagateNegation(false).toString() : (!rightToLeftTraceInclusion ? rightToLeftWinningBudgets[0].hml.propagateNegation(false).toString() : undefined)};
     }
@@ -227,8 +227,8 @@ messageHandlers.isStronglyTwoNestedSimulationEquivalent = data => {
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
-        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[5] > 1; });
         data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
@@ -241,8 +241,8 @@ messageHandlers.isStronglyReadinessTracesEquivalent = data => {
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
-        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[3] > 1 || energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
         data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
@@ -255,8 +255,8 @@ messageHandlers.isStronglyPossibleFuturesEquivalent = data => {
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
-        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 2 || energyLevel.budget[5] > 1; });
         data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
@@ -269,8 +269,8 @@ messageHandlers.isStronglyReadinessEquivalent = data => {
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
-        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 2 || energyLevel.budget[2] > 1 || energyLevel.budget[3] > 1 || energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
         data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};;
     }
@@ -283,8 +283,8 @@ messageHandlers.isStronglyFailureTracesEquivalent = data => {
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
-        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[3] > 0 || energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
         data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
@@ -297,8 +297,8 @@ messageHandlers.isStronglyRevivalEquivalent = data => {
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
-        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 2 || energyLevel.budget[2] > 1 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
         data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
@@ -311,8 +311,8 @@ messageHandlers.isStronglyReadySimulationEquivalent = data => {
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
-        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
         data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
@@ -325,8 +325,8 @@ messageHandlers.isStronglyImpossibleFuturesEquivalent = data => {
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
-        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 2 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[5] > 1; });
         data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
@@ -339,8 +339,8 @@ messageHandlers.isStronglyFailureEquivalent = data => {
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
-        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 2 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 1 || energyLevel.budget[5] > 1; });
         data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
@@ -353,24 +353,24 @@ messageHandlers.isStronglyEnablednessEquivalent = data => {
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
-        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[0] > 1 || energyLevel.budget[1] > 1 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
         data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};        
     }
     self.postMessage(data);
 };
 
-messageHandlers.runBJN = data => {
+messageHandlers.runStrongSpectroscopy = data => {
     if(inputMode === "TCCS"){
         throw new Error("TCCS is not supported for this equivalence");
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let gameBJN = new BJN.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
-        let winningBudgets = BJN.computeWinningBudgets(gameBJN).entries().next().value[1];
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let energies = winningBudgets.map((budget) => { return budget.budget; });
-        let equalities = BJN.getEqualitiesFromEnergies(energies)
+        let equalities = StrongSpectroscopy.getEqualitiesFromEnergies(energies)
         data.result = {equalities: equalities, formula: !equalities.bisimulation ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
     }
     self.postMessage(data);

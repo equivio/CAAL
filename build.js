@@ -40,9 +40,9 @@ ccsSourceFiles.include('src/ccs/*.ts');
 ccsSourceFiles = ccsSourceFiles.toArray();
 createTscFileTask(ccsTargetFile, ccsSourceFiles, {definitionFile: true}, 'Compile ' + ccsTargetFile);
 
-//BJN-Algorithm
-var bjn = _P('lib/BJN.js')
-createTscFileTask(bjn, [_P("src/BJN-Algo/BJN.ts")]);
+// spectroscopy
+var strongSpectroscopy = _P('lib/strong-spectroscopy.js')
+createTscFileTask(strongSpectroscopy, [_P("src/spectroscopy/strong-spectroscopy.ts")]);
 
 // verifier worker
 var workerVerifier = _P('lib/workers/verifier.js');
@@ -79,7 +79,7 @@ createTscFileTask(mainTargetFile, mainSourceFiles, {definitionFile: true, source
 
 task('grammars', [ccsGrammar, tccsGrammar, hmlGrammar, thmlGrammar]);
 
-task('all', [dataTargetFile, utilTargetFile, 'grammars', ccsTargetFile, 'ace', bjn, workerVerifier, mainTargetFile], function() {
+task('all', [dataTargetFile, utilTargetFile, 'grammars', ccsTargetFile, 'ace', strongSpectroscopy, workerVerifier, mainTargetFile], function() {
     console.log('Done Building');
 });
 
@@ -101,7 +101,7 @@ function createTscFileTask(targetFile, sourceFiles, options, comment, onFinish) 
         if (options.definitionFile) command += ' -d';
         if (options.sourceMap) command += ' --sourcemap';
         command += ' --target ES2015';
-        //command += targetFile === bjn ? ' --target ES2015' : ' --target ES5';
+        //command += targetFile === strongSpectroscopy ? ' --target ES2015' : ' --target ES5';
         command += ' --out ' + targetFile + ' ' + sourceFiles.join(' ');
         jake.exec(command, {printStdout: true}, function () { onFinish(complete); });
     });
