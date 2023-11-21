@@ -12,78 +12,6 @@ module BJN {
         }
     }
 
-    // class Node {
-    //     public label: string;
-
-    //     constructor(label: string) {
-    //         this.label = label;
-    //     }
-    // }
-
-    // class Edge {
-    //     public from: Node;
-    //     public to: Node;
-    //     public label: string;
-
-    //     constructor(from: Node, to: Node, label: string) {
-    //         this.from = from;
-    //         this.to = to;
-    //         this.label = label;
-    //     }
-    // }
-
-    // class Graph {
-    //     private nodes: Node[];
-    //     public edges: Edge[];
-
-    //     constructor() {
-    //         this.nodes = [];
-    //         this.edges = [];
-    //     }
-
-    //     public addNode(label: string): Node {
-    //         let node = new Node(label);
-    //         this.nodes.push(node);
-    //         return node;
-    //     }
-
-    //     public addEdge(from: Node, to: Node, label: string): Edge {
-    //         let edge = new Edge(from, to, label);
-    //         this.edges.push(edge);
-    //         return edge;
-    //     }
-    //     public getNodeByLabel(label: String) {
-    //         return this.nodes.find((node) => {
-    //             return node.label === label;
-    //         })
-    //     }
-    // }
-
-    // export function parseForBJN(succGen: CCS.SuccessorGenerator): Graph {
-    //     let graphForBJN = new Graph();
-    //     let todo: CCS.Process[] = [];
-    //     // named processes are root node of tree
-    //     succGen.getGraph().getNamedProcesses().forEach((name) => {
-    //         graphForBJN.addNode(name);
-    //         todo.push(succGen.getGraph().processByName(name));
-    //     })
-    //     // DFS
-    //     while (todo.length > 0) {
-    //         let currentProc = todo.pop()!;
-    //         let transitions = succGen.getSuccessors(currentProc.id);
-    //         transitions.forEach((transition) => {
-    //             let targetProcessName = transition.targetProcess.toString();
-    //             if (!graphForBJN.getNodeByLabel(targetProcessName)) {
-    //                 graphForBJN.addNode(targetProcessName);
-    //                 todo.push(transition.targetProcess);
-    //             }
-    //             graphForBJN.addEdge(graphForBJN.getNodeByLabel(currentProc.toString())!, graphForBJN.getNodeByLabel(targetProcessName)!, transition.action.toString());
-    //         })
-    //     }
-    //     return graphForBJN;
-    // }
-
-
     export class Position extends WithAutoIncrementedId {
         public p: CCS.Process;
         public qSet?: CCS.Process[]
@@ -368,37 +296,6 @@ module BJN {
                                 }
                             }
                         })
-
-                        // g.edges.forEach((edge) => {
-                        //     if (edge.from.label === pos.p.label) {
-                        //         let newQSet: Node[] = [];
-                        //         g.edges.forEach((e) => {
-                        //             if (e.label === edge.label) {
-                        //                 pos.qSet!.forEach((q) => {
-                        //                     if (e.from.label === q.label) {
-                        //                         // duplicates?
-                        //                         newQSet.push(e.to);
-                        //                     }
-                        //                 })
-                        //             }
-                        //         })
-                        //         let newPos: Position = new Position(edge.to, false, newQSet, undefined, undefined);
-                        //         // check if newPos was already discovered to avoid duplicates
-                        //         if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
-                        //             this.addPosition(newPos);
-                        //             this.addMove(new Move(pos, newPos, [-1, 0, 0, 0, 0, 0], edge.label));
-                        //             todo.push(newPos);
-                        //         }
-                        //         else {
-                        //             // omit redundant loops
-                        //             if (!newPos.isEqualTo(pos)){
-                        //                 let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
-                        //                 if (!destPos) { throw new Error("Position does not exist despite check"); }
-                        //                 this.addMove(new Move(pos, destPos, [-1, 0, 0, 0, 0, 0], edge.label))
-                        //             }
-                        //         }
-                        //     }
-                        // })
 
                         // conjunctional challenges
                         let twoPartitions: CCS.Process[][] = findTwoPartitions(pos.qSet!)
