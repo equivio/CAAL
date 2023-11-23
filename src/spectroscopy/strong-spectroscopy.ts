@@ -14,10 +14,10 @@ module StrongSpectroscopy {
 
     export class Position extends WithAutoIncrementedId {
         public p: CCS.Process;
-        public qSet?: CCS.Process[]
-        public qStarSet?: CCS.Process[]
+        public qSet?: CCS.Process[];
+        public qStarSet?: CCS.Process[];
         public q?: CCS.Process;
-        public isDefenderPosition: boolean
+        public isDefenderPosition: boolean;
 
         constructor(p: CCS.Process, isDefenderPosition: boolean, qSet?: CCS.Process[], qStarSet?: CCS.Process[], q?: CCS.Process) {
             // assign index
