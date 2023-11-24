@@ -111,7 +111,7 @@ module WeakSpectroscopy {
             return true;
         }
 
-        // TODO: adjust for weak spectroscopy positions
+        // TODO: adjust for weak spectroscopy positions when needed for energy game view
         // public toString(): string {
         //     let str = "(" + this.p.toString() + ",";
         //     if (this.q) {
@@ -482,15 +482,41 @@ module WeakSpectroscopy {
                         }
 
                         // branching conjunctions
-                        // TODO: what is Q_alpha?
+                        let partitionsForAlpha = {};
+                        pTransitions.forEach((transition) => {
+                            // the attacker always wants to have all q \in Q in Q_alpha that don't have any strong outgoing alpha-transitions
+                            if (!partitionsForAlpha[transition.action.getLabel()]){
+                                partitionsForAlpha[transition.action.getLabel()] = [];
+                                let qSetAlphaBase: CCS.Process[] = []
+                                pos.qSet!.forEach((proc) => {
+                                    if (strongSuccGen.getSuccessors(proc.id).transitionsForAction(transition.action).length === 0){qSetAlphaBase.push(proc);}
+                                })
+                                let partitions: CCS.Process[][] =  findTwoPartitions(getSetDifference(pos.qSet!, qSetAlphaBase));
+                                partitions.forEach((partition) => {
+                                    let qSetAlpha: CCS.Process[] = [...qSetAlphaBase, ...partition];
+                                    if (qSetAlpha.length > 0){
+                                        partitionsForAlpha[transition.action.getLabel()].push([getSetDifference(pos.qSet!, qSetAlpha), qSetAlpha]);
+                                    }
+                                })
+                            }
+                            partitionsForAlpha[transition.action.getLabel()].forEach((partition) => {
+                                let newPos: Position = new Position(pos.p, true, false, false, true, partition[0], undefined, transition.action, transition.targetProcess, partition[1]);
+                                // check if newPos was already discovered to avoid duplicates
+                                if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
+                                    this.addPosition(newPos);
+                                    this.addMove(new Move(pos, newPos, [0,0,0,0,0,0,0,0]));
+                                    todo.push(newPos);
+                                }
+                                else {
+                                    let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
+                                    if (!destPos) { throw new Error("Position does not exist despite check"); }
+                                    this.addMove(new Move(pos, destPos, [0,0,0,0,0,0,0,0]));
+                                }
+                            })
+                        })
                     }
                 }
             }
-        }
-        // TODO: everything below this comment has not been ajusted for weak spectroscopy
-
-        public parsePosition(left: CCS.Process, right: { q: CCS.Process | undefined, qSet: CCS.Process[] | undefined, qStarSet: CCS.Process[] | undefined }): Position {
-            return new Position(left, false, right.qSet, right.qStarSet, right.q);
         }
 
         public getPossibleMoves(position: Position): Move[] {
@@ -507,7 +533,7 @@ module WeakSpectroscopy {
 
     export function update(budget: number[], update: any): number[] {
         let updatedBudget: number[] = [];
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 8; i++) {
             if (Array.isArray(update[i])) {
                 updatedBudget[i] = Math.min(budget[update[i][0] - 1], budget[update[i][1] - 1]);
             }
@@ -516,15 +542,6 @@ module WeakSpectroscopy {
             }
         }
         return updatedBudget;
-    }
-
-    function updateHML(hml: HML.Formula, update: (number | number[])[], actionName: string) : HML.Formula {
-        let actionMatcher = new HML.SingleActionMatcher(new CCS.Action(actionName, false));
-        if (update[0] === -1) { return new HML.StrongExistsFormula(actionMatcher, hml); }
-        if (update[0][1] === 3) { return new HML.ConjFormula([hml]); }
-        if (update[3][0] === 3) { return new HML.ConjFormula([hml]); }
-        if (update[5] === -1) { return new HML.NegationFormula(hml); }
-        return hml;
     }
 
     function inverseUpdate(energyLevel: number[], update: (number | number[])[]) : number[] {
@@ -536,7 +553,7 @@ module WeakSpectroscopy {
             }
             // minimum selection updates (index starts at one)
             else {
-                let part = Array(6).fill(0);
+                let part = Array(8).fill(0);
                 part[u_i[0] - 1] = energyLevel[i];
                 part[u_i[1] - 1] = energyLevel[i];
                 parts.push(part);
@@ -583,7 +600,7 @@ module WeakSpectroscopy {
         });
     }
 
-
+    // distinguishing HML-formulas not implemtented yet
     export function computeWinningBudgets(game: Game) {
         // ln 2
         let attackerWin = new Map<Position, {budget: number[], hml: HML.Formula}[]>();
@@ -593,9 +610,9 @@ module WeakSpectroscopy {
         // ln 3
         let todo: Position[] = [];
         game.defenderPositions.forEach((pos) => {
-            if (pos.defenderStuck()) {
+            if (pos.defenderStuck(game.moves)) {
                 todo.push(pos);
-                attackerWin.set(pos, [{budget: Array(6).fill(0), hml: new HML.TrueFormula()}]);
+                attackerWin.set(pos, [{budget: Array(8).fill(0), hml: new HML.TrueFormula()}]);
             }
         })
 
@@ -611,8 +628,9 @@ module WeakSpectroscopy {
                 game.moves.forEach((move) => {
                     if (move.from == g) {
                         attackerWin.get(move.to)?.forEach((edash) => {
-                            let newHML: HML.Formula = updateHML(edash.hml, move.update, move.actionName!);
-                            minToFind.push({budget: inverseUpdate(edash.budget, move.update), hml: newHML});
+                            // let newHML: HML.Formula = updateHML(edash.hml, move.update, move.actionName!);
+                            // minToFind.push({budget: inverseUpdate(edash.budget, move.update), hml: newHML});
+                            minToFind.push({budget: inverseUpdate(edash.budget, move.update), hml: edash.hml});
                         })
                     }
                 })
@@ -620,7 +638,7 @@ module WeakSpectroscopy {
             }
             // ln 9
             else {
-                if (g.defenderStuck()) {
+                if (g.defenderStuck(game.moves)) {
                     game.moves.forEach((move) => {
                         if (move.to == g) {
                             todo.push(move.from);
@@ -654,7 +672,7 @@ module WeakSpectroscopy {
                     let minToFind: {budget: number[], hml: HML.Formula}[] = []
                     if (optionsArray.length == 1) {
                         minToFind.push(...optionsArray[0]);
-                        minToFind.forEach((budget) => { budget.hml = new HML.ConjFormula([budget.hml]) });
+                        // minToFind.forEach((budget) => { budget.hml = new HML.ConjFormula([budget.hml]) });
                     }
                     optionsArray.forEach((gdashValues) => {
                         optionsArray.forEach((otherGdashValues) => {
@@ -664,8 +682,9 @@ module WeakSpectroscopy {
                             else {
                                 gdashValues.forEach((energyLevel) => {
                                     otherGdashValues.forEach((otherEnergyLevel) => {
-                                        let sup: {budget: number[], hml: HML.Formula} = {budget: [], hml: new HML.ConjFormula([energyLevel.hml, otherEnergyLevel.hml])};
-                                        for (let k = 0; k < 6; k++) {
+                                        // let sup: {budget: number[], hml: HML.Formula} = {budget: [], hml: new HML.ConjFormula([energyLevel.hml, otherEnergyLevel.hml])};
+                                        let sup: {budget: number[], hml: HML.Formula} = {budget: [], hml: energyLevel.hml};
+                                        for (let k = 0; k < 8; k++) {
                                             sup.budget[k] = Math.max(energyLevel.budget[k], otherEnergyLevel.budget[k]);
                                         }
                                         minToFind.push(sup);
@@ -705,21 +724,30 @@ module WeakSpectroscopy {
 
     export function getEqualitiesFromEnergies(energyLevels: number[][]) {
         let equalities = {
-            bisimulation: false,
-            twoNestedSimulation: false,
-            readySimulation: false,
-            possibleFutures: false,
-            simulation: false,
-            readinessTraces: false,
-            failureTraces: false,
+            srbbisim: false,
+            bbisim: false,
+            srdbisim: false,
+            dbisim: false,
+            etabisim: false,
+            sbisim: false,
+            bisim: false,
+            etassim: false,
+            sim: false,
+            twosim: false,
+            rsim: false,
+            csim: false,
+            pfutures: false,
             readiness: false,
-            impossibleFutures: false,
-            revivals: false,
+            ifutures: false,
             failures: false,
-            traceInclusion: false,
-            enabledness: false
+            traces: false,
+            srsim: false,
+            scsim: false,
+            sreadiness: false,
+            sifutures: false,
+            sfailures: false
         };
-        // if there exists no distinguishing HML-formula, bisimulation applies
+        // if there exists no distinguishing HML-formula, srbbisim applies
         if (energyLevels.length == 0) {
             for (let eq in equalities) {
                 equalities[eq] = true;
@@ -727,106 +755,188 @@ module WeakSpectroscopy {
         }
         // if for all minimum energy budgets at least one dimension of each is greater than the "allowed" budget to refute, the equivalence applies
         else {
-            // two-nested simulation
-            if (energyLevels.every((energyLevel) => { return energyLevel[5] > 1 })) {
+            // bbisim
+            if (energyLevels.every((energyLevel) => { return energyLevel[3] > 0 })) {
                 for (let eq in equalities) {
-                    if (eq === "bisimulation") {
+                    if (["srbbisim", "srdbisim", "sbisim", "srsim", "scsim", "sreadiness", "sifutures", "sfailures"].indexOf(eq) > -1) {
                         continue;
                     }
                     equalities[eq] = true;
                 }
             }
             else {
-                // ready simulation
-                if (energyLevels.every((energyLevel) => { return energyLevel[4] > 1 || energyLevel[5] > 1 })) {
+                // etabisim
+                if (energyLevels.every((energyLevel) => { return energyLevel[3] > 0 || energyLevel[4] > 0 })) {
                     for (let eq in equalities) {
-                        if (["bisimulation", "twoNestedSimulation", "possibleFutures", "impossibleFutures"].indexOf(eq) > -1) {
+                        if (["srbbisim", "srdbisim", "dbisim", "sbisim", "srsim", "scsim", "sreadiness", "sifutures", "sfailures"].indexOf(eq) > -1) {
+                            continue;
+                        }
+                        equalities[eq] = true;
+                    }
+                }
+                else{
+                    // etasim
+                    if (energyLevels.every((energyLevel) => { return energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[6] > 0 || energyLevel[7] > 0 })) {
+                        equalities["etasim"] = true;
+                        equalities["sim"] = true;
+                        equalities["traces"] = true;
+                        }
+                    else {
+                        // sim
+                        if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[6] > 0 || energyLevel[7] > 0 })) {
+                            equalities["sim"] = true;
+                            equalities["traces"] = true;
+                        }
+                        else{
+                            // traces
+                            if (energyLevels.every((energyLevel) => { return energyLevel.slice(1).some((dim) => { return dim > 0; }) })) {
+                                equalities["traces"] = true;
+                            }
+                        }
+                    }
+                }
+                // dbisim
+                if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[3] > 0 })) {
+                    for (let eq in equalities) {
+                        if (["srbbisim", "srdbisim", "bbisim", "etabisim", "etasim", "sbisim", "srsim", "scsim", "sreadiness", "sifutures", "sfailures"].indexOf(eq) > -1) {
                             continue;
                         }
                         equalities[eq] = true;
                     }
                 }
                 else {
-                    // simulation
-                    if (energyLevels.every((energyLevel) => { return energyLevel[4] > 0 || energyLevel[5] > 0 })) {
-                        equalities["simulation"] = true;
-                        equalities["traceInclusion"] = true;
-                        equalities["enabledness"] = true;
-                    }
-                    else {
-                        // trace equivalence
-                        if (energyLevels.every((energyLevel) => { return energyLevel[1] > 1 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0 })) {
-                            equalities["traceInclusion"] = true;
-                            equalities["enabledness"] = true;
-                        }
-                        // enabledness
-                        else {
-                            if (energyLevels.every((energyLevel) => { return energyLevel[0] > 1 || energyLevel[1] > 1 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0 })) {
-                                equalities["enabledness"] = true;
-                            }
-                        }
-                    }
-                    // readiness traces
-                    if (energyLevels.every((energyLevel) => { return energyLevel[3] > 1 || energyLevel[4] > 1 || energyLevel[5] > 1 })) {
+                    // bisim
+                    if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 })) {
                         for (let eq in equalities) {
-                            if (["bisimulation", "twoNestedSimulation", "readySimulation", "possibleFutures", "impossibleFutures", "simulation"].indexOf(eq) > -1) {
+                            if (["srbbisim", "srdbisim", "bbisim", "dbisim", "etabisim", "etasim", "sbisim", "srsim", "scsim", "sreadiness", "sifutures", "sfailures"].indexOf(eq) > -1) {
                                 continue;
                             }
                             equalities[eq] = true;
                         }
                     }
                     else {
-                        // failure trace
-                        if (energyLevels.every((energyLevel) => { return energyLevel[3] > 0 || energyLevel[4] > 1 || energyLevel[5] > 1 })) {
-                            equalities["failureTraces"] = true;
-                            equalities["revivals"] = true;
+                        // twosim
+                        if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[7] > 1 })) {
+                            equalities["twosim"] = true;
+                            equalities["rsim"] = true;
+                            equalities["pfutures"] = true;
+                            equalities["sim"] = true;
+                            equalities["readiness"] = true;
+                            equalities["ifutures"] = true;
                             equalities["failures"] = true;
-                            equalities["traceInclusion"] = true;
-                            equalities["enabledness"] = true;
+                            equalities["traces"] = true;
+                        }
+                        else {
+                            // rsim
+                            if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[6] > 1 || energyLevel[7] > 1 })) {
+                                equalities["rsim"] = true;
+                                equalities["sim"] = true;
+                                equalities["readiness"] = true;
+                                equalities["failures"] = true;
+                                equalities["traces"] = true;
+                            }
+
+                            // pfutures
+                            if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 1 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[7] > 1 })) {
+                                equalities["pfutures"] = true;
+                                equalities["readiness"] = true;
+                                equalities["ifutures"] = true;
+                                equalities["failures"] = true;
+                                equalities["traces"] = true;
+                            }
+                            else {
+                                // readiness
+                                if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 1 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 1 || energyLevel[6] > 1 || energyLevel[7] > 1 })) {
+                                    equalities["readiness"] = true;
+                                    equalities["failures"] = true;
+                                    equalities["traces"] = true;
+                                }
+                                else {
+                                    // failures
+                                    if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 1 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0 || energyLevel[6] > 1 || energyLevel[7] > 1 })) {
+                                        equalities["failures"] = true;
+                                        equalities["traces"] = true;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-                // possible futures
-                if (energyLevels.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[5] > 1 })) {
-                    for (let eq in equalities) {
-                        if (["bisimulation", "twoNestedSimulation", "readySimulation", "simulation", "readinessTraces", "failureTraces"].indexOf(eq) > -1) {
-                            continue;
-                        }
-                        equalities[eq] = true;
-                    }
+                // csim
+                if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0 })) {
+                    equalities["csim"] = true;
+                    equalities["ifutures"] = true;
+                    equalities["failures"] = true;
+                    equalities["traces"] = true;
                 }
                 else {
-                    // impossible futures
-                    if (energyLevels.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[5] > 1 })) {
-                        equalities["impossibleFutures"] = true;
+                    //ifutures
+                    if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 1 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0 || energyLevel[7] > 1})) {
+                        equalities["ifutures"] = true;
                         equalities["failures"] = true;
-                        equalities["traceInclusion"] = true;
-                        equalities["enabledness"] = true;
+                        equalities["traces"] = true;
+                    }
+                }
+            }
+
+            // srdbisim
+            if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 })) {
+                for (let eq in equalities) {
+                    if (["srbbisim", "bbisim", "etabisim", "etasim"].indexOf(eq) > -1) {
+                        continue;
+                    }
+                    equalities[eq] = true;
+                }
+            }
+            else {
+                // sbisim
+                if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 0 || energyLevel[4] > 0 })) {
+                    equalities["sbisim"] = true;
+                    equalities["srsim"] = true;
+                    equalities["scsim"] = true;
+                    equalities["sreadiness"] = true;
+                    equalities["sifutures"] = true;
+                    equalities["sfailures"] = true;
+                    equalities["traces"] = true;
+                }
+                else {
+                    // srsim
+                    if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 0 || energyLevel[4] > 0 || energyLevel[6] > 1 || energyLevel[7] > 1 })) {
+                        equalities["srsim"] = true;
+                        equalities["sreadiness"] = true;
+                        equalities["sfailures"] = true;
+                        equalities["traces"] = true;
                     }
                     else {
-                        // failures
-                        if (energyLevels.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 0 || energyLevel[3] > 0 || energyLevel[4] > 1 || energyLevel[5] > 1 })) {
-                            equalities["failures"] = true;
-                            equalities["traceInclusion"] = true;
-                            equalities["enabledness"] = true;
+                        // sreadiness
+                        if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 0 || energyLevel[3] > 1 || energyLevel[4] > 0 || energyLevel[5] > 1 || energyLevel[6] > 1 || energyLevel[7] > 1 })) {
+                            equalities["sreadiness"] = true;
+                            equalities["sfailures"] = true;
+                            equalities["traces"] = true;
+                        }
+                        else {
+                            // sfailures
+                            if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 0 || energyLevel[3] > 1 || energyLevel[4] > 0 || energyLevel[5] > 0 || energyLevel[6] > 1 || energyLevel[7] > 1 })) {
+                                equalities["sfailures"] = true;
+                                equalities["traces"] = true;
+                            }
                         }
                     }
-                    // readiness
-                    if (energyLevels.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 1 || energyLevel[3] > 1 || energyLevel[4] > 1 || energyLevel[5] > 1 })) {
-                        equalities["readiness"] = true;
-                        equalities["revivals"] = true;
-                        equalities["failures"] = true;
-                        equalities["traceInclusion"] = true;
-                        equalities["enabledness"] = true;
-                    }
-                    else {
-                        if (energyLevels.every((energyLevel) => { return energyLevel[1] > 2 || energyLevel[2] > 1 || energyLevel[3] > 0 || energyLevel[4] > 1 || energyLevel[5] > 1 })) {
-                            equalities["revivals"] = true;
-                            equalities["failures"] = true;
-                            equalities["traceInclusion"] = true;
-                            equalities["enabledness"] = true;
-                        }
-                    }
+                }
+                // scsim
+                if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0 })) {
+                    equalities["scsim"] = true;
+                    equalities["sifutures"] = true;
+                    equalities["sfailures"] = true;
+                    equalities["traces"] = true;
+                }
+                else {
+                    // sifutures
+                    if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 0 || energyLevel[3] > 1 || energyLevel[4] > 0 || energyLevel[5] > 0 || energyLevel[7] > 1 })) {
+                        equalities["sifutures"] = true;
+                        equalities["sfailures"] = true;
+                        equalities["traces"] = true;
+                    } 
                 }
             }
         }
