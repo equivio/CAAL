@@ -1,6 +1,6 @@
 /// <reference path="activity.ts" />
 /// <reference path="game.ts" />
-/// <reference path="../BJN-Algo/BJN.ts" />
+/// <reference path="../spectroscopy/strong-spectroscopy.ts" />
 
 module Activity {
 
@@ -343,8 +343,8 @@ module Activity {
             let budget = this.getEnergyBudgetFromRelation(options.relation);
             this.displayEnergyGauge(budget);
 
-            this.SEGameLogic = new SEGameLogic(this, new GameLog(options.time), this.succGen, budget, options.leftProcess,
-                { q: undefined, qSet: [options.rightProcess], qStarSet: undefined })
+            this.SEGameLogic = new SEGameLogic(this, new GameLog(options.time), this.succGen, budget, this.succGen.getProcessByName(options.leftProcess),
+                { q: undefined, qSet: [this.succGen.getProcessByName(options.rightProcess)], qStarSet: undefined })
 
             //this.SEGameLogic.computeMarking();
 
@@ -431,7 +431,7 @@ module Activity {
             graph.getProcessDataObject(process.id).status = "expanded";
         }
 
-        public onPlay(position: BJN.Position): void {
+        public onPlay(position: StrongSpectroscopy.Position): void {
             this.draw(position.p, this.leftGraph, this.$leftDepth.val(), false);
             let rightDepth = this.$rightDepth.val();
             if (position.q) {
@@ -457,23 +457,23 @@ module Activity {
                 return;
 
             var configuration = this.SEGameLogic.getCurrentConfiguration();
-            this.leftGraph.setSelected(configuration.left);
+            this.leftGraph.setSelected(configuration.left.id);
 
             let configIds = Object.create(null);
             if (configuration.right.q) {
-                configIds.q = configuration.right.q;
+                configIds.q = configuration.right.q.id;
             }
             else {
                 if (configuration.right.qSet) {
                     configIds.qSet = [];
                     configuration.right.qSet.forEach((proc) => {
-                        configIds.qSet.push(proc);
+                        configIds.qSet.push(proc.id);
                     })
                 }
                 if (configuration.right.qStarSet) {
                     configIds.qStarSet = [];
                     configuration.right.qStarSet.forEach((proc) => {
-                        configIds.qStarSet.push(proc);
+                        configIds.qStarSet.push(proc.id);
                     })
                 }
             }
@@ -565,8 +565,8 @@ module Activity {
 
         private energyLeft: number[];
         private succGen: CCS.SuccessorGenerator;
-        private bjn: BJN.Game;
-        private attackerWinBudgets: Map<BJN.Position, {budget: number[], hml: HML.Formula}[]>;
+        private strongSpectroscopy: StrongSpectroscopy.Game;
+        private attackerWinBudgets: Map<StrongSpectroscopy.Position, {budget: number[], hml: HML.Formula}[]>;
 
         private gameActivity: SEGame;
         private gameLog: GameLog;
@@ -583,7 +583,7 @@ module Activity {
         private cycleCache: any;
 
         constructor(gameActivity: SEGame, gameLog: GameLog, succGen: CCS.SuccessorGenerator,
-            energyBudget: number[], currentLeft: any, currentRight: any) {
+            energyBudget: number[], currentLeft: CCS.Process, currentRight: any) {
             super();
 
             this.gameActivity = gameActivity;
@@ -592,9 +592,9 @@ module Activity {
             this.energyLeft = energyBudget;
             this.currentLeft = currentLeft;
             this.currentRight = currentRight;
-            this.bjn = new BJN.Game(this.succGen, this.currentLeft,
+            this.strongSpectroscopy = new StrongSpectroscopy.Game(this.succGen, this.currentLeft,
                 this.currentRight.qSet![0]!);
-            this.attackerWinBudgets = BJN.computeWinningBudgets(this.bjn);
+            this.attackerWinBudgets = StrongSpectroscopy.computeWinningBudgets(this.strongSpectroscopy);
         }
 
         public getTransitionStr(update: string): string {
@@ -627,7 +627,7 @@ module Activity {
             this.stopGame();
 
             this.cycleCache = {};
-            this.cycleCache[this.bjn.parsePosition(this.currentLeft, this.currentRight).toString()] = true;
+            this.cycleCache[this.strongSpectroscopy.parsePosition(this.currentLeft, this.currentRight).toString()] = true;
 
             this.gameActivity.highlightNodes();
             this.gameActivity.centerNode(this.currentLeft, Move.Left);
@@ -657,7 +657,7 @@ module Activity {
             this.attacker = attacker;
             this.defender = defender;
         }
-        private saveCurrentConfig(position: BJN.Position): void {
+        private saveCurrentConfig(position: StrongSpectroscopy.Position): void {
             this.currentLeft = position.p;
             let qSet: CCS.Process[] | undefined = undefined;
             if (position.qSet) {
@@ -677,10 +677,10 @@ module Activity {
 
         }
 
-        public play(player: Player, choice: BJN.Move): void {
+        public play(player: Player, choice: StrongSpectroscopy.Move): void {
             this.gameLog.printPlay(player, choice, this);
             this.saveCurrentConfig(choice.to);
-            this.energyLeft = BJN.update(this.energyLeft, choice.update);
+            this.energyLeft = StrongSpectroscopy.update(this.energyLeft, choice.update);
             // check for exceeded budget and cycle
             if (this.energyLeft.some((dim) => { return dim < 0; })) {
                 this.gameLog.printExcessWinner((player === this.attacker) ? this.defender : this.attacker);
@@ -730,7 +730,7 @@ module Activity {
         }
 
         private cycleExists(): boolean {
-            let cacheStr = this.bjn.parsePosition(this.currentLeft, this.currentRight).toString();
+            let cacheStr = this.strongSpectroscopy.parsePosition(this.currentLeft, this.currentRight).toString();
 
             if (this.cycleCache[cacheStr]) {
                 // cycle detected
@@ -747,20 +747,20 @@ module Activity {
         }
 
         public getCurrentChoices(): any {
-            return this.bjn.getPossibleMoves(this.bjn.parsePosition(this.currentLeft, this.currentRight));
+            return this.strongSpectroscopy.getPossibleMoves(this.strongSpectroscopy.parsePosition(this.currentLeft, this.currentRight));
         }
 
         public getCurrentWinner(): Player {
-            let choices = this.bjn.getPossibleMoves(this.bjn.parsePosition(this.currentLeft, this.currentRight));
+            let choices = this.strongSpectroscopy.getPossibleMoves(this.strongSpectroscopy.parsePosition(this.currentLeft, this.currentRight));
             if (this.currentRight.qStarSet) { return this.getWinningDefend(choices) ? this.defender : this.attacker }
             else { return this.getWinningAttack(choices) ? this.attacker : this.defender }
         }
 
-        public getWinningAttack(choices: BJN.Move[]): any {
+        public getWinningAttack(choices: StrongSpectroscopy.Move[]): any {
             for (let i = 0; i < choices.length; i++) {
                 // check if position was visited before (cycle avoidance)
                 if (this.cycleCache[choices[i].to.toString()]) { continue; }
-                let newEnergyLeft: number[] = BJN.update(this.energyLeft, choices[i].update);
+                let newEnergyLeft: number[] = StrongSpectroscopy.update(this.energyLeft, choices[i].update);
                 let positionAttackerWin = this.attackerWinBudgets.get(choices[i].to);
                 if (!positionAttackerWin) { throw "Something went wrong when selecting a move."; }
                 else {
@@ -777,14 +777,14 @@ module Activity {
         }
         public getLosingAttack(choices: any): any {
             let bestScore: number = -Infinity;
-            let bestChoice: BJN.Move;
+            let bestChoice: StrongSpectroscopy.Move;
             for (let i = 0; i < choices.length; i++) {
                 // cycle check
                 if (this.cycleCache[choices[i].to.toString()]) {
                     if (i === 0) { bestChoice = choices[0]; }
                     continue;
                 }
-                let newEnergyLeft: number[] = BJN.update(this.energyLeft, choices[i].update);
+                let newEnergyLeft: number[] = StrongSpectroscopy.update(this.energyLeft, choices[i].update);
                 // budget excess check
                 if (newEnergyLeft.some((dim) => { return dim < 0; })) {
                     if (i === 0) { bestChoice = choices[0]; }
@@ -810,9 +810,9 @@ module Activity {
             }
             return bestChoice!;
         }
-        public getWinningDefend(choices: BJN.Move[]): any {
+        public getWinningDefend(choices: StrongSpectroscopy.Move[]): any {
             for (let i = 0; i < choices.length; i++) {
-                let newEnergyLeft: number[] = BJN.update(this.energyLeft, choices[i].update);
+                let newEnergyLeft: number[] = StrongSpectroscopy.update(this.energyLeft, choices[i].update);
                 let positionAttackerWin = this.attackerWinBudgets.get(choices[i].to);
                 if (!positionAttackerWin) { throw "Something went wrong when selecting a move."; }
                 else {
@@ -829,9 +829,9 @@ module Activity {
         }
         public getLosingDefend(choices: any): any {
             let bestScore: number = Infinity;
-            let bestChoice: BJN.Move;
+            let bestChoice: StrongSpectroscopy.Move;
             for (let i = 0; i < choices.length; i++) {
-                let newEnergyLeft: number[] = BJN.update(this.energyLeft, choices[i].update);
+                let newEnergyLeft: number[] = StrongSpectroscopy.update(this.energyLeft, choices[i].update);
                 let positionAttackerWin = this.attackerWinBudgets.get(choices[i].to);
                 if (!positionAttackerWin) { throw "Something went wrong when selecting a move."; }
                 // manhattan-distance as indicator of best possible losing move
@@ -1062,19 +1062,19 @@ module Activity {
 
             let rightConfig: string = "";
             if (configuration.right.q) {
-                rightConfig += configuration.right.q;
+                rightConfig += configuration.right.q.id;
             }
             else {
                 rightConfig += "{";
                 for (let i = 0; i < configuration.right.qSet.length; i++) {
-                    rightConfig += configuration.right.qSet[i];
+                    rightConfig += configuration.right.qSet[i].id;
                     rightConfig += i < configuration.right.qSet.length - 1 ? "," : "";
                 }
                 rightConfig += "}";
                 if (configuration.right.qStarSet) {
                     rightConfig += ",{";
                     for (let i = 0; i < configuration.right.qStarSet.length; i++) {
-                        rightConfig += configuration.right.qStarSet[i];
+                        rightConfig += configuration.right.qStarSet[i].id;
                         rightConfig += i < configuration.right.qStarSet.length - 1 ? "," : "";
                     }
                     rightConfig += "}";
@@ -1082,14 +1082,14 @@ module Activity {
             }
 
             var context = {
-                1: { text: configuration.left, tag: "<span>", attr: [{ name: "class", value: "monospace" }] },
+                1: { text: configuration.left.id, tag: "<span>", attr: [{ name: "class", value: "monospace" }] },
                 2: { text: rightConfig, tag: "<span>", attr: [{ name: "class", value: "monospace" }] }
             }
 
             this.println(this.render(template, context), "<p>");
         }
 
-        public printPlay(player: Player, choice: BJN.Move, game: SEGameLogic): void {
+        public printPlay(player: Player, choice: StrongSpectroscopy.Move, game: SEGameLogic): void {
             var template = "{1} played {2} {3} {4}.";
 
             let actionTransition = game.getTransitionStr(choice.updateToString());

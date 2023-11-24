@@ -1,6 +1,6 @@
 /// <reference path="../../lib/ccs.d.ts" />
 
-module BJN {
+module StrongSpectroscopy {
 
     let idCounter = 0;
 

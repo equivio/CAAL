@@ -14,7 +14,7 @@ module Activity {
             this.queue = [];
 
             $("#add-property").on("click", () => this.showPropertyModal());
-            $("#verify-bjn").on("click", () => this.verifyBJN());
+            $("#verify-strong-spectroscopy").on("click", () => this.verifyStrongSpectroscopy());
             $("#delete-all").on("click", () => this.deleteAllProperties());
             $("#verify-all").on("click", () => this.verifyAll());
             $("#verify-stop").on("click", () => this.stopVerify());
@@ -171,7 +171,7 @@ module Activity {
             } else {
                 let gameConfiguration = property.getGameConfiguration();
                 // check if property is supported by equivalence/hml game
-                if (!(property instanceof Property.BJNEquivalence)){
+                if (!(property instanceof Property.StrongSpectroscopyEquivalence)){
                     if (gameConfiguration && !(property instanceof Property.TraceInclusion)) {
                         var startGame = () => {
                             if (property instanceof Property.HML) {
@@ -323,47 +323,51 @@ module Activity {
 
             options["comment"] = $("#propertyComment").val();
 
-            if (propertyName === "BJNAlgo"){
-                // delete potential old props
-                let properties = this.project.getProperties().filter((prop) => {
-                    if ("forBJN" in prop){
-                        return prop["forBJN"];
-                    }
-                    return false
-                });
-                properties.forEach((prop) => {
-                    this.deleteProperty({data: {property: prop}});
-                })
-                let supportedEqs = [
-                    "Bisimulation",
-                    "TwoNestedSimulation",
-                    "ReadySimulation",
-                    "PossibleFutures",
-                    "Simulation",
-                    "ReadinessTraces",
-                    "FailureTraces",
-                    "Readiness",
-                    "ImpossibleFutures",
-                    "Revivals",
-                    "Failures",
-                    "TraceInclusion",
-                    "Enabledness"
-                ];
-                options["forBJN"] = true;
-                supportedEqs.forEach((eq) => {
-                    var property = new window["Property"][eq](options);
-                    this.project.addProperty(property);
+            if (propertyName === "Spectroscopy"){
+                if (options["type"] === "strong"){
+                    // delete potential old strong props
+                    let properties = this.project.getProperties().filter((prop) => {
+                        if ("forStrongSpectroscopy" in prop){
+                            return prop["forStrongSpectroscopy"];
+                        }
+                        return false
+                    });
+                    properties.forEach((prop) => {
+                        this.deleteProperty({data: {property: prop}});
+                    })
+                    let supportedEqs = [
+                        "Bisimulation",
+                        "TwoNestedSimulation",
+                        "ReadySimulation",
+                        "PossibleFutures",
+                        "Simulation",
+                        "ReadinessTraces",
+                        "FailureTraces",
+                        "Readiness",
+                        "ImpossibleFutures",
+                        "Revivals",
+                        "Failures",
+                        "TraceInclusion",
+                        "Enabledness"
+                    ];
+                    options["forStrongSpectroscopy"] = true;
+                    supportedEqs.forEach((eq) => {
+                        var property = new window["Property"][eq](options);
+                        this.project.addProperty(property);
 
-                    if (e) {
-                        this.project.deleteProperty(e.data.property);
-                        property.setRow(e.data.property.getRow());
-                    }
-                    this.displayProperty(property);
-                })
-                $("#verify-bjn").prop("disabled", false);
+                        if (e) {
+                            this.project.deleteProperty(e.data.property);
+                            property.setRow(e.data.property.getRow());
+                        }
+                        this.displayProperty(property);
+                    })
+                    $("#verify-strong-spectroscopy").prop("disabled", false);
+                }else {
+                    // TODO weak spectroscopy
+                }
             } else{
 
-                options["forBJN"] = false;
+                options["forStrongSpectroscopy"] = false;
                 var property = new window["Property"][propertyName](options);
                 this.project.addProperty(property);
 
@@ -412,11 +416,11 @@ module Activity {
             this.verifyNext();
         }
 
-        private verifyBJN() : void {
+        private verifyStrongSpectroscopy() : void {
             if(this.verifyingProperty == null){
                 let properties = this.project.getProperties().filter((prop) => {
-                    if ("forBJN" in prop){
-                        return prop["forBJN"];
+                    if ("forStrongSpectroscopy" in prop){
+                        return prop["forStrongSpectroscopy"];
                     }
                     return false
                 });
@@ -450,7 +454,7 @@ module Activity {
                 });
             
                 worker.postMessage({
-                    type: "runBJN",
+                    type: "runStrongSpectroscopy",
                     time: someProp.getTime(),
                     leftProcess: someProp.getFirstProcess(),
                     rightProcess: someProp.getSecondProcess()
@@ -527,14 +531,14 @@ module Activity {
         private enableVerification() : void {
             $(".verify-property").removeClass("text-muted");
             $("#verify-all").prop("disabled", false);
-            $("#verify-bjn").prop("disabled", false);
+            $("#verify-strong-spectroscopy").prop("disabled", false);
             $("#verify-stop").prop("disabled", true);
         }
 
         private disableVerification() : void {
             $(".verify-property").addClass("text-muted");
             $("#verify-all").prop("disabled", true);
-            $("#verify-bjn").prop("disabled", true);
+            $("#verify-strong-spectroscopy").prop("disabled", true);
             $("#verify-stop").prop("disabled", false);
         }
     }

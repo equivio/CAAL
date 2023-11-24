@@ -332,7 +332,7 @@ module Property {
         protected secondProcess : string;
         protected type : string;
         protected time : string;
-        protected forBJN : boolean = false;
+        protected forStrongSpectroscopy : boolean = false;
 
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(status);
@@ -341,8 +341,8 @@ module Property {
             this.type = options.type;
             this.time = options.time;
             this.comment = options.comment;
-            // flag to distinguish between independent Eqs and those that are part of the multiple at once BJN-Verififcation
-            this.forBJN = options.forBJN;
+            // flag to distinguish between independent eqs and those that are part of the multiple at once strong-spectroscopy-verififcation
+            this.forStrongSpectroscopy = options.forStrongSpectroscopy;
         }
 
         public getFirstProcess() : string {
@@ -380,12 +380,12 @@ module Property {
             };
         }
 
-        public getForBJN(){
-            return this.forBJN;
+        public getForStrongSpectroscopy(){
+            return this.forStrongSpectroscopy;
         }
 
-        public setForBJN(value : boolean){
-            this.forBJN = value;
+        public setForStrongSpectroscopy(value : boolean){
+            this.forStrongSpectroscopy = value;
         }
 
         public toJSON() : any {
@@ -650,7 +650,7 @@ module Property {
         }
     }
 
-    export class BJNEquivalence extends DistinguishingFormula{
+    export class StrongSpectroscopyEquivalence extends DistinguishingFormula{
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
@@ -689,7 +689,7 @@ module Property {
         }
     }
 
-    export class TwoNestedSimulation extends BJNEquivalence {
+    export class TwoNestedSimulation extends StrongSpectroscopyEquivalence {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
@@ -704,11 +704,11 @@ module Property {
         }
 
         protected getWorkerHandler() : string {
-            return "isStronglyTwoNestedSimulationEquivalent";
+            return super.getType() === "strong" ? "isStronglyTwoNestedSimulationEquivalent" : "isWeaklyTwoNestedSimulationEquivalent";
         }
     }
 
-    export class ReadySimulation extends BJNEquivalence {
+    export class ReadySimulation extends StrongSpectroscopyEquivalence {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
@@ -723,11 +723,11 @@ module Property {
         }
 
         protected getWorkerHandler() : string {
-            return "isStronglyReadySimulationEquivalent";
+            return super.getType() === "strong" ? "isStronglyReadySimulationEquivalent" : "isWeaklyReadySimulationEquivalent";
         }
     }
 
-    export class ReadinessTraces extends BJNEquivalence {
+    export class ReadinessTraces extends StrongSpectroscopyEquivalence {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
@@ -742,11 +742,11 @@ module Property {
         }
 
         protected getWorkerHandler() : string {
-            return "isStronglyReadinessTracesEquivalent";
+            return super.getType() === "strong" ? "isStronglyReadinessTracesEquivalent" : "isWeaklyReadinessTracesEquivalent";
         }
     }
 
-    export class PossibleFutures extends BJNEquivalence {
+    export class PossibleFutures extends StrongSpectroscopyEquivalence {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
@@ -761,11 +761,11 @@ module Property {
         }
 
         protected getWorkerHandler() : string {
-            return "isStronglyPossibleFuturesEquivalent";
+            return super.getType() === "strong" ? "isStronglyPossibleFuturesEquivalent" : "isWeaklyPossibleFuturesEquivalent";
         }
     }
 
-    export class FailureTraces extends BJNEquivalence {
+    export class FailureTraces extends StrongSpectroscopyEquivalence {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
@@ -780,11 +780,11 @@ module Property {
         }
 
         protected getWorkerHandler() : string {
-            return "isStronglyFailureTracesEquivalent";
+            return super.getType() === "strong" ? "isStronglyFailureTracesEquivalent" : "isWeaklyFailureTracesEquivalent";
         }
     }
 
-    export class Readiness extends BJNEquivalence {
+    export class Readiness extends StrongSpectroscopyEquivalence {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
@@ -799,11 +799,11 @@ module Property {
         }
 
         protected getWorkerHandler() : string {
-            return "isStronglyReadinessEquivalent";
+            return super.getType() === "strong" ? "isStronglyReadinessEquivalent" : "isWeaklyReadinessEquivalent";
         }
     }
 
-    export class Revivals extends BJNEquivalence {
+    export class Revivals extends StrongSpectroscopyEquivalence {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
@@ -818,11 +818,11 @@ module Property {
         }
 
         protected getWorkerHandler() : string {
-            return "isStronglyRevivalEquivalent";
+            return super.getType() === "strong" ? "isStronglyRevivalEquivalent" : "isWeaklyRevivalEquivalent";
         }
     }
 
-    export class ImpossibleFutures extends BJNEquivalence {
+    export class ImpossibleFutures extends StrongSpectroscopyEquivalence {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
@@ -837,11 +837,11 @@ module Property {
         }
 
         protected getWorkerHandler() : string {
-            return "isStronglyImpossibleFuturesEquivalent";
+            return super.getType() === "strong" ? "isStronglyImpossibleFuturesEquivalent" : "isWeaklyImpossibleFuturesEquivalent";
         }
     }
 
-    export class Failures extends BJNEquivalence {
+    export class Failures extends StrongSpectroscopyEquivalence {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
@@ -856,11 +856,11 @@ module Property {
         }
 
         protected getWorkerHandler() : string {
-            return "isStronglyFailureEquivalent";
+            return super.getType() === "strong" ? "isStronglyFailureEquivalent" : "isWeaklyFailureEquivalent";
         }
     }
 
-    export class Enabledness extends BJNEquivalence {
+    export class Enabledness extends StrongSpectroscopyEquivalence {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
@@ -875,7 +875,7 @@ module Property {
         }
 
         protected getWorkerHandler() : string {
-            return "isStronglyEnablednessEquivalent";
+            return super.getType() === "strong" ? "isStronglyEnablednessEquivalent" : "isWeaklyEnablednessEquivalent";
         }
     }
 }
