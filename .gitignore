@@ -23,7 +23,7 @@ lib/util.d.ts
 lib/workers
 lib/data.d.ts
 lib/data.js
-lib/BJN.js
+lib/strong-spectroscopy.js
 *.js.map
 release.tar.gz
 mailconfig.php
