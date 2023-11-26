@@ -332,7 +332,7 @@ module Property {
         protected secondProcess : string;
         protected type : string;
         protected time : string;
-        protected forStrongSpectroscopy : boolean = false;
+        protected forSpectroscopy : boolean = false;
 
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(status);
@@ -342,7 +342,7 @@ module Property {
             this.time = options.time;
             this.comment = options.comment;
             // flag to distinguish between independent eqs and those that are part of the multiple at once strong-spectroscopy-verififcation
-            this.forStrongSpectroscopy = options.forStrongSpectroscopy;
+            this.forSpectroscopy = options.forSpectroscopy;
         }
 
         public getFirstProcess() : string {
@@ -380,12 +380,12 @@ module Property {
             };
         }
 
-        public getForStrongSpectroscopy(){
-            return this.forStrongSpectroscopy;
+        public getforSpectroscopy(){
+            return this.forSpectroscopy;
         }
 
-        public setForStrongSpectroscopy(value : boolean){
-            this.forStrongSpectroscopy = value;
+        public setforSpectroscopy(value : boolean){
+            this.forSpectroscopy = value;
         }
 
         public toJSON() : any {
@@ -876,6 +876,463 @@ module Property {
 
         protected getWorkerHandler() : string {
             return super.getType() === "strong" ? "isStronglyEnablednessEquivalent" : "isWeaklyEnablednessEquivalent";
+        }
+    }
+
+    export class WeakSpectroscopyEquivalence extends Relation{
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+        /**
+         * Check whether both process(first and second) is defined, and it exists in the CCS program.
+         * Property status must not be invalid.
+         * Property type must be weak.
+         * @return {boolean} if true, everything is defined.
+         */
+        public isReadyForVerification() : boolean {
+            var isReady = true;
+            var error = "";
+
+            if(!this.getFirstProcess() && !this.getSecondProcess()) {
+                isReady = false;
+                error = "Two processes must be selected"
+            } else {
+                // if they are defined check whether they are defined in the CCS-program
+                var processList = this.project.getGraph().getNamedProcesses()
+                if (processList.indexOf(this.getFirstProcess()) === -1 || processList.indexOf(this.getSecondProcess()) === -1) {
+                    isReady = false;
+                    error = "One of the processes is not defined in the CCS program."
+                } else{
+                    if (this.type === "strong"){
+                        isReady = false;
+                        error = "only weak equivalences are supported."
+                    }
+                }
+            }
+
+            if(!isReady) { 
+                this.setInvalidateStatus(error);
+            }
+
+            return isReady
+        }
+    }
+    // TODO: Unify classes when distinguishing formulas implemented for weak version
+    export class Srbbisim extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>srbbisim</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Srbbisim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklySrbbisim";
+        }
+    }
+
+    export class Bbisim extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>bbsim</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Bbisim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyBbisim";
+        }
+    }
+
+    export class Srdbisim extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>srdbisim</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Srdbisim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklySrdbisim";
+        }
+    }
+
+    export class Dbisim extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>dbisim</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Dbisim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyDbisim";
+        }
+    }
+
+    export class Etabisim extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>etabisim</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Etabisim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyEtabisim";
+        }
+    }
+
+    export class Sbisim extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>sbisim</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Sbisim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklySbisim";
+        }
+    }
+
+    export class Bisim extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>bisim</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Bisim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyBisimilar";
+        }
+    }
+
+    export class Etasim extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>etasim</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Etasim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyEtasim";
+        }
+    }
+
+    export class Sim extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>sim</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Sim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklySimilar";
+        }
+    }
+
+    export class Twosim extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>twosim</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Twosim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyTwosim";
+        }
+    }
+
+    export class Rsim extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>rsim</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Rsim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyRsim";
+        }
+    }
+
+    export class Csim extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>Csim</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Csim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyCsim";
+        }
+    }
+
+    export class Pfutures extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>pfutures</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Pfutures";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyPfutures";
+        }
+    }
+
+    export class Weakreadiness extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>readiness</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Weakreadiness";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyReadiness";
+        }
+    }
+
+    export class Ifutures extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>ifutures</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Ifutures";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyIfutures";
+        }
+    }
+
+    export class Weakfailures extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>failures</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Weakfailures";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyFailures";
+        }
+    }
+
+    export class Sfailures extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>sfailures</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Sfailures";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklySfailures"
+        }
+    }
+
+    export class Sifutures extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>sifutures</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Sifutures";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklySifutures"
+        }
+    }
+
+    export class Sreadiness extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>sreadiness</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Sreadiness";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklySreadiness"
+        }
+    }
+
+    export class Scsim extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>scsim</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Scsim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyScsim"
+        }
+    }
+
+    export class Srsim extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>srsim</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Srsim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklySrsim"
+        }
+    }
+
+    export class Weaktraces extends WeakSpectroscopyEquivalence {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>traces</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Weaktraces";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyTraceIncluded"
         }
     }
 }

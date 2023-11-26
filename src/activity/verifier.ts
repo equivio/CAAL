@@ -14,7 +14,7 @@ module Activity {
             this.queue = [];
 
             $("#add-property").on("click", () => this.showPropertyModal());
-            $("#verify-strong-spectroscopy").on("click", () => this.verifyStrongSpectroscopy());
+            $("#verify-spectroscopy").on("click", () => this.verifySpectroscopy());
             $("#delete-all").on("click", () => this.deleteAllProperties());
             $("#verify-all").on("click", () => this.verifyAll());
             $("#verify-stop").on("click", () => this.stopVerify());
@@ -324,18 +324,19 @@ module Activity {
             options["comment"] = $("#propertyComment").val();
 
             if (propertyName === "Spectroscopy"){
+                // delete potential old strong props
+                let properties = this.project.getProperties().filter((prop) => {
+                    if ("forSpectroscopy" in prop){
+                        return prop["forSpectroscopy"];
+                    }
+                    return false
+                });
+                properties.forEach((prop) => {
+                    this.deleteProperty({data: {property: prop}});
+                })
+                let supportedEqs: string[];
                 if (options["type"] === "strong"){
-                    // delete potential old strong props
-                    let properties = this.project.getProperties().filter((prop) => {
-                        if ("forStrongSpectroscopy" in prop){
-                            return prop["forStrongSpectroscopy"];
-                        }
-                        return false
-                    });
-                    properties.forEach((prop) => {
-                        this.deleteProperty({data: {property: prop}});
-                    })
-                    let supportedEqs = [
+                    supportedEqs = [
                         "Bisimulation",
                         "TwoNestedSimulation",
                         "ReadySimulation",
@@ -350,24 +351,47 @@ module Activity {
                         "TraceInclusion",
                         "Enabledness"
                     ];
-                    options["forStrongSpectroscopy"] = true;
-                    supportedEqs.forEach((eq) => {
-                        var property = new window["Property"][eq](options);
-                        this.project.addProperty(property);
-
-                        if (e) {
-                            this.project.deleteProperty(e.data.property);
-                            property.setRow(e.data.property.getRow());
-                        }
-                        this.displayProperty(property);
-                    })
-                    $("#verify-strong-spectroscopy").prop("disabled", false);
                 }else {
-                    // TODO weak spectroscopy
+                    supportedEqs = [
+                        "Srbbisim",
+                        "Bbisim",
+                        "Srdbisim",
+                        "Dbisim",
+                        "Etabisim",
+                        "Sbisim",
+                        "Bisim",
+                        "Etasim",
+                        "Sim",
+                        "Twosim",
+                        "Rsim",
+                        "Csim",
+                        "Pfutures",
+                        "Weakreadiness",
+                        "Ifutures",
+                        "Weakfailures",
+                        "Weaktraces",
+                        "Srsim",
+                        "Scsim",
+                        "Sreadiness",
+                        "Sifutures",
+                        "Sfailures"
+                    ];
                 }
+                options["forSpectroscopy"] = true;
+                supportedEqs.forEach((eq) => {
+                    var property = new window["Property"][eq](options);
+                    this.project.addProperty(property);
+
+                    if (e) {
+                        this.project.deleteProperty(e.data.property);
+                        property.setRow(e.data.property.getRow());
+                    }
+                    this.displayProperty(property);
+                })
+                $("#verify-spectroscopy").prop("disabled", false);
             } else{
 
-                options["forStrongSpectroscopy"] = false;
+                options["forSpectroscopy"] = false;
                 var property = new window["Property"][propertyName](options);
                 this.project.addProperty(property);
 
@@ -416,11 +440,11 @@ module Activity {
             this.verifyNext();
         }
 
-        private verifyStrongSpectroscopy() : void {
+        private verifySpectroscopy() : void {
             if(this.verifyingProperty == null){
                 let properties = this.project.getProperties().filter((prop) => {
-                    if ("forStrongSpectroscopy" in prop){
-                        return prop["forStrongSpectroscopy"];
+                    if ("forSpectroscopy" in prop){
+                        return prop["forSpectroscopy"];
                     }
                     return false
                 });
@@ -452,14 +476,14 @@ module Activity {
                     program: program,
                     inputMode: inputMode
                 });
-            
-                worker.postMessage({
-                    type: "runStrongSpectroscopy",
-                    time: someProp.getTime(),
-                    leftProcess: someProp.getFirstProcess(),
-                    rightProcess: someProp.getSecondProcess()
-                });
-                
+                if(someProp instanceof Property.Relation) {
+                    worker.postMessage({
+                        type: someProp.getType() === "strong" ? "runStrongSpectroscopy" : "runWeakSpectroscopy",
+                        time: someProp.getTime(),
+                        leftProcess: someProp.getFirstProcess(),
+                        rightProcess: someProp.getSecondProcess()
+                    });
+                } else { throw new Error("Property to be verified is not a relation.") }
                 worker.addEventListener("error", (error) => {
                     worker.terminate();
                     someProp.setError(error.message);
@@ -488,7 +512,6 @@ module Activity {
                         }
                         else if (result === false){
                             prop.setStatus(PropertyStatus.unsatisfied);
-                            // this should always be the case
                             if (prop instanceof Property.DistinguishingFormula){
                                 prop.formula = results.formula + ";";
                             }
@@ -531,14 +554,14 @@ module Activity {
         private enableVerification() : void {
             $(".verify-property").removeClass("text-muted");
             $("#verify-all").prop("disabled", false);
-            $("#verify-strong-spectroscopy").prop("disabled", false);
+            $("#verify-spectroscopy").prop("disabled", false);
             $("#verify-stop").prop("disabled", true);
         }
 
         private disableVerification() : void {
             $(".verify-property").addClass("text-muted");
             $("#verify-all").prop("disabled", true);
-            $("#verify-strong-spectroscopy").prop("disabled", true);
+            $("#verify-spectroscopy").prop("disabled", true);
             $("#verify-stop").prop("disabled", false);
         }
     }
