@@ -171,7 +171,7 @@ module Activity {
             } else {
                 let gameConfiguration = property.getGameConfiguration();
                 // check if property is supported by equivalence/hml game
-                if (!(property instanceof Property.StrongSpectroscopyEquivalence)){
+                if (property instanceof Property.HML || property instanceof Property.Bisimulation || property instanceof Property.Simulation || property instanceof Property.SimulationEquivalence || property instanceof Property.Traces){
                     if (gameConfiguration && !(property instanceof Property.TraceInclusion)) {
                         var startGame = () => {
                             if (property instanceof Property.HML) {
@@ -199,7 +199,7 @@ module Activity {
                         .on("click", () => property.generateDistinguishingFormula(generateFormula)));
                 }
 
-                if(gameConfiguration){
+                if(gameConfiguration && property instanceof Property.Relation && property.getType() === "strong"){
                     // check if relation is supported by the Spectroscopy Energy Game
                     let matchflag = false;
                     $("#se-game-relation option").each((i, e) => {
@@ -211,7 +211,6 @@ module Activity {
                         $ul.append($("<li>").append($("<a>").append("Play Spectroscopy Energy Game"))
                             .on("click", () => Main.activityHandler.selectActivity("segame", gameConfiguration)));
                     }
-
                 }
             }
 
@@ -359,17 +358,17 @@ module Activity {
                         "Dbisim",
                         "Etabisim",
                         "Sbisim",
-                        "Bisim",
+                        "Bisimulation",
                         "Etasim",
-                        "Sim",
-                        "Twosim",
-                        "Rsim",
+                        "Simulation",
+                        "TwoNestedSimulation",
+                        "ReadySimulation",
                         "Csim",
-                        "Pfutures",
-                        "Weakreadiness",
-                        "Ifutures",
-                        "Weakfailures",
-                        "Weaktraces",
+                        "PossibleFutures",
+                        "Readiness",
+                        "ImpossibleFutures",
+                        "Failures",
+                        "TraceInclusion",
                         "Srsim",
                         "Scsim",
                         "Sreadiness",

@@ -730,17 +730,17 @@ module WeakSpectroscopy {
             dbisim: false,
             etabisim: false,
             sbisim: false,
-            bisim: false,
+            bisimulation: false,
             etasim: false,
-            sim: false,
-            twosim: false,
-            rsim: false,
+            simulation: false,
+            twoNestedSimulation: false,
+            readySimulation: false,
             csim: false,
-            pfutures: false,
-            weakreadiness: false,
-            ifutures: false,
-            weakfailures: false,
-            weaktraces: false,
+            possibleFutures: false,
+            readiness: false,
+            impossibleFutures: false,
+            failures: false,
+            traceInclusion: false,
             srsim: false,
             scsim: false,
             sreadiness: false,
@@ -778,19 +778,19 @@ module WeakSpectroscopy {
                     // etasim
                     if (energyLevels.every((energyLevel) => { return energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[6] > 0 || energyLevel[7] > 0 })) {
                         equalities["etasim"] = true;
-                        equalities["sim"] = true;
-                        equalities["traces"] = true;
+                        equalities["simulation"] = true;
+                        equalities["traceInclusion"] = true;
                         }
                     else {
-                        // sim
+                        // simulation
                         if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[6] > 0 || energyLevel[7] > 0 })) {
-                            equalities["sim"] = true;
-                            equalities["traces"] = true;
+                            equalities["simulation"] = true;
+                            equalities["traceInclusion"] = true;
                         }
                         else{
-                            // traces
+                            // traceInclusion
                             if (energyLevels.every((energyLevel) => { return energyLevel.slice(1).some((dim) => { return dim > 0; }) })) {
-                                equalities["traces"] = true;
+                                equalities["traceInclusion"] = true;
                             }
                         }
                     }
@@ -805,7 +805,7 @@ module WeakSpectroscopy {
                     }
                 }
                 else {
-                    // bisim
+                    // bisimulation
                     if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 })) {
                         for (let eq in equalities) {
                             if (["srbbisim", "srdbisim", "bbisim", "dbisim", "etabisim", "etasim", "sbisim", "srsim", "scsim", "sreadiness", "sifutures", "sfailures"].indexOf(eq) > -1) {
@@ -815,47 +815,47 @@ module WeakSpectroscopy {
                         }
                     }
                     else {
-                        // twosim
+                        // twoNestedSimulation
                         if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[7] > 1 })) {
-                            equalities["twosim"] = true;
-                            equalities["rsim"] = true;
-                            equalities["pfutures"] = true;
-                            equalities["sim"] = true;
+                            equalities["twoNestedSimulation"] = true;
+                            equalities["readySimulation"] = true;
+                            equalities["possibleFutures"] = true;
+                            equalities["simulation"] = true;
                             equalities["readiness"] = true;
-                            equalities["ifutures"] = true;
+                            equalities["impossibleFutures"] = true;
                             equalities["failures"] = true;
-                            equalities["traces"] = true;
+                            equalities["traceInclusion"] = true;
                         }
                         else {
-                            // rsim
+                            // readySimulation
                             if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[6] > 1 || energyLevel[7] > 1 })) {
-                                equalities["rsim"] = true;
-                                equalities["sim"] = true;
+                                equalities["readySimulation"] = true;
+                                equalities["simulation"] = true;
                                 equalities["readiness"] = true;
                                 equalities["failures"] = true;
-                                equalities["traces"] = true;
+                                equalities["traceInclusion"] = true;
                             }
 
-                            // pfutures
+                            // possibleFutures
                             if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 1 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[7] > 1 })) {
-                                equalities["pfutures"] = true;
+                                equalities["possibleFutures"] = true;
                                 equalities["readiness"] = true;
-                                equalities["ifutures"] = true;
+                                equalities["impossibleFutures"] = true;
                                 equalities["failures"] = true;
-                                equalities["traces"] = true;
+                                equalities["traceInclusion"] = true;
                             }
                             else {
                                 // readiness
                                 if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 1 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 1 || energyLevel[6] > 1 || energyLevel[7] > 1 })) {
                                     equalities["readiness"] = true;
                                     equalities["failures"] = true;
-                                    equalities["traces"] = true;
+                                    equalities["traceInclusion"] = true;
                                 }
                                 else {
                                     // failures
                                     if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 1 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0 || energyLevel[6] > 1 || energyLevel[7] > 1 })) {
                                         equalities["failures"] = true;
-                                        equalities["traces"] = true;
+                                        equalities["traceInclusion"] = true;
                                     }
                                 }
                             }
@@ -865,16 +865,16 @@ module WeakSpectroscopy {
                 // csim
                 if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0 })) {
                     equalities["csim"] = true;
-                    equalities["ifutures"] = true;
+                    equalities["impossibleFutures"] = true;
                     equalities["failures"] = true;
-                    equalities["traces"] = true;
+                    equalities["traceInclusion"] = true;
                 }
                 else {
-                    //ifutures
+                    //impossibleFutures
                     if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 1 || energyLevel[3] > 0 || energyLevel[4] > 0 || energyLevel[5] > 0 || energyLevel[7] > 1})) {
-                        equalities["ifutures"] = true;
+                        equalities["impossibleFutures"] = true;
                         equalities["failures"] = true;
-                        equalities["traces"] = true;
+                        equalities["traceInclusion"] = true;
                     }
                 }
             }
@@ -897,7 +897,7 @@ module WeakSpectroscopy {
                     equalities["sreadiness"] = true;
                     equalities["sifutures"] = true;
                     equalities["sfailures"] = true;
-                    equalities["traces"] = true;
+                    equalities["traceInclusion"] = true;
                 }
                 else {
                     // srsim
@@ -905,20 +905,20 @@ module WeakSpectroscopy {
                         equalities["srsim"] = true;
                         equalities["sreadiness"] = true;
                         equalities["sfailures"] = true;
-                        equalities["traces"] = true;
+                        equalities["traceInclusion"] = true;
                     }
                     else {
                         // sreadiness
                         if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 0 || energyLevel[3] > 1 || energyLevel[4] > 0 || energyLevel[5] > 1 || energyLevel[6] > 1 || energyLevel[7] > 1 })) {
                             equalities["sreadiness"] = true;
                             equalities["sfailures"] = true;
-                            equalities["traces"] = true;
+                            equalities["traceInclusion"] = true;
                         }
                         else {
                             // sfailures
                             if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 0 || energyLevel[3] > 1 || energyLevel[4] > 0 || energyLevel[5] > 0 || energyLevel[6] > 1 || energyLevel[7] > 1 })) {
                                 equalities["sfailures"] = true;
-                                equalities["traces"] = true;
+                                equalities["traceInclusion"] = true;
                             }
                         }
                     }
@@ -928,7 +928,7 @@ module WeakSpectroscopy {
                     equalities["scsim"] = true;
                     equalities["sifutures"] = true;
                     equalities["sfailures"] = true;
-                    equalities["traces"] = true;
+                    equalities["traceInclusion"] = true;
                 }
                 else {
                     // sifutures
