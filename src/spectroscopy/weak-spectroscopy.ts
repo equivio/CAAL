@@ -45,7 +45,7 @@ module WeakSpectroscopy {
             if (!this.isBranchingPosition) { return this.qSet!.length === 0; }
             if (this.qSet!.length !== 0) { return false; }
             // check for possible moves from this position
-            return moves.some((move) => { return this.isEqualTo(move.from) })
+            return !moves.some((move) => { return this.isEqualTo(move.from) });
         }
 
         public isEqualTo(otherPos: Position) {
@@ -282,7 +282,7 @@ module WeakSpectroscopy {
                     }
                 }
                 else {
-                    // attacker clause positions
+                    // clause positions
                     if (pos.q) {
                         // positive clauses
                         let qSet: CCS.Process[] = [];
@@ -302,7 +302,7 @@ module WeakSpectroscopy {
                             if (!destPos) { throw new Error("Position does not exist despite check"); }
                             this.addMove(new Move(pos, destPos, [[1,6],0,0,0,0,0,0,0]));
                         }
-                        // negative decisions
+                        // negative clauses
                         if (pos.p.id !== pos.q.id) {
                             qSet = [];
                             weakSuccGen.getSuccessors(pos.p.id).transitionsForAction(new CCS.Action("tau", false)).forEach((transition) => {
@@ -324,7 +324,7 @@ module WeakSpectroscopy {
                         }
                     } else {
 
-                        // attacker branching accounting
+                        // branching accounting
                         if(pos.isBranchingPosition) {
                             let newPos: Position = new Position(pos.p, false, false, false, false, pos.qSet);
                             // check if newPos was already discovered to avoid duplicates
@@ -340,8 +340,8 @@ module WeakSpectroscopy {
                             }
                         }
 
-                        // delay
                         if (!(pos.isBranchingPosition || pos.isDelayedPosition || pos.isStablePosition)){
+                            // delay
                             let qSet: CCS.Process[] = [];
                             pos.qSet!.forEach((proc) => {
                                 weakSuccGen.getSuccessors(proc.id).transitionsForAction(new CCS.Action("tau", false)).forEach((transition) => {
@@ -361,146 +361,44 @@ module WeakSpectroscopy {
                                 if (!destPos) { throw new Error("Position does not exist despite check"); }
                                 this.addMove(new Move(pos, destPos, [0,0,0,0,0,0,0,0]))
                             }
-                        }
 
-                        // finishing
-                        if (pos.qSet!.length === 0){
-                            let newPos: Position = new Position(pos.p, true, false, false, false, []);
-                            // check if newPos was already discovered to avoid duplicates
-                            if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
-                                this.addPosition(newPos);
-                                this.addMove(new Move(pos, newPos, [0,0,0,0,0,0,0,0]));
-                                todo.push(newPos);
-                            }
-                            else {
-                                let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
-                                if (!destPos) { throw new Error("Position does not exist despite check"); }
-                                this.addMove(new Move(pos, destPos, [0,0,0,0,0,0,0,0]));
-                            }
-                        } else {
-                            // early conjunction
-                            let newPos: Position = new Position(pos.p, true, false, false, false, pos.qSet!);
-                            // check if newPos was already discovered to avoid duplicates
-                            if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
-                                this.addPosition(newPos);
-                                this.addMove(new Move(pos, newPos, [0,0,0,0,-1,0,0,0]));
-                                todo.push(newPos);
-                            }
-                            else {
-                                let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
-                                if (!destPos) { throw new Error("Position does not exist despite check"); }
-                                this.addMove(new Move(pos, destPos, [0,0,0,0,-1,0,0,0]));
-                            }
-                        }
-
-                        // procrastination
-                        let pTransitions: CCS.TransitionSet = strongSuccGen.getSuccessors(pos.p.id);
-                        pTransitions.transitionsForAction(new CCS.Action("tau", false)).forEach((transition) => {
-                            if (transition.targetProcess.id === pos.p.id) { return; }
-                            let newPos: Position = new Position(transition.targetProcess, false, true, false, false, pos.qSet!);
-                            // check if newPos was already discovered to avoid duplicates
-                            if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
-                                this.addPosition(newPos);
-                                this.addMove(new Move(pos, newPos, [0,0,0,0,0,0,0,0]));
-                                todo.push(newPos);
-                            }
-                            else {
-                                let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
-                                if (!destPos) { throw new Error("Position does not exist despite check"); }
-                                this.addMove(new Move(pos, destPos, [0,0,0,0,0,0,0,0]));
-                            }
-                        })
-
-                        // observation
-                        let qTransitions: CCS.TransitionSet[] = [];
-                        let qPrimes = {};
-                        pos.qSet!.forEach((q) => {
-                            qTransitions.push(strongSuccGen.getSuccessors(q.id));
-                        })
-
-                        pTransitions.forEach((pTransition) => {
-                            let actionName: string = pTransition.action.getLabel();
-                            if (actionName === "tau") { return; }
-                            if (!qPrimes[actionName]){
-                                let qPrimesForAction: CCS.Process[] = []
-                                qTransitions.forEach((qTrans) => {
-                                    qTrans.transitionsForAction(pTransition.action).forEach((qTransition) => {
-                                        qPrimesForAction.push(qTransition.targetProcess)
-                                    })
-                                })
-                                qPrimes[actionName] = qPrimesForAction;
-                            }
-                            let newPos: Position = new Position(pTransition.targetProcess, false, false, false, false, qPrimes[actionName]);
-                            // check if newPos was already discovered to avoid duplicates
-                            if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
-                                this.addPosition(newPos);
-                                this.addMove(new Move(pos, newPos, [-1,0,0,0,0,0,0,0], actionName));
-                                todo.push(newPos);
-                            }
-                            else {
-                                // omit redundant loops
-                                if (!newPos.isEqualTo(pos)){
+                            // finishing
+                            if (pos.qSet!.length === 0){
+                                let newPos: Position = new Position(pos.p, true, false, false, false, []);
+                                // check if newPos was already discovered to avoid duplicates
+                                if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
+                                    this.addPosition(newPos);
+                                    this.addMove(new Move(pos, newPos, [0,0,0,0,0,0,0,0]));
+                                    todo.push(newPos);
+                                }
+                                else {
                                     let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
                                     if (!destPos) { throw new Error("Position does not exist despite check"); }
-                                    this.addMove(new Move(pos, destPos, [-1,0,0,0,0,0,0,0], actionName))
+                                    this.addMove(new Move(pos, destPos, [0,0,0,0,0,0,0,0]));
                                 }
-                            }
-                        })
-                        
-                        // late instable conjunction
-                        let newPos: Position = new Position(pos.p, true, false, false, false, pos.qSet!);
-                            // check if newPos was already discovered to avoid duplicates
-                            if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
-                                this.addPosition(newPos);
-                                this.addMove(new Move(pos, newPos, [0,0,0,0,0,0,0,0]));
-                                todo.push(newPos);
-                            }
-                            else {
-                                let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
-                                if (!destPos) { throw new Error("Position does not exist despite check"); }
-                                this.addMove(new Move(pos, destPos, [0,0,0,0,0,0,0,0]));
-                            }
-                        
-                        // late stable conjunction
-                        if (strongSuccGen.getSuccessors(pos.p.id).transitionsForAction(new CCS.Action("tau", false)).length === 0){
-                            let qSetPrime: CCS.Process[] = [];
-                            pos.qSet!.forEach((proc) => {
-                                if (strongSuccGen.getSuccessors(proc.id).transitionsForAction(new CCS.Action("tau", false)).length === 0) { qSetPrime.push(proc); }
-                            })
-                            let newPos: Position = new Position(pos.p, true, false, true, false, qSetPrime);
-                            // check if newPos was already discovered to avoid duplicates
-                            if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
-                                this.addPosition(newPos);
-                                this.addMove(new Move(pos, newPos, [0,0,0,0,0,0,0,0]));
-                                todo.push(newPos);
-                            }
-                            else {
-                                let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
-                                if (!destPos) { throw new Error("Position does not exist despite check"); }
-                                this.addMove(new Move(pos, destPos, [0,0,0,0,0,0,0,0]));
+                            } else {
+                                // early conjunction
+                                let newPos: Position = new Position(pos.p, true, false, false, false, pos.qSet!);
+                                // check if newPos was already discovered to avoid duplicates
+                                if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
+                                    this.addPosition(newPos);
+                                    this.addMove(new Move(pos, newPos, [0,0,0,0,-1,0,0,0]));
+                                    todo.push(newPos);
+                                }
+                                else {
+                                    let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
+                                    if (!destPos) { throw new Error("Position does not exist despite check"); }
+                                    this.addMove(new Move(pos, destPos, [0,0,0,0,-1,0,0,0]));
+                                }
                             }
                         }
 
-                        // branching conjunctions
-                        let partitionsForAlpha = {};
-                        pTransitions.forEach((transition) => {
-                            // the attacker always wants to have all q \in Q in Q_alpha that don't have any strong outgoing alpha-transitions
-                            if (!partitionsForAlpha[transition.action.getLabel()]){
-                                partitionsForAlpha[transition.action.getLabel()] = [];
-                                let qSetAlphaBase: CCS.Process[] = []
-                                pos.qSet!.forEach((proc) => {
-                                    if (strongSuccGen.getSuccessors(proc.id).transitionsForAction(transition.action).length === 0){qSetAlphaBase.push(proc);}
-                                })
-                                let partitions: CCS.Process[][] =  findTwoPartitions(getSetDifference(pos.qSet!, qSetAlphaBase));
-                                partitions.forEach((partition) => {
-                                    let qSetAlpha: CCS.Process[] = [...qSetAlphaBase, ...partition];
-                                    if (qSetAlpha.length > 0){
-                                        partitionsForAlpha[transition.action.getLabel()].push([getSetDifference(pos.qSet!, qSetAlpha), qSetAlpha]);
-                                    }
-                                })
-                            }
-                            partitionsForAlpha[transition.action.getLabel()].forEach((partition) => {
-                                let newPos: Position = new Position(pos.p, true, false, false, true, partition[0], undefined, transition.action, transition.targetProcess, partition[1]);
+                        if (pos.isDelayedPosition){
+                            // procrastination
+                            let pTransitions: CCS.TransitionSet = strongSuccGen.getSuccessors(pos.p.id);
+                            pTransitions.transitionsForAction(new CCS.Action("tau", false)).forEach((transition) => {
+                                if (transition.targetProcess.id === pos.p.id) { return; }
+                                let newPos: Position = new Position(transition.targetProcess, false, true, false, false, pos.qSet!);
                                 // check if newPos was already discovered to avoid duplicates
                                 if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
                                     this.addPosition(newPos);
@@ -513,7 +411,111 @@ module WeakSpectroscopy {
                                     this.addMove(new Move(pos, destPos, [0,0,0,0,0,0,0,0]));
                                 }
                             })
-                        })
+
+                            // observation
+                            let qTransitions: CCS.TransitionSet[] = [];
+                            let qPrimes = {};
+                            pos.qSet!.forEach((q) => {
+                                qTransitions.push(strongSuccGen.getSuccessors(q.id));
+                            })
+
+                            pTransitions.forEach((pTransition) => {
+                                let actionName: string = pTransition.action.getLabel();
+                                if (actionName === "tau") { return; }
+                                if (!qPrimes[actionName]){
+                                    let qPrimesForAction: CCS.Process[] = []
+                                    qTransitions.forEach((qTrans) => {
+                                        qTrans.transitionsForAction(pTransition.action).forEach((qTransition) => {
+                                            qPrimesForAction.push(qTransition.targetProcess)
+                                        })
+                                    })
+                                    qPrimes[actionName] = qPrimesForAction;
+                                }
+                                let newPos: Position = new Position(pTransition.targetProcess, false, false, false, false, qPrimes[actionName]);
+                                // check if newPos was already discovered to avoid duplicates
+                                if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
+                                    this.addPosition(newPos);
+                                    this.addMove(new Move(pos, newPos, [-1,0,0,0,0,0,0,0], actionName));
+                                    todo.push(newPos);
+                                }
+                                else {
+                                    // omit redundant loops
+                                    if (!newPos.isEqualTo(pos)){
+                                        let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
+                                        if (!destPos) { throw new Error("Position does not exist despite check"); }
+                                        this.addMove(new Move(pos, destPos, [-1,0,0,0,0,0,0,0], actionName))
+                                    }
+                                }
+                            })
+                            
+                            // late instable conjunction
+                            let newPos: Position = new Position(pos.p, true, false, false, false, pos.qSet!);
+                                // check if newPos was already discovered to avoid duplicates
+                                if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
+                                    this.addPosition(newPos);
+                                    this.addMove(new Move(pos, newPos, [0,0,0,0,0,0,0,0]));
+                                    todo.push(newPos);
+                                }
+                                else {
+                                    let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
+                                    if (!destPos) { throw new Error("Position does not exist despite check"); }
+                                    this.addMove(new Move(pos, destPos, [0,0,0,0,0,0,0,0]));
+                                }
+                            
+                            // late stable conjunction
+                            if (strongSuccGen.getSuccessors(pos.p.id).transitionsForAction(new CCS.Action("tau", false)).length === 0){
+                                let qSetPrime: CCS.Process[] = [];
+                                pos.qSet!.forEach((proc) => {
+                                    if (strongSuccGen.getSuccessors(proc.id).transitionsForAction(new CCS.Action("tau", false)).length === 0) { qSetPrime.push(proc); }
+                                })
+                                let newPos: Position = new Position(pos.p, true, false, true, false, qSetPrime);
+                                // check if newPos was already discovered to avoid duplicates
+                                if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
+                                    this.addPosition(newPos);
+                                    this.addMove(new Move(pos, newPos, [0,0,0,0,0,0,0,0]));
+                                    todo.push(newPos);
+                                }
+                                else {
+                                    let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
+                                    if (!destPos) { throw new Error("Position does not exist despite check"); }
+                                    this.addMove(new Move(pos, destPos, [0,0,0,0,0,0,0,0]));
+                                }
+                            }
+
+                            // branching conjunctions
+                            let partitionsForAlpha = {};
+                            pTransitions.forEach((transition) => {
+                                // the attacker always wants to have all q \in Q in Q_alpha that don't have any strong outgoing alpha-transitions
+                                if (!partitionsForAlpha[transition.action.getLabel()]){
+                                    partitionsForAlpha[transition.action.getLabel()] = [];
+                                    let qSetAlphaBase: CCS.Process[] = []
+                                    pos.qSet!.forEach((proc) => {
+                                        if (strongSuccGen.getSuccessors(proc.id).transitionsForAction(transition.action).length === 0){qSetAlphaBase.push(proc);}
+                                    })
+                                    let partitions: CCS.Process[][] =  findTwoPartitions(getSetDifference(pos.qSet!, qSetAlphaBase));
+                                    partitions.forEach((partition) => {
+                                        let qSetAlpha: CCS.Process[] = [...qSetAlphaBase, ...partition];
+                                        if (qSetAlpha.length > 0){
+                                            partitionsForAlpha[transition.action.getLabel()].push([getSetDifference(pos.qSet!, qSetAlpha), qSetAlpha]);
+                                        }
+                                    })
+                                }
+                                partitionsForAlpha[transition.action.getLabel()].forEach((partition) => {
+                                    let newPos: Position = new Position(pos.p, true, false, false, true, partition[0], undefined, transition.action, transition.targetProcess, partition[1]);
+                                    // check if newPos was already discovered to avoid duplicates
+                                    if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
+                                        this.addPosition(newPos);
+                                        this.addMove(new Move(pos, newPos, [0,0,0,0,0,0,0,0]));
+                                        todo.push(newPos);
+                                    }
+                                    else {
+                                        let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
+                                        if (!destPos) { throw new Error("Position does not exist despite check"); }
+                                        this.addMove(new Move(pos, destPos, [0,0,0,0,0,0,0,0]));
+                                    }
+                                })
+                            })
+                        }
                     }
                 }
             }
