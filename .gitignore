@@ -24,6 +24,7 @@ lib/workers
 lib/data.d.ts
 lib/data.js
 lib/strong-spectroscopy.js
+lib/weak-spectroscopy.js
 *.js.map
 release.tar.gz
 mailconfig.php

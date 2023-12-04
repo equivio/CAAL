@@ -43,6 +43,8 @@ createTscFileTask(ccsTargetFile, ccsSourceFiles, {definitionFile: true}, 'Compil
 // spectroscopy
 var strongSpectroscopy = _P('lib/strong-spectroscopy.js')
 createTscFileTask(strongSpectroscopy, [_P("src/spectroscopy/strong-spectroscopy.ts")]);
+var weakSpectroscopy = _P('lib/weak-spectroscopy.js')
+createTscFileTask(weakSpectroscopy, [_P("src/spectroscopy/weak-spectroscopy.ts")]);
 
 // verifier worker
 var workerVerifier = _P('lib/workers/verifier.js');
@@ -79,7 +81,7 @@ createTscFileTask(mainTargetFile, mainSourceFiles, {definitionFile: true, source
 
 task('grammars', [ccsGrammar, tccsGrammar, hmlGrammar, thmlGrammar]);
 
-task('all', [dataTargetFile, utilTargetFile, 'grammars', ccsTargetFile, 'ace', strongSpectroscopy, workerVerifier, mainTargetFile], function() {
+task('all', [dataTargetFile, utilTargetFile, 'grammars', ccsTargetFile, 'ace', strongSpectroscopy, weakSpectroscopy, workerVerifier, mainTargetFile], function() {
     console.log('Done Building');
 });
 

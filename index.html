@@ -307,7 +307,7 @@
                         <button id="verify-all" type="button" class="btn btn-default">Verify All</button>
                     </div>
                     <div class="btn-group pull-right">
-                        <button id="verify-strong-spectroscopy" type="button" class="btn btn-default" disabled style="margin-right: 25px;">Verify with strong spectroscopy</button>
+                        <button id="verify-spectroscopy" type="button" class="btn btn-default" disabled style="margin-right: 25px;">Verify with spectroscopy</button>
                     </div>
                     <div class="btn-group pull-right">
                         <button id="delete-all" type="button" class="btn btn-default" style="margin-right: 25px;">Delete all</button>
@@ -395,6 +395,19 @@
                                                 <option value="ImpossibleFutures">Impossible Futures</option>
                                                 <option value="Failures">Failures</option>
                                                 <option value="Enabledness">Enabledness</option>
+                                                <option value="Srbbisim">Stability-Respecting Branching Bisimulation</option>
+                                                <option value="Bbisim">Branching Bisimulation</option>
+                                                <option value="Etabisim">η-Bisimulation</option>
+                                                <option value="Etasim">η-Simulation</option>
+                                                <option value="Dbisim">Delay Bisimulation</option>
+                                                <option value="Csim">Contrasim</option>
+                                                <option value="Srdbisim">Stability-Respecting Delay Bisimulation</option>
+                                                <option value="Sbisim">Stable Bisimulation</option>
+                                                <option value="Srsim">Stable Ready Simulation</option>
+                                                <option value="Scsim">Stable Contrasimulation</option>
+                                                <option value="Sreadiness">Stable Readiness</option>
+                                                <option value="Sifutures">Stable Impossible Futures</option>
+                                                <option value="Sfailures">Stable Failures</option>
                                                 <option value="Spectroscopy">Spectroscopy</option>
                                             </select>
                                         </div>
@@ -719,6 +732,7 @@
         <script src="lib/util.js"></script>
         <script src="lib/ccs.js"></script>
         <script src="lib/strong-spectroscopy.js"></script>
+        <script src="lib/weak-spectroscopy.js"></script>
         <script src="lib/blob-stream.js"></script>
         <script src="lib/pdfkit.js"></script>
         <script src="lib/main.js"></script>

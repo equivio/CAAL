@@ -332,7 +332,7 @@ module Property {
         protected secondProcess : string;
         protected type : string;
         protected time : string;
-        protected forStrongSpectroscopy : boolean = false;
+        protected forSpectroscopy : boolean = false;
 
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(status);
@@ -342,7 +342,7 @@ module Property {
             this.time = options.time;
             this.comment = options.comment;
             // flag to distinguish between independent eqs and those that are part of the multiple at once strong-spectroscopy-verififcation
-            this.forStrongSpectroscopy = options.forStrongSpectroscopy;
+            this.forSpectroscopy = options.forSpectroscopy;
         }
 
         public getFirstProcess() : string {
@@ -380,12 +380,12 @@ module Property {
             };
         }
 
-        public getForStrongSpectroscopy(){
-            return this.forStrongSpectroscopy;
+        public getforSpectroscopy(){
+            return this.forSpectroscopy;
         }
 
-        public setForStrongSpectroscopy(value : boolean){
-            this.forStrongSpectroscopy = value;
+        public setforSpectroscopy(value : boolean){
+            this.forSpectroscopy = value;
         }
 
         public toJSON() : any {
@@ -555,7 +555,7 @@ module Property {
 
         public getDescription() : string {
             var symbol = super.getType() === "strong" ? "&#8594;" : "&#8658;";
-            return this.firstProcess + " sim<sub>" + symbol + super.getTimeSubscript() +"</sub> " + this.secondProcess;
+            return this.firstProcess + " sim<sub>" + symbol + super.getTimeSubscript() + "</sub> " + this.secondProcess;
         }
         
         public getClassName() : string {
@@ -650,7 +650,123 @@ module Property {
         }
     }
 
-    export class StrongSpectroscopyEquivalence extends DistinguishingFormula{
+    export class TwoNestedSimulation extends DistinguishingFormula {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        // TODO: distinguish between weak and strong
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>2n</sub>" + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "TwoNestedSimulation";
+        }
+
+        protected getWorkerHandler() : string {
+            return super.getType() === "strong" ? "isStronglyTwoNestedSimulation" : "isWeaklyTwoNestedSimulation";
+        }
+    }
+
+    export class ReadySimulation extends DistinguishingFormula {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>RS</sub>" + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "ReadySimulation";
+        }
+
+        protected getWorkerHandler() : string {
+            return super.getType() === "strong" ? "isStronglyReadySimulation" : "isWeaklyReadySimulation";
+        }
+    }
+
+    export class PossibleFutures extends DistinguishingFormula {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>PF</sub>" + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "PossibleFutures";
+        }
+
+        protected getWorkerHandler() : string {
+            return super.getType() === "strong" ? "isStronglyPossibleFutures" : "isWeaklyPossibleFutures";
+        }
+    }
+
+    export class Readiness extends DistinguishingFormula {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>R</sub>" + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Readiness";
+        }
+
+        protected getWorkerHandler() : string {
+            return super.getType() === "strong" ? "isStronglyReadiness" : "isWeaklyReadiness";
+        }
+    }
+
+    export class ImpossibleFutures extends DistinguishingFormula {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>IF</sub>" + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "ImpossibleFutures";
+        }
+
+        protected getWorkerHandler() : string {
+            return super.getType() === "strong" ? "isStronglyImpossibleFutures" : "isWeaklyImpossibleFutures";
+        }
+    }
+
+    export class Failures extends DistinguishingFormula {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>F</sub>" + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Failures";
+        }
+
+        protected getWorkerHandler() : string {
+            return super.getType() === "strong" ? "isStronglyFailure" : "isWeaklyFailure";
+        }
+    }
+
+    // parent class for all relations only supported by strong spectroscopy
+    export class StrongSpectroscopyRelation extends DistinguishingFormula{
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
@@ -689,52 +805,14 @@ module Property {
         }
     }
 
-    export class TwoNestedSimulation extends StrongSpectroscopyEquivalence {
+    export class ReadinessTraces extends StrongSpectroscopyRelation {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
 
         public getDescription() : string {
             var symbol = "⪯"
-            return this.firstProcess + " " + symbol + "<sub>2n</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
-        }
-        
-        public getClassName() : string {
-            return "TwoNestedSimulation";
-        }
-
-        protected getWorkerHandler() : string {
-            return super.getType() === "strong" ? "isStronglyTwoNestedSimulationEquivalent" : "isWeaklyTwoNestedSimulationEquivalent";
-        }
-    }
-
-    export class ReadySimulation extends StrongSpectroscopyEquivalence {
-        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
-            super(options, status);
-        }
-
-        public getDescription() : string {
-            var symbol = "⪯"
-            return this.firstProcess + " " + symbol + "<sub>RS</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
-        }
-        
-        public getClassName() : string {
-            return "ReadySimulation";
-        }
-
-        protected getWorkerHandler() : string {
-            return super.getType() === "strong" ? "isStronglyReadySimulationEquivalent" : "isWeaklyReadySimulationEquivalent";
-        }
-    }
-
-    export class ReadinessTraces extends StrongSpectroscopyEquivalence {
-        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
-            super(options, status);
-        }
-
-        public getDescription() : string {
-            var symbol = "⪯"
-            return this.firstProcess + " " + symbol + "<sub>RT</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+            return this.firstProcess + " " + symbol + "<sub>RT</sub>" + " " + this.secondProcess;
         }
 
         public getClassName() : string {
@@ -742,37 +820,18 @@ module Property {
         }
 
         protected getWorkerHandler() : string {
-            return super.getType() === "strong" ? "isStronglyReadinessTracesEquivalent" : "isWeaklyReadinessTracesEquivalent";
+            return super.getType() === "strong" ? "isStronglyReadinessTraces" : "isWeaklyReadinessTraces";
         }
     }
 
-    export class PossibleFutures extends StrongSpectroscopyEquivalence {
+    export class FailureTraces extends StrongSpectroscopyRelation {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
 
         public getDescription() : string {
             var symbol = "⪯"
-            return this.firstProcess + " " + symbol + "<sub>PF</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
-        }
-
-        public getClassName() : string {
-            return "PossibleFutures";
-        }
-
-        protected getWorkerHandler() : string {
-            return super.getType() === "strong" ? "isStronglyPossibleFuturesEquivalent" : "isWeaklyPossibleFuturesEquivalent";
-        }
-    }
-
-    export class FailureTraces extends StrongSpectroscopyEquivalence {
-        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
-            super(options, status);
-        }
-
-        public getDescription() : string {
-            var symbol = "⪯"
-            return this.firstProcess + " " + symbol + "<sub>FT</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+            return this.firstProcess + " " + symbol + "<sub>FT</sub>" + " " + this.secondProcess;
         }
 
         public getClassName() : string {
@@ -780,37 +839,18 @@ module Property {
         }
 
         protected getWorkerHandler() : string {
-            return super.getType() === "strong" ? "isStronglyFailureTracesEquivalent" : "isWeaklyFailureTracesEquivalent";
+            return super.getType() === "strong" ? "isStronglyFailureTraces" : "isWeaklyFailureTraces";
         }
     }
 
-    export class Readiness extends StrongSpectroscopyEquivalence {
+    export class Revivals extends StrongSpectroscopyRelation {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
 
         public getDescription() : string {
             var symbol = "⪯"
-            return this.firstProcess + " " + symbol + "<sub>R</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
-        }
-
-        public getClassName() : string {
-            return "Readiness";
-        }
-
-        protected getWorkerHandler() : string {
-            return super.getType() === "strong" ? "isStronglyReadinessEquivalent" : "isWeaklyReadinessEquivalent";
-        }
-    }
-
-    export class Revivals extends StrongSpectroscopyEquivalence {
-        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
-            super(options, status);
-        }
-
-        public getDescription() : string {
-            var symbol = "⪯"
-            return this.firstProcess + " " + symbol + "<sub>RV</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+            return this.firstProcess + " " + symbol + "<sub>RV</sub>" + " " + this.secondProcess;
         }
 
         public getClassName() : string {
@@ -818,56 +858,18 @@ module Property {
         }
 
         protected getWorkerHandler() : string {
-            return super.getType() === "strong" ? "isStronglyRevivalEquivalent" : "isWeaklyRevivalEquivalent";
+            return super.getType() === "strong" ? "isStronglyRevival" : "isWeaklyRevival";
         }
     }
 
-    export class ImpossibleFutures extends StrongSpectroscopyEquivalence {
+    export class Enabledness extends StrongSpectroscopyRelation {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);
         }
 
         public getDescription() : string {
             var symbol = "⪯"
-            return this.firstProcess + " " + symbol + "<sub>IF</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
-        }
-
-        public getClassName() : string {
-            return "ImpossibleFutures";
-        }
-
-        protected getWorkerHandler() : string {
-            return super.getType() === "strong" ? "isStronglyImpossibleFuturesEquivalent" : "isWeaklyImpossibleFuturesEquivalent";
-        }
-    }
-
-    export class Failures extends StrongSpectroscopyEquivalence {
-        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
-            super(options, status);
-        }
-
-        public getDescription() : string {
-            var symbol = "⪯"
-            return this.firstProcess + " " + symbol + "<sub>F</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
-        }
-
-        public getClassName() : string {
-            return "Failures";
-        }
-
-        protected getWorkerHandler() : string {
-            return super.getType() === "strong" ? "isStronglyFailureEquivalent" : "isWeaklyFailureEquivalent";
-        }
-    }
-
-    export class Enabledness extends StrongSpectroscopyEquivalence {
-        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
-            super(options, status);
-        }
-
-        public getDescription() : string {
-            var symbol = "⪯"
-            return this.firstProcess + " " + symbol + "<sub>E</sub>" + super.getTimeSubscript() + " " + this.secondProcess;
+            return this.firstProcess + " " + symbol + "<sub>E</sub>" + " " + this.secondProcess;
         }
 
         public getClassName() : string {
@@ -875,7 +877,294 @@ module Property {
         }
 
         protected getWorkerHandler() : string {
-            return super.getType() === "strong" ? "isStronglyEnablednessEquivalent" : "isWeaklyEnablednessEquivalent";
+            return super.getType() === "strong" ? "isStronglyEnabledness" : "isWeaklyEnabledness";
+        }
+    }
+
+    // parent class for all relations only supported by weak spectroscopy
+    export class WeakSpectroscopyRelation extends DistinguishingFormula{
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+        /**
+         * Check whether both process(first and second) is defined, and it exists in the CCS program.
+         * Property status must not be invalid.
+         * Property type must be weak.
+         * @return {boolean} if true, everything is defined.
+         */
+        public isReadyForVerification() : boolean {
+            var isReady = true;
+            var error = "";
+
+            if(!this.getFirstProcess() && !this.getSecondProcess()) {
+                isReady = false;
+                error = "Two processes must be selected"
+            } else {
+                // if they are defined check whether they are defined in the CCS-program
+                var processList = this.project.getGraph().getNamedProcesses()
+                if (processList.indexOf(this.getFirstProcess()) === -1 || processList.indexOf(this.getSecondProcess()) === -1) {
+                    isReady = false;
+                    error = "One of the processes is not defined in the CCS program."
+                } else{
+                    if (this.type === "strong"){
+                        isReady = false;
+                        error = "only weak equivalences are supported."
+                    }
+                }
+            }
+
+            if(!isReady) { 
+                this.setInvalidateStatus(error);
+            }
+
+            return isReady
+        }
+    }
+
+    export class Srbbisim extends WeakSpectroscopyRelation {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>srbbisim</sub>" + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Srbbisim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklySrbbisim";
+        }
+    }
+
+    export class Bbisim extends WeakSpectroscopyRelation {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>bbsim</sub>" + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Bbisim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyBbisim";
+        }
+    }
+
+    export class Srdbisim extends WeakSpectroscopyRelation {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>srdbisim</sub>" + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Srdbisim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklySrdbisim";
+        }
+    }
+
+    export class Dbisim extends WeakSpectroscopyRelation {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>dbisim</sub>" + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Dbisim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyDbisim";
+        }
+    }
+
+    export class Etabisim extends WeakSpectroscopyRelation {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>etabisim</sub>" + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Etabisim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyEtabisim";
+        }
+    }
+
+    export class Sbisim extends WeakSpectroscopyRelation {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>sbisim</sub>" + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Sbisim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklySbisim";
+        }
+    }
+
+    export class Etasim extends WeakSpectroscopyRelation {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>etasim</sub>" + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Etasim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyEtasim";
+        }
+    }
+
+    export class Csim extends WeakSpectroscopyRelation {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>Csim</sub>" + " " + this.secondProcess;
+        }
+        
+        public getClassName() : string {
+            return "Csim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyCsim";
+        }
+    }
+
+    export class Sfailures extends WeakSpectroscopyRelation {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>sfailures</sub>" + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Sfailures";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklySfailures"
+        }
+    }
+
+    export class Sifutures extends WeakSpectroscopyRelation {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>sifutures</sub>" + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Sifutures";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklySifutures"
+        }
+    }
+
+    export class Sreadiness extends WeakSpectroscopyRelation {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>sreadiness</sub>" + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Sreadiness";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklySreadiness"
+        }
+    }
+
+    export class Scsim extends WeakSpectroscopyRelation {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>scsim</sub>" + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Scsim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklyScsim"
+        }
+    }
+
+    export class Srsim extends WeakSpectroscopyRelation {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getDescription() : string {
+            var symbol = "⪯"
+            return this.firstProcess + " " + symbol + "<sub>srsim</sub>" + " " + this.secondProcess;
+        }
+
+        public getClassName() : string {
+            return "Srsim";
+        }
+
+        protected getWorkerHandler() : string {
+            return "isWeaklySrsim"
         }
     }
 }

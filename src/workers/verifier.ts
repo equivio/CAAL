@@ -6,8 +6,9 @@ declare var TCCSParser;
 declare var HMLParser;
 declare var THMLParser;
 declare var StrongSpectroscopy;
+declare var WeakSpectroscopy;
 
-importScripts("../ccs_grammar.js", "../tccs_grammar.js", "../hml_grammar.js", "../thml_grammar.js", "../data.js", "../util.js", "../ccs.js", "../strong-spectroscopy.js");
+importScripts("../ccs_grammar.js", "../tccs_grammar.js", "../hml_grammar.js", "../thml_grammar.js", "../data.js", "../util.js", "../ccs.js", "../strong-spectroscopy.js", "../weak-spectroscopy.js");
 
 var messageHandlers : any = {};
 var graph;
@@ -53,12 +54,20 @@ messageHandlers.isStronglyBisimilar = data => {
 };
 
 messageHandlers.isWeaklyBisimilar = data => {
-    var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true}),
-        defendSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true}),
-        leftProcess = attackSuccGen.getProcessByName(data.leftProcess),
-        rightProcess = defendSuccGen.getProcessByName(data.rightProcess),
-        isBisimilar = Equivalence.isBisimilar(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id, graph);
-    data.result = isBisimilar;
+    var strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true}),
+        weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true}),
+        leftProcess = strongSuccGen.getProcessByName(data.leftProcess),
+        rightProcess = weakSuccGen.getProcessByName(data.rightProcess);
+    if (inputMode === "TCCS"){
+        let isBisimilar = Equivalence.isBisimilar(strongSuccGen, weakSuccGen, leftProcess.id, rightProcess.id, graph);
+        data.result = isBisimilar;
+    }
+    else{
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, leftProcess, rightProcess)
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0; });
+        data.result = {isSatisfied: satisfied, formula: winningBudgets.length !== 0 ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
+    }
     self.postMessage(data);
 };
 
@@ -82,12 +91,20 @@ messageHandlers.isStronglySimilar = data => {
 };
 
 messageHandlers.isWeaklySimilar = data => {
-    var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true}),
-        defendSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true}),
-        leftProcess = attackSuccGen.getProcessByName(data.leftProcess),
-        rightProcess = defendSuccGen.getProcessByName(data.rightProcess),
-        isSimilar = Equivalence.isSimilar(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id);
-    data.result = isSimilar
+    var strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true}),
+        weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true}),
+        leftProcess = strongSuccGen.getProcessByName(data.leftProcess),
+        rightProcess = weakSuccGen.getProcessByName(data.rightProcess);
+    if (inputMode === "TCCS"){
+        let isSimilar = Equivalence.isSimilar(strongSuccGen, weakSuccGen, leftProcess.id, rightProcess.id);
+        data.result = isSimilar;
+    }
+    else{
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, leftProcess, rightProcess)
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[6] > 0 || energyLevel.budget[7] > 0; });
+        data.result = {isSatisfied: satisfied, formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
+    }
     self.postMessage(data);
 };
 
@@ -152,12 +169,20 @@ messageHandlers.isStronglyTraceIncluded = data => {
 };
 
 messageHandlers.isWeaklyTraceIncluded = data => {
-    var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
-    var defendSuccGen = attackSuccGen;
-    var leftProcess = graph.processByName(data.leftProcess);
-    var rightProcess = graph.processByName(data.rightProcess);
-    
-    data.result = Equivalence.isTraceIncluded(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id, graph);
+    var strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true}),
+        weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true}),
+        leftProcess = strongSuccGen.getProcessByName(data.leftProcess),
+        rightProcess = weakSuccGen.getProcessByName(data.rightProcess);
+    if (inputMode === "TCCS"){
+        let isTraceIncluded = Equivalence.isTraceIncluded(strongSuccGen, weakSuccGen, leftProcess.id, rightProcess.id, graph);
+        data.result = isTraceIncluded;
+    }
+    else{
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, leftProcess, rightProcess)
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget.slice(1).some((dim) => { return dim > 0; }) ; });
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
+    }
     self.postMessage(data);
 };
 
@@ -221,7 +246,7 @@ messageHandlers.isWeaklyTraceEq = data => {
     self.postMessage(data);
 };
 
-messageHandlers.isStronglyTwoNestedSimulationEquivalent = data => {
+messageHandlers.isStronglyTwoNestedSimulation = data => {
     if(inputMode === "TCCS"){
         throw new Error("TCCS is not supported for this equivalence");
     }
@@ -235,7 +260,22 @@ messageHandlers.isStronglyTwoNestedSimulationEquivalent = data => {
     self.postMessage(data);
 };
 
-messageHandlers.isStronglyReadinessTracesEquivalent = data => {
+messageHandlers.isWeaklyTwoNestedSimulation = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[7] > 1; });
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isStronglyReadinessTraces = data => {
     if(inputMode === "TCCS"){
         throw new Error("TCCS is not supported for this equivalence");
     }
@@ -249,7 +289,7 @@ messageHandlers.isStronglyReadinessTracesEquivalent = data => {
     self.postMessage(data);
 };
 
-messageHandlers.isStronglyPossibleFuturesEquivalent = data => {
+messageHandlers.isStronglyPossibleFutures = data => {
     if(inputMode === "TCCS"){
         throw new Error("TCCS is not supported for this equivalence");
     }
@@ -263,7 +303,22 @@ messageHandlers.isStronglyPossibleFuturesEquivalent = data => {
     self.postMessage(data);
 };
 
-messageHandlers.isStronglyReadinessEquivalent = data => {
+messageHandlers.isWeaklyPossibleFutures = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 0 || energyLevel.budget[2] > 1 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[7] > 1; });
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isStronglyReadiness = data => {
     if(inputMode === "TCCS"){
         throw new Error("TCCS is not supported for this equivalence");
     }
@@ -277,7 +332,22 @@ messageHandlers.isStronglyReadinessEquivalent = data => {
     self.postMessage(data);
 };
 
-messageHandlers.isStronglyFailureTracesEquivalent = data => {
+messageHandlers.isWeaklyReadiness = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 0 || energyLevel.budget[2] > 1 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 1 || energyLevel.budget[6] > 1 || energyLevel.budget[7] > 1; });
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isStronglyFailureTraces = data => {
     if(inputMode === "TCCS"){
         throw new Error("TCCS is not supported for this equivalence");
     }
@@ -291,7 +361,7 @@ messageHandlers.isStronglyFailureTracesEquivalent = data => {
     self.postMessage(data);
 };
 
-messageHandlers.isStronglyRevivalEquivalent = data => {
+messageHandlers.isStronglyRevival = data => {
     if(inputMode === "TCCS"){
         throw new Error("TCCS is not supported for this equivalence");
     }
@@ -305,7 +375,7 @@ messageHandlers.isStronglyRevivalEquivalent = data => {
     self.postMessage(data);
 };
 
-messageHandlers.isStronglyReadySimulationEquivalent = data => {
+messageHandlers.isStronglyReadySimulation = data => {
     if(inputMode === "TCCS"){
         throw new Error("TCCS is not supported for this equivalence");
     }
@@ -319,7 +389,22 @@ messageHandlers.isStronglyReadySimulationEquivalent = data => {
     self.postMessage(data);
 };
 
-messageHandlers.isStronglyImpossibleFuturesEquivalent = data => {
+messageHandlers.isWeaklyReadySimulation = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[6] > 1 || energyLevel.budget[7] > 1; });
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isStronglyImpossibleFutures = data => {
     if(inputMode === "TCCS"){
         throw new Error("TCCS is not supported for this equivalence");
     }
@@ -333,7 +418,22 @@ messageHandlers.isStronglyImpossibleFuturesEquivalent = data => {
     self.postMessage(data);
 };
 
-messageHandlers.isStronglyFailureEquivalent = data => {
+messageHandlers.isWeaklyImpossibleFutures = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 0 || energyLevel.budget[2] > 1 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0 || energyLevel.budget[7] > 1; });
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isStronglyFailure = data => {
     if(inputMode === "TCCS"){
         throw new Error("TCCS is not supported for this equivalence");
     }
@@ -347,7 +447,22 @@ messageHandlers.isStronglyFailureEquivalent = data => {
     self.postMessage(data);
 };
 
-messageHandlers.isStronglyEnablednessEquivalent = data => {
+messageHandlers.isWeaklyFailure = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 0 || energyLevel.budget[2] > 1 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0 || energyLevel.budget[6] > 1 || energyLevel.budget[7] > 1; });
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isStronglyEnabledness = data => {
     if(inputMode === "TCCS"){
         throw new Error("TCCS is not supported for this equivalence");
     }
@@ -367,11 +482,221 @@ messageHandlers.runStrongSpectroscopy = data => {
     }
     else{
         let attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
-        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let game = new StrongSpectroscopy.Game(attackSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess));
         let winningBudgets = StrongSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
         let energies = winningBudgets.map((budget) => { return budget.budget; });
-        let equalities = StrongSpectroscopy.getEqualitiesFromEnergies(energies)
+        let equalities = StrongSpectroscopy.getEqualitiesFromEnergies(energies);
         data.result = {equalities: equalities, formula: !equalities.bisimulation ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.runWeakSpectroscopy = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess));
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let energies = winningBudgets.map((budget) => { return budget.budget; });
+        let equalities = WeakSpectroscopy.getEqualitiesFromEnergies(energies);
+        data.result = {equalities: equalities, formula: !equalities.srbbisim ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isWeaklySrbbisim = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        data.result = {isSatisfied: winningBudgets.length === 0, formula: winningBudgets.length !== 0 ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};  
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isWeaklyBbisim = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => {return energyLevel.budget[3] > 0;})
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};  
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isWeaklyDbisim = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 0 || energyLevel.budget[3] > 0; });
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isWeaklyEtabisim = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0; });
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isWeaklyEtasim = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[6] > 0 || energyLevel.budget[7] > 0; });
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isWeaklyCsim = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => { return energyLevel.budget[1] > 0 || energyLevel.budget[3] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0; });
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isWeaklySrdbisim = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => {return energyLevel.budget[1] > 0;})
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};  
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isWeaklySbisim = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => {return energyLevel.budget[1] > 0 || energyLevel.budget[2] > 0 || energyLevel.budget[4] > 0;})
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};  
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isWeaklyScsim = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => {return energyLevel.budget[1] > 0 || energyLevel.budget[2] > 0|| energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0;})
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};  
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isWeaklySifutures = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => {return energyLevel.budget[1] > 0 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 1 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0 || energyLevel.budget[7] > 1;})
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};  
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isWeaklySrsim = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => {return energyLevel.budget[1] > 0 || energyLevel.budget[2] > 0 || energyLevel.budget[4] > 0 || energyLevel.budget[6] > 1 || energyLevel.budget[7] > 1;})
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};  
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isWeaklySreadiness = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => {return energyLevel.budget[1] > 0 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 1 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 1 || energyLevel.budget[6] > 1 || energyLevel.budget[7] > 1;})
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};  
+    }
+    self.postMessage(data);
+};
+
+messageHandlers.isWeaklySfailures = data => {
+    if(inputMode === "TCCS"){
+        throw new Error("TCCS is not supported for this equivalence");
+    }
+    else{
+        let strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true});
+        let weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let winningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let satisfied = winningBudgets.every((energyLevel) => {return energyLevel.budget[1] > 0 || energyLevel.budget[2] > 0 || energyLevel.budget[3] > 1 || energyLevel.budget[4] > 0 || energyLevel.budget[5] > 0 || energyLevel.budget[6] > 1 || energyLevel.budget[7] > 1;})
+        data.result = {isSatisfied: satisfied ,  formula: !satisfied ? winningBudgets[0].hml.propagateNegation(false).toString() : undefined};  
     }
     self.postMessage(data);
 };
