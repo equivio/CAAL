@@ -261,11 +261,8 @@ module WeakSpectroscopy {
                         let isTau: boolean = pos.alpha!.getLabel() === "tau";
                         pos.qSetAlpha!.forEach((proc) => {
                             let transitions = strongSuccGen.getSuccessors(proc.id).transitionsForAction(pos.alpha!);
-                            if(isTau){
-                                if (transitions.some((transition) => { return transition.targetProcess.id === proc.id; })) { qSetPrime.push(proc); }
-                            } else {
-                                transitions.forEach((transition) => { qSetPrime.push(transition.targetProcess); })
-                            }
+                            transitions.forEach((transition) => { qSetPrime.push(transition.targetProcess); })
+                            if (isTau && !qSetPrime.some((position) => { return proc.id === position.id; })){ qSetPrime.push(proc); }
                         })
                         let newPos: Position = new Position(pos.pPrime!, false, false, false, true, qSetPrime);
                         // check if newPos was already discovered to avoid duplicates
@@ -770,7 +767,7 @@ module WeakSpectroscopy {
                 // etabisim
                 if (energyLevels.every((energyLevel) => { return energyLevel[3] > 0 || energyLevel[4] > 0 })) {
                     for (let eq in equalities) {
-                        if (["srbbisim", "srdbisim", "dbisim", "sbisim", "srsim", "scsim", "sreadiness", "sifutures", "sfailures"].indexOf(eq) > -1) {
+                        if (["srbbisim", "bbisim", "srdbisim", "dbisim", "sbisim", "srsim", "scsim", "sreadiness", "sifutures", "sfailures"].indexOf(eq) > -1) {
                             continue;
                         }
                         equalities[eq] = true;
