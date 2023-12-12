@@ -575,6 +575,7 @@ module WeakSpectroscopy {
             let pushed: boolean = false;
             // another flag to check for dominance
             let dominated: boolean = false;
+            let toBeRemoved: {budget: number[], hml: HML.Formula}[] = [];
             for (let minBudget of newAttackerWin) {
                 // budget is dominated by minbudget
                 if (budget.budget.every((e_n, i) => { return e_n >= minBudget.budget[i] })) {
@@ -584,13 +585,17 @@ module WeakSpectroscopy {
                 // budget dominates minbudget
                 else {
                     if (budget.budget.every((e_n, i) => { return e_n <= minBudget.budget[i] })) {
-                        newAttackerWin.splice(newAttackerWin.indexOf(minBudget), 1);
+                        toBeRemoved.push(minBudget);
                         if (!pushed) {
                             newAttackerWin.push(budget);
                             pushed = true;
                         }
                     }
                 }
+            }
+            // remove dominated budgets
+            for (let dominatedBudget of toBeRemoved) {
+                newAttackerWin.splice(newAttackerWin.indexOf(dominatedBudget), 1);
             }
             // budget is not comparable to any minbudget in newAttackerWin
             if (!(dominated || pushed)) {
