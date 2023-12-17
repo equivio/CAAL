@@ -485,13 +485,15 @@ module WeakSpectroscopy {
                                 // the attacker always wants to have all q \in Q in Q_alpha that don't have any strong outgoing alpha-transitions
                                 if (!partitionsForAlpha[transition.action.getLabel()]){
                                     partitionsForAlpha[transition.action.getLabel()] = [];
-                                    let qSetAlphaBase: CCS.Process[] = []
-                                    pos.qSet!.forEach((proc) => {
-                                        if (strongSuccGen.getSuccessors(proc.id).transitionsForAction(transition.action).length === 0){qSetAlphaBase.push(proc);}
-                                    })
-                                    let partitions: CCS.Process[][] =  findTwoPartitions(getSetDifference(pos.qSet!, qSetAlphaBase));
+                                    //let qSetAlphaBase: CCS.Process[] = []
+                                    //pos.qSet!.forEach((proc) => {
+                                    //    if (strongSuccGen.getSuccessors(proc.id).transitionsForAction(transition.action).length === 0){qSetAlphaBase.push(proc);}
+                                    //})
+                                    let partitions: CCS.Process[][] =  findTwoPartitions(pos.qSet!);
+                                    //let partitions: CCS.Process[][] =  findTwoPartitions(getSetDifference(pos.qSet!, qSetAlphaBase));
                                     partitions.forEach((partition) => {
-                                        let qSetAlpha: CCS.Process[] = [...qSetAlphaBase, ...partition];
+                                        let qSetAlpha: CCS.Process[] = [...partition];
+                                        //let qSetAlpha: CCS.Process[] = [...qSetAlphaBase, ...partition];
                                         if (qSetAlpha.length > 0){
                                             partitionsForAlpha[transition.action.getLabel()].push([getSetDifference(pos.qSet!, qSetAlpha), qSetAlpha]);
                                         }
@@ -604,6 +606,41 @@ module WeakSpectroscopy {
         });
     }
 
+    function generateCombinations(optionsArray: {budget: number[], hml: HML.Formula}[][]): {budget: number[], hml: HML.Formula}[][] {
+        if (optionsArray.length === 0) {
+          return [];
+        }
+      
+        // Initialize an array to store the combinations
+        const combinations: any[][] = [];
+      
+        // Helper function to generate combinations recursively
+        function generateCombinationsRecursively(currentCombination: {budget: number[], hml: HML.Formula}[], remainingOptions: {budget: number[], hml: HML.Formula}[][]) {
+            // If there are no more options, add the current combination to the list
+            if (remainingOptions.length === 0) {
+                combinations.push([...currentCombination]);
+                return;
+            }
+      
+            // Iterate over the entries in the current option
+            for (let entry of remainingOptions[0]) {
+                // Add the current entry to the current combination
+                currentCombination.push(entry);
+      
+                // Recursively generate combinations for the remaining options
+                generateCombinationsRecursively(currentCombination, remainingOptions.slice(1));
+      
+                // Remove the last entry to backtrack and try the next entry
+                currentCombination.pop();
+            }
+        }
+      
+        // Start the recursive generation with an empty combination and all options
+        generateCombinationsRecursively([], optionsArray);
+      
+        return combinations;
+    }
+
     // distinguishing HML-formulas not implemtented yet
     export function computeWinningBudgets(game: Game) {
         // ln 2
@@ -678,24 +715,16 @@ module WeakSpectroscopy {
                         minToFind.push(...optionsArray[0]);
                         // minToFind.forEach((budget) => { budget.hml = new HML.ConjFormula([budget.hml]) });
                     }
-                    optionsArray.forEach((gdashValues) => {
-                        optionsArray.forEach((otherGdashValues) => {
-                            if (gdashValues == otherGdashValues) {
-                                return;
-                            }
-                            else {
-                                gdashValues.forEach((energyLevel) => {
-                                    otherGdashValues.forEach((otherEnergyLevel) => {
-                                        // let sup: {budget: number[], hml: HML.Formula} = {budget: [], hml: new HML.ConjFormula([energyLevel.hml, otherEnergyLevel.hml])};
-                                        let sup: {budget: number[], hml: HML.Formula} = {budget: [], hml: energyLevel.hml};
-                                        for (let k = 0; k < 8; k++) {
-                                            sup.budget[k] = Math.max(energyLevel.budget[k], otherEnergyLevel.budget[k]);
-                                        }
-                                        minToFind.push(sup);
-                                    })
-                                })
-                            }
-                        })
+
+                    let combinations: {budget: number[], hml: HML.Formula}[][] = generateCombinations(optionsArray);
+                    combinations.forEach((combination) => {
+                        let sup: {budget: number[], hml: HML.Formula} = {budget: combination[0].budget, hml: new HML.TrueFormula()};
+                        for (let k = 0; k < 8; k++) {
+                            combination.forEach((budget) => {
+                                sup.budget[k] = Math.max(sup.budget[k], budget.budget[k]);
+                            })
+                        }
+                        minToFind.push(sup);
                     })
                     computeMinimumBudgets(newAttackerWin, minToFind);
                 }
