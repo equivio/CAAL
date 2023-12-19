@@ -392,6 +392,7 @@ module StrongSpectroscopy {
             let pushed: boolean = false;
             // another flag to check for dominance
             let dominated: boolean = false;
+            let toBeRemoved: {budget: number[], hml: HML.Formula}[] = [];
             for (let minBudget of newAttackerWin) {
                 // budget is dominated by minbudget
                 if (budget.budget.every((e_n, i) => { return e_n >= minBudget.budget[i] })) {
@@ -401,7 +402,7 @@ module StrongSpectroscopy {
                 // budget dominates minbudget
                 else {
                     if (budget.budget.every((e_n, i) => { return e_n <= minBudget.budget[i] })) {
-                        newAttackerWin.splice(newAttackerWin.indexOf(minBudget), 1);
+                        toBeRemoved.push(minBudget);
                         if (!pushed) {
                             newAttackerWin.push(budget);
                             pushed = true;
@@ -409,11 +410,50 @@ module StrongSpectroscopy {
                     }
                 }
             }
+            // remove dominated budgets
+            for (let dominatedBudget of toBeRemoved) {
+                newAttackerWin.splice(newAttackerWin.indexOf(dominatedBudget), 1);
+            }
             // budget is not comparable to any minbudget in newAttackerWin
             if (!(dominated || pushed)) {
                 newAttackerWin.push(budget);
             }
         });
+    }
+
+    function generateCombinations(optionsArray: {budget: number[], hml: HML.Formula}[][]): {budget: number[], hml: HML.Formula}[][] {
+        if (optionsArray.length === 0) {
+          return [];
+        }
+      
+        // Initialize an array to store the combinations
+        const combinations: any[][] = [];
+      
+        // Helper function to generate combinations recursively
+        function generateCombinationsRecursively(currentCombination: {budget: number[], hml: HML.Formula}[], remainingOptions: {budget: number[], hml: HML.Formula}[][]) {
+            // If there are no more options, add the current combination to the list
+            if (remainingOptions.length === 0) {
+                combinations.push([...currentCombination]);
+                return;
+            }
+      
+            // Iterate over the entries in the current option
+            for (let entry of remainingOptions[0]) {
+                // Add the current entry to the current combination
+                currentCombination.push(entry);
+      
+                // Recursively generate combinations for the remaining options
+                generateCombinationsRecursively(currentCombination, remainingOptions.slice(1));
+      
+                // Remove the last entry to backtrack and try the next entry
+                currentCombination.pop();
+            }
+        }
+      
+        // Start the recursive generation with an empty combination and all options
+        generateCombinationsRecursively([], optionsArray);
+      
+        return combinations;
     }
 
 
@@ -489,23 +529,19 @@ module StrongSpectroscopy {
                         minToFind.push(...optionsArray[0]);
                         minToFind.forEach((budget) => { budget.hml = new HML.ConjFormula([budget.hml]) });
                     }
-                    optionsArray.forEach((gdashValues) => {
-                        optionsArray.forEach((otherGdashValues) => {
-                            if (gdashValues == otherGdashValues) {
-                                return;
-                            }
-                            else {
-                                gdashValues.forEach((energyLevel) => {
-                                    otherGdashValues.forEach((otherEnergyLevel) => {
-                                        let sup: {budget: number[], hml: HML.Formula} = {budget: [], hml: new HML.ConjFormula([energyLevel.hml, otherEnergyLevel.hml])};
-                                        for (let k = 0; k < 6; k++) {
-                                            sup.budget[k] = Math.max(energyLevel.budget[k], otherEnergyLevel.budget[k]);
-                                        }
-                                        minToFind.push(sup);
-                                    })
-                                })
-                            }
-                        })
+
+                    let combinations: {budget: number[], hml: HML.Formula}[][] = generateCombinations(optionsArray);
+                    combinations.forEach((combination) => {
+                        let formulasForConj: HML.Formula[] = [];
+                        let sup: {budget: number[], hml: HML.Formula} = {budget: combination[0].budget, hml: new HML.TrueFormula()};
+                        for (let k = 0; k < 6; k++) {
+                            combination.forEach((budget) => {
+                                sup.budget[k] = Math.max(sup.budget[k], budget.budget[k]);
+                                if (k === 0) { formulasForConj.push(budget.hml); }
+                            })
+                        }
+                        sup.hml = new HML.ConjFormula(formulasForConj);
+                        minToFind.push(sup);
                     })
                     computeMinimumBudgets(newAttackerWin, minToFind);
                 }
