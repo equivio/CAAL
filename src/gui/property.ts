@@ -473,6 +473,98 @@ module Property {
         }
     }
 
+    export class SpectroscopyAtOnce extends DistinguishingFormula {
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        protected workerFinished(event : any, callback : Function) : void {
+            if (!(typeof event.data.result === "boolean")){
+                this.formula = event.data.result.formula + ";";
+                event.data.result = event.data.result.equalities;
+            }
+            this.worker.terminate();
+            this.worker = null; 
+            
+            this.onWorkerFinished(event);
+            
+            this.stopTimer();
+            callback(this); /* verification ended */
+        }
+
+        protected onWorkerFinished(event : any) : void {
+            if (event.data.result.equalities){
+                // satisfied signals that spectroscopy backend has verified supported eqs
+                this.status = PropertyStatus.satisfied;
+            }
+            else {
+                this.status = PropertyStatus.unknown;
+            }
+        }
+
+        public getDescription() : string {
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+                var supportedEqs = [
+                    "Bisimulation",
+                    "TwoNestedSimulation",
+                    "ReadySimulation",
+                    "PossibleFutures",
+                    "Simulation",
+                    "ReadinessTraces",
+                    "FailureTraces",
+                    "Readiness",
+                    "ImpossibleFutures",
+                    "Revivals",
+                    "Failures",
+                    "TraceInclusion",
+                    "Enabledness"
+                ];
+            }
+            else{
+                var symbol = "⪯";
+                var supportedEqs = [
+                    "Srbbisim",
+                    "Bbisim",
+                    "Srdbisim",
+                    "Dbisim",
+                    "Etabisim",
+                    "Sbisim",
+                    "Bisimulation",
+                    "Etasim",
+                    "Simulation",
+                    "TwoNestedSimulation",
+                    "ReadySimulation",
+                    "Csim",
+                    "PossibleFutures",
+                    "Readiness",
+                    "ImpossibleFutures",
+                    "Failures",
+                    "TraceInclusion",
+                    "Srsim",
+                    "Scsim",
+                    "Sreadiness",
+                    "Sifutures",
+                    "Sfailures"
+                ];
+            }
+            let desc : string = this.firstProcess + " " + symbol + "<sub>X</sub>" + " " + this.secondProcess + "\n";
+            supportedEqs.forEach((eq) => {
+                desc += eq + "\n";
+            })
+            // remove last linebreak
+            return desc.slice(0,-1);
+        }
+
+        public getClassName() : string {
+            return "SpectroscopyAtOnce";
+        }
+
+        protected getWorkerHandler() : string {
+            return super.getType() === "strong" ? "runStrongSpectroscopy" : "runWeakSpectroscopy";
+        }
+    }
+
     export class Bisimulation extends DistinguishingFormula {
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(options, status);

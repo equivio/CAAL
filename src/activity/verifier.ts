@@ -19,6 +19,7 @@ module Activity {
             $("#verify-all").on("click", () => this.verifyAll());
             $("#verify-stop").on("click", () => this.stopVerify());
             $("input[name=property-type]").on("change", () => this.showSelectedPropertyType());
+            $("#verify-spectroscopy").on("click", () => this.toggleRelation());
 
             var $propertyTable = $("#property-table-properties");
             (<any>$propertyTable).sortable({
@@ -118,14 +119,18 @@ module Activity {
                 statusIcon.prop('title', property.getError() || '');
                 statusIcon.tooltip();
             }
-
-            $row.append($("<td>").append(statusIcon));
+            if (property instanceof Property.SpectroscopyAtOnce && property.getStatus() !== PropertyStatus.invalid && property.getStatus() !== PropertyStatus.unknown)  {
+                $row.append($("<td>"));
+            }
+            else{
+                $row.append($("<td>").append(statusIcon));
+            }
 
             var $time = $("<td>").append(property.getElapsedTime());
             property.setTimeCell($time);
             $row.append($time);
 
-            var $description = $("<td>").append(property.getDescription());
+            var $description = $("<td style='white-space:pre-wrap; word-wrap:break-word'>").append(property.getDescription());
             $description.on("dblclick", {property: property}, (e) => this.showPropertyModal(e));
             $row.append($description);
 
@@ -226,6 +231,7 @@ module Activity {
         private setPropertyModalOptions() : void {
             var processes = this.graph.getNamedProcesses().reverse();
             var $lists = $("#firstProcess").add($("#secondProcess")).add($("#hmlProcess")).empty();
+            $("#verify-spectroscopy").prop("checked", false);
 
             for (var i = 0; i < processes.length; i++) {
                 var $option = $("<option></option>").append(processes[i]);
@@ -277,6 +283,17 @@ module Activity {
             $("#property-modal").modal("show");
         }
 
+        private toggleRelation() : void {
+            let $spectroscopyToggle = $("#verify-spectroscopy");
+            let $relationType = $(".relation-type");
+            if ($spectroscopyToggle.is(':checked')) {
+                $relationType.hide();
+            }
+            else {
+                $relationType.show();
+            }
+        }
+
         private getSelectedPropertyType() : string {
             return $("input[name=property-type]:checked").val();
         }
@@ -322,75 +339,82 @@ module Activity {
 
             options["comment"] = $("#propertyComment").val();
 
-            if (propertyName === "Spectroscopy"){
+            if (propertyName !== "HML" && $("#verify-spectroscopy").is(":checked")){
                 // delete potential old strong props
-                let properties = this.project.getProperties().filter((prop) => {
-                    if ("forSpectroscopy" in prop){
-                        return prop["forSpectroscopy"];
-                    }
-                    return false
-                });
-                properties.forEach((prop) => {
-                    this.deleteProperty({data: {property: prop}});
-                })
-                let supportedEqs: string[];
-                if (options["type"] === "strong"){
-                    supportedEqs = [
-                        "Bisimulation",
-                        "TwoNestedSimulation",
-                        "ReadySimulation",
-                        "PossibleFutures",
-                        "Simulation",
-                        "ReadinessTraces",
-                        "FailureTraces",
-                        "Readiness",
-                        "ImpossibleFutures",
-                        "Revivals",
-                        "Failures",
-                        "TraceInclusion",
-                        "Enabledness"
-                    ];
-                }else {
-                    supportedEqs = [
-                        "Srbbisim",
-                        "Bbisim",
-                        "Srdbisim",
-                        "Dbisim",
-                        "Etabisim",
-                        "Sbisim",
-                        "Bisimulation",
-                        "Etasim",
-                        "Simulation",
-                        "TwoNestedSimulation",
-                        "ReadySimulation",
-                        "Csim",
-                        "PossibleFutures",
-                        "Readiness",
-                        "ImpossibleFutures",
-                        "Failures",
-                        "TraceInclusion",
-                        "Srsim",
-                        "Scsim",
-                        "Sreadiness",
-                        "Sifutures",
-                        "Sfailures"
-                    ];
+                // let properties = this.project.getProperties().filter((prop) => {
+                //     if ("forSpectroscopy" in prop){
+                //         return prop["forSpectroscopy"];
+                //     }
+                //     return false
+                // });
+                // properties.forEach((prop) => {
+                //     this.deleteProperty({data: {property: prop}});
+                // })
+                // let supportedEqs: string[];
+                // if (options["type"] === "strong"){
+                //     supportedEqs = [
+                //         "Bisimulation",
+                //         "TwoNestedSimulation",
+                //         "ReadySimulation",
+                //         "PossibleFutures",
+                //         "Simulation",
+                //         "ReadinessTraces",
+                //         "FailureTraces",
+                //         "Readiness",
+                //         "ImpossibleFutures",
+                //         "Revivals",
+                //         "Failures",
+                //         "TraceInclusion",
+                //         "Enabledness"
+                //     ];
+                // }else {
+                //     supportedEqs = [
+                //         "Srbbisim",
+                //         "Bbisim",
+                //         "Srdbisim",
+                //         "Dbisim",
+                //         "Etabisim",
+                //         "Sbisim",
+                //         "Bisimulation",
+                //         "Etasim",
+                //         "Simulation",
+                //         "TwoNestedSimulation",
+                //         "ReadySimulation",
+                //         "Csim",
+                //         "PossibleFutures",
+                //         "Readiness",
+                //         "ImpossibleFutures",
+                //         "Failures",
+                //         "TraceInclusion",
+                //         "Srsim",
+                //         "Scsim",
+                //         "Sreadiness",
+                //         "Sifutures",
+                //         "Sfailures"
+                //     ];
+                // }
+                // options["forSpectroscopy"] = true;
+                // supportedEqs.forEach((eq) => {
+                //     var property = new window["Property"][eq](options);
+                //     this.project.addProperty(property);
+
+                //     if (e) {
+                //         this.project.deleteProperty(e.data.property);
+                //         property.setRow(e.data.property.getRow());
+                //     }
+                //     this.displayProperty(property);
+                // })
+                // $("#verify-spectroscopy").prop("disabled", false);
+
+                var property = new window["Property"]["SpectroscopyAtOnce"](options);
+                this.project.addProperty(property);
+                if (e) {
+                    this.project.deleteProperty(e.data.property);
+                    property.setRow(e.data.property.getRow());
                 }
-                options["forSpectroscopy"] = true;
-                supportedEqs.forEach((eq) => {
-                    var property = new window["Property"][eq](options);
-                    this.project.addProperty(property);
-
-                    if (e) {
-                        this.project.deleteProperty(e.data.property);
-                        property.setRow(e.data.property.getRow());
-                    }
-                    this.displayProperty(property);
-                })
-                $("#verify-spectroscopy").prop("disabled", false);
+                this.displayProperty(property);
             } else{
-
-                options["forSpectroscopy"] = false;
+                // options["forSpectroscopy"] = false;
                 var property = new window["Property"][propertyName](options);
                 this.project.addProperty(property);
 
