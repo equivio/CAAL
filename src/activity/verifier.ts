@@ -14,7 +14,6 @@ module Activity {
             this.queue = [];
 
             $("#add-property").on("click", () => this.showPropertyModal());
-            $("#verify-spectroscopy").on("click", () => this.verifySpectroscopy());
             $("#delete-all").on("click", () => this.deleteAllProperties());
             $("#verify-all").on("click", () => this.verifyAll());
             $("#verify-stop").on("click", () => this.stopVerify());
@@ -232,6 +231,8 @@ module Activity {
             var processes = this.graph.getNamedProcesses().reverse();
             var $lists = $("#firstProcess").add($("#secondProcess")).add($("#hmlProcess")).empty();
             $("#verify-spectroscopy").prop("checked", false);
+            $("#relation-radio").prop("checked", true);
+            $("#hml-radio").prop("checked", false);
 
             for (var i = 0; i < processes.length; i++) {
                 var $option = $("<option></option>").append(processes[i]);
@@ -340,72 +341,6 @@ module Activity {
             options["comment"] = $("#propertyComment").val();
 
             if (propertyName !== "HML" && $("#verify-spectroscopy").is(":checked")){
-                // delete potential old strong props
-                // let properties = this.project.getProperties().filter((prop) => {
-                //     if ("forSpectroscopy" in prop){
-                //         return prop["forSpectroscopy"];
-                //     }
-                //     return false
-                // });
-                // properties.forEach((prop) => {
-                //     this.deleteProperty({data: {property: prop}});
-                // })
-                // let supportedEqs: string[];
-                // if (options["type"] === "strong"){
-                //     supportedEqs = [
-                //         "Bisimulation",
-                //         "TwoNestedSimulation",
-                //         "ReadySimulation",
-                //         "PossibleFutures",
-                //         "Simulation",
-                //         "ReadinessTraces",
-                //         "FailureTraces",
-                //         "Readiness",
-                //         "ImpossibleFutures",
-                //         "Revivals",
-                //         "Failures",
-                //         "TraceInclusion",
-                //         "Enabledness"
-                //     ];
-                // }else {
-                //     supportedEqs = [
-                //         "Srbbisim",
-                //         "Bbisim",
-                //         "Srdbisim",
-                //         "Dbisim",
-                //         "Etabisim",
-                //         "Sbisim",
-                //         "Bisimulation",
-                //         "Etasim",
-                //         "Simulation",
-                //         "TwoNestedSimulation",
-                //         "ReadySimulation",
-                //         "Csim",
-                //         "PossibleFutures",
-                //         "Readiness",
-                //         "ImpossibleFutures",
-                //         "Failures",
-                //         "TraceInclusion",
-                //         "Srsim",
-                //         "Scsim",
-                //         "Sreadiness",
-                //         "Sifutures",
-                //         "Sfailures"
-                //     ];
-                // }
-                // options["forSpectroscopy"] = true;
-                // supportedEqs.forEach((eq) => {
-                //     var property = new window["Property"][eq](options);
-                //     this.project.addProperty(property);
-
-                //     if (e) {
-                //         this.project.deleteProperty(e.data.property);
-                //         property.setRow(e.data.property.getRow());
-                //     }
-                //     this.displayProperty(property);
-                // })
-                // $("#verify-spectroscopy").prop("disabled", false);
-
                 var property = new window["Property"]["SpectroscopyAtOnce"](options);
                 this.project.addProperty(property);
                 if (e) {
@@ -414,7 +349,6 @@ module Activity {
                 }
                 this.displayProperty(property);
             } else{
-                // options["forSpectroscopy"] = false;
                 var property = new window["Property"][propertyName](options);
                 this.project.addProperty(property);
 
@@ -463,100 +397,6 @@ module Activity {
             this.verifyNext();
         }
 
-        private verifySpectroscopy() : void {
-            if(this.verifyingProperty == null){
-                let properties = this.project.getProperties().filter((prop) => {
-                    if ("forSpectroscopy" in prop){
-                        return prop["forSpectroscopy"];
-                    }
-                    return false
-                });
-                if(properties.length === 0){
-                    this.verifyNext();
-                    return;
-                }
-                this.disableVerification();
-                // since all props have same config, checking for one of them is enough
-                let someProp = properties[0];
-                if (!someProp.isReadyForVerification()) {
-                    console.log("something is wrong, please check the property");
-                    this.verifyingProperty = null;
-                    this.enableVerification();
-                    properties.forEach((prop) => {
-                        this.displayProperty(prop);
-                    });
-                    this.verifyNext();
-                    return;
-                }
-                someProp.startTimer();
-            
-                var program = this.project.getCCS();
-                var inputMode = InputMode[this.project.getInputMode()];
-                let worker = new Worker("lib/workers/verifier.js");
-                
-                worker.postMessage({
-                    type: "program",
-                    program: program,
-                    inputMode: inputMode
-                });
-                if(someProp instanceof Property.Relation) {
-                    worker.postMessage({
-                        type: someProp.getType() === "strong" ? "runStrongSpectroscopy" : "runWeakSpectroscopy",
-                        time: someProp.getTime(),
-                        leftProcess: someProp.getFirstProcess(),
-                        rightProcess: someProp.getSecondProcess()
-                    });
-                } else { throw new Error("Property to be verified is not a relation.") }
-                worker.addEventListener("error", (error) => {
-                    worker.terminate();
-                    someProp.setError(error.message);
-                    someProp.setStatus(PropertyStatus.invalid);
-                    someProp.stopTimer();
-                    this.verifyingProperty = null;
-                    this.enableVerification();
-                    properties.forEach((prop) => {
-                        prop.setError(error.message);
-                        prop.setStatus(PropertyStatus.invalid);
-                        prop.stopTimer();
-                        this.displayProperty(prop);
-                    });
-                    this.verifyNext();
-                    return;
-                }, false);
-                
-                worker.addEventListener("message", (event) => {
-                    worker.terminate();
-                    let results = event.data.result;
-                    properties.forEach((prop) => {
-                        // first letter of class name needs to be lowercase
-                        let result = results.equalities[prop.getClassName().charAt(0).toLowerCase() + prop.getClassName().slice(1)]
-                        if (result === true){
-                            prop.setStatus(PropertyStatus.satisfied);
-                        }
-                        else if (result === false){
-                            prop.setStatus(PropertyStatus.unsatisfied);
-                            if (prop instanceof Property.DistinguishingFormula){
-                                prop.formula = results.formula + ";";
-                            }
-                        }
-                        else {
-                            prop.setStatus(result);
-                        }
-                    });
-                    someProp.stopTimer();
-                    let timeString = someProp.getElapsedTime();
-
-                    this.verifyingProperty = null;
-                    this.enableVerification();
-                    properties.forEach((prop) => {
-                        prop.setElapsedTime(timeString);
-                        this.displayProperty(prop);
-                    });
-                    this.verifyNext();
-                });
-            }
-        }
-
         private stopVerify() : void {
             if (this.verifyingProperty != null) {
                 this.verifyingProperty.abortVerification();
@@ -577,14 +417,12 @@ module Activity {
         private enableVerification() : void {
             $(".verify-property").removeClass("text-muted");
             $("#verify-all").prop("disabled", false);
-            $("#verify-spectroscopy").prop("disabled", false);
             $("#verify-stop").prop("disabled", true);
         }
 
         private disableVerification() : void {
             $(".verify-property").addClass("text-muted");
             $("#verify-all").prop("disabled", true);
-            $("#verify-spectroscopy").prop("disabled", true);
             $("#verify-stop").prop("disabled", false);
         }
     }
