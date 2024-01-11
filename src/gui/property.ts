@@ -332,7 +332,6 @@ module Property {
         protected secondProcess : string;
         protected type : string;
         protected time : string;
-        protected forSpectroscopy : boolean = false;
 
         public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
             super(status);
@@ -341,8 +340,6 @@ module Property {
             this.type = options.type;
             this.time = options.time;
             this.comment = options.comment;
-            // flag to distinguish between independent eqs and those that are part of the multiple at once strong-spectroscopy-verififcation
-            this.forSpectroscopy = options.forSpectroscopy;
         }
 
         public getFirstProcess() : string {
@@ -378,14 +375,6 @@ module Property {
                 relation: this.getClassName(),
                 playerType: this.status === PropertyStatus.satisfied ? "attacker" : "defender"
             };
-        }
-
-        public getforSpectroscopy(){
-            return this.forSpectroscopy;
-        }
-
-        public setforSpectroscopy(value : boolean){
-            this.forSpectroscopy = value;
         }
 
         public toJSON() : any {
@@ -470,6 +459,117 @@ module Property {
             } else {
                 generationEnded();
             }
+        }
+    }
+
+    export class SpectroscopyAtOnce extends DistinguishingFormula {
+        private verificationResult = undefined;
+
+        public constructor(options : any, status : PropertyStatus = PropertyStatus.unknown) {
+            super(options, status);
+        }
+
+        public getGameConfiguration() : any {
+            return {
+                leftProcess: this.firstProcess,
+                rightProcess: this.secondProcess,
+                type: this.type,
+                time: this.time ? this.time : "",
+                relation: super.getType() === "strong" ? "Bisimulation" : "Srbbisim",
+                playerType: "attacker"
+            };
+        }
+
+        protected workerFinished(event : any, callback : Function) : void {
+            if (event.data.result.formula){
+                this.formula = event.data.result.formula + ";";
+            }
+            this.verificationResult = event.data.result.equalities;
+            this.worker.terminate();
+            this.worker = null; 
+            
+            this.onWorkerFinished();
+            
+            this.stopTimer();
+            callback(this); /* verification ended */
+        }
+
+        protected onWorkerFinished() : void {
+            if (this.verificationResult){
+                // satisfied signals that spectroscopy backend has verified supported eqs and no distinguishing formula exists
+                this.status = this.formula ? PropertyStatus.unsatisfied : PropertyStatus.satisfied;
+            }
+            else {
+                this.status = PropertyStatus.unknown;
+            }
+        }
+
+        public getDescription() : string {
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+                var supportedEqs = [
+                    "Bisimulation",
+                    "TwoNestedSimulation",
+                    "ReadySimulation",
+                    "PossibleFutures",
+                    "Simulation",
+                    "ReadinessTraces",
+                    "FailureTraces",
+                    "Readiness",
+                    "ImpossibleFutures",
+                    "Revivals",
+                    "Failures",
+                    "TraceInclusion",
+                    "Enabledness"
+                ];
+            }
+            else{
+                var symbol = "⪯";
+                var supportedEqs = [
+                    "Srbbisim",
+                    "Bbisim",
+                    "Srdbisim",
+                    "Dbisim",
+                    "Etabisim",
+                    "Sbisim",
+                    "Bisimulation",
+                    "Etasim",
+                    "Simulation",
+                    "TwoNestedSimulation",
+                    "ReadySimulation",
+                    "Csim",
+                    "PossibleFutures",
+                    "Readiness",
+                    "ImpossibleFutures",
+                    "Failures",
+                    "TraceInclusion",
+                    "Srsim",
+                    "Scsim",
+                    "Sreadiness",
+                    "Sifutures",
+                    "Sfailures"
+                ];
+            }
+            let desc : string = this.firstProcess + " " + symbol + "<sub>X</sub>" + " " + this.secondProcess + "\n";
+            supportedEqs.forEach((eq) => {
+                if(this.verificationResult) {
+                    desc += (this.verificationResult[eq.charAt(0).toLowerCase() + eq.slice(1)] ? "<div style='color:green;'>" : "<div style='color:red;'>") + eq + "</div>";
+                }else{desc += eq + "\n";}
+            })
+            if(this.verificationResult) {
+                this.verificationResult = undefined;
+                return desc;
+            }
+            // remove last linebreak
+            return desc.slice(0,-1);
+        }
+
+        public getClassName() : string {
+            return "SpectroscopyAtOnce";
+        }
+
+        protected getWorkerHandler() : string {
+            return super.getType() === "strong" ? "runStrongSpectroscopy" : "runWeakSpectroscopy";
         }
     }
 
