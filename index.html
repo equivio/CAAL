@@ -629,7 +629,7 @@
                 </div>
             </div>
             <div id="se-game-main" class="row">
-                <div id="se-game-left" class="col-md-6">
+                <div id="se-game-left" class="col-md-12">
                     <div class="relative">
                         <input id="se-zoom-left" data-side="left" min="1" max="3" step="0.2" value="1" type="range" />
                         <div class="input-group">
@@ -641,21 +641,6 @@
                         <div id="se-game-left-canvas">
                             <canvas></canvas>
                             <div id="se-game-canvas-tooltip-left"></div>
-                        </div>
-                    </div>
-                </div>
-                <div id="se-game-right" class="col-md-6">
-                    <div class="relative">
-                        <input id="se-zoom-right" data-side="right" min="1" max="3" step="0.2" value="1" type="range" />
-                        <div class="input-group">
-                            <input id="se-depth-right" class="form-control" value="5" type="text" data-previous-depth="5" data-tooltip="depth" />
-                            <span class="input-group-btn">
-                                <button id="se-freeze-right" type="button" class="btn btn-default" data-frozen="false" data-tooltip="freeze"><i class="fa fa-lock fa-lg"></i></button>
-                            </span>
-                        </div>
-                        <div id="se-game-right-canvas">
-                            <canvas></canvas>
-                            <div id="se-game-canvas-tooltip-right"></div>
                         </div>
                     </div>
                 </div>
