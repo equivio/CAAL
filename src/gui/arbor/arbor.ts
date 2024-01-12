@@ -14,7 +14,7 @@ module GUI {
         private highlightedEdges : Edge[] = [];
         private selectedNode : Node;
         //private rightGraphNodes : Node | Node[] | Node[][];
-        private rightGraphNodes : {q: Node | undefined, qSet: Node[] | undefined, qStarSet: Node[] | undefined} = Object.create(null);
+        private rightGraphNodes : {p: Node | undefined, q: Node | undefined, qSet: Node[] | undefined, qStarSet: Node[] | undefined} = Object.create(null);
 
         constructor(renderer, options = {repulsion: 400, stiffness: 800, friction: 0.5, integrator: "verlet"}) {
             this.sys = arbor.ParticleSystem(options);
@@ -74,23 +74,34 @@ module GUI {
                     })
                 }
             }
-            this.rightGraphNodes = {q: undefined, qSet: undefined, qStarSet: undefined};
+            this.rightGraphNodes = {p: undefined, q: undefined, qSet: undefined, qStarSet: undefined};
         }
 
-        public setRightGraphNodes(names : {q: string | undefined, qSet: string[] | undefined, qStarSet: string[] | undefined}){
+        public setRightGraphNodes(names : {p: string, q: string | undefined, qSet: string[] | undefined, qStarSet: string[] | undefined}){
             if(!names) return;
 
+            this.unselectRightGraphNodes();
+
+            let pNode = this.sys.getNode(names.p);
+            if(pNode){
+                pNode.data.status = ["selectedAsP"];
+                this.rightGraphNodes.p = pNode;
+            }
+
             if(names.q){
-                let newNode = this.sys.getNode(names.q)
+                let newNode = this.sys.getNode(names.q);
                 if(newNode){
-                    this.unselectRightGraphNodes();
-                    newNode.data.status = "selectedAsQ";
+                    if (!(typeof newNode.data.status === "string")){
+                        newNode.data.status.push("selectedAsSingleQ");
+                    }
+                    else{
+                        newNode.data.status = ["selectedAsSingleQ"];
+                    }
                     this.rightGraphNodes.q = newNode;
                 }
             }
             else{
                 if(names.qStarSet){
-                    this.unselectRightGraphNodes();
                     let initialized = false;
                     names.qStarSet.forEach((name) => {
                         let newNode = this.sys.getNode(name);
@@ -99,13 +110,17 @@ module GUI {
                                 this.rightGraphNodes.qStarSet = [];
                                 initialized = true;
                             }
-                            newNode.data.status = "selectedAsQStar";
+                            if (!(typeof newNode.data.status === "string")){
+                                newNode.data.status.push("selectedAsQStar");
+                            }
+                            else{
+                                newNode.data.status = ["selectedAsQStar"];
+                            }
                             this.rightGraphNodes.qStarSet!.push(newNode);
                         }
                     })
                 }
                 if(names.qSet){
-                    this.unselectRightGraphNodes();
                     let initialized = false;
                     names.qSet.forEach((name) => {
                         let newNode = this.sys.getNode(name);
@@ -114,7 +129,12 @@ module GUI {
                                 this.rightGraphNodes.qSet = [];
                                 initialized = true;
                             }
-                            newNode.data.status = "selectedAsQ";
+                            if (!(typeof newNode.data.status === "string")){
+                                newNode.data.status.push("selectedAsQ");
+                            }
+                            else{
+                                newNode.data.status = ["selectedAsQ"];
+                            }
                             this.rightGraphNodes.qSet!.push(newNode);
                         }
                     })

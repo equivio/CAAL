@@ -18,26 +18,19 @@ module Activity {
         private $playerType: JQuery;
         private $restart: JQuery;
         private $energyGauge: JQuery;
-        private $leftContainer: JQuery;
-        private $rightContainer: JQuery;
-        private $leftZoom: JQuery;
-        private $rightZoom: JQuery;
-        private $leftDepth: JQuery;
-        private $rightDepth: JQuery;
-        private $leftFreeze: JQuery;
-        private $rightFreeze: JQuery;
-        private leftCanvas: HTMLCanvasElement;
-        private rightCanvas: HTMLCanvasElement;
-        private leftRenderer: Renderer;
-        private rightRenderer: Renderer;
-        private leftGraph: GUI.ProcessGraphUI;
-        private rightGraph: GUI.ProcessGraphUI;
+        private $guiContainer: JQuery;
+        private $zoom: JQuery;
+        private $depth: JQuery;
+        private $freeze: JQuery;
+        private canvas: HTMLCanvasElement;
+        private renderer: Renderer;
+        private guiGraph: GUI.ProcessGraphUI;
 
         constructor(container: string, button: string, activeToggle: string) {
             super(container, button, activeToggle);
 
             this.project = Project.getInstance();
-            this.fullscreen = new Fullscreen($("#se-game-container")[0], $("#se-game-fullscreen"), () => this.resize(null, null));
+            this.fullscreen = new Fullscreen($("#se-game-container")[0], $("#se-game-fullscreen"), () => this.resize(null));
             this.tooltip = new ProcessTooltip($("#se-game-status"));
             new DataTooltip($("#se-game-log")); // no need to save instance
 
@@ -48,79 +41,44 @@ module Activity {
             this.$playerType = $("input[name=se-player-type]");
             this.$restart = $("#se-game-restart");
             this.$energyGauge = $("#se-game-gauge");
-            this.$leftContainer = $("#se-game-left-canvas");
-            this.$rightContainer = $("#se-game-right-canvas");
-            this.$leftZoom = $("#se-zoom-left");
-            this.$rightZoom = $("#se-zoom-right");
-            this.$leftDepth = $("#se-depth-left");
-            this.$rightDepth = $("#se-depth-right");
-            this.$leftFreeze = $("#se-freeze-left");
-            this.$rightFreeze = $("#se-freeze-right");
-            this.leftCanvas = <HTMLCanvasElement>this.$leftContainer.find("canvas")[0];
-            this.rightCanvas = <HTMLCanvasElement>this.$rightContainer.find("canvas")[0];
+            this.$guiContainer = $("#se-game-left-canvas");
+            this.$zoom = $("#se-zoom-left");
+            this.$depth = $("#se-depth-left");
+            this.$freeze = $("#se-freeze-left");
+            this.canvas = <HTMLCanvasElement>this.$guiContainer.find("canvas")[0];
 
-            this.leftRenderer = new Renderer(this.leftCanvas);
-            this.rightRenderer = new Renderer(this.rightCanvas);
-            this.leftGraph = new GUI.ArborGraph(this.leftRenderer);
-            this.rightGraph = new GUI.ArborGraph(this.rightRenderer);
+            this.renderer = new Renderer(this.canvas);
+            this.guiGraph = new GUI.ArborGraph(this.renderer);
 
-            this.$leftProcessList.on("change", () => this.newGame(true, false));
-            this.$rightProcessList.on("change", () => this.newGame(false, true));
-            this.$ccsGameTypes.on("change", () => this.newGame(true, true));
-            this.$gameRelation.on("change", () => this.newGame(false, false));
-            this.$playerType.on("change", () => this.newGame(false, false));
-            this.$restart.on("click", () => this.newGame(false, false));
-            this.$leftFreeze.on("click", (e) => this.toggleFreeze(this.leftGraph, !this.$leftFreeze.data("frozen"), $(e.currentTarget)));
-            this.$rightFreeze.on("click", (e) => this.toggleFreeze(this.rightGraph, !this.$rightFreeze.data("frozen"), $(e.currentTarget)));
+            this.$leftProcessList.on("change", () => this.newGame(true));
+            this.$rightProcessList.on("change", () => this.newGame(false));
+            this.$ccsGameTypes.on("change", () => this.newGame(true));
+            this.$gameRelation.on("change", () => this.newGame(false));
+            this.$playerType.on("change", () => this.newGame(false));
+            this.$restart.on("click", () => this.newGame(false));
+            this.$freeze.on("click", (e) => this.toggleFreeze(this.guiGraph, !this.$freeze.data("frozen"), $(e.currentTarget)));
 
             // Manually remove focus from depth input when the canvas is clicked.
-            $(this.leftCanvas).on("click", () => { if (this.$leftDepth.is(":focus")) this.$leftDepth.blur() });
-            $(this.rightCanvas).on("click", () => { if (this.$rightDepth.is(":focus")) this.$rightDepth.blur() });
+            $(this.canvas).on("click", () => { if (this.$depth.is(":focus")) this.$depth.blur() });
 
-            this.$leftDepth.on("change", () => {
-                this.validateDepth(this.$leftDepth);
-                this.setDepth(this.SEGameLogic.getCurrentConfiguration().left, this.leftGraph, this.$leftDepth.val(), Move.Left);
-            });
-
-            this.$rightDepth.on("change", () => {
-                this.validateDepth(this.$rightDepth);
-                let rightConfig = this.SEGameLogic.getCurrentConfiguration().right;
-                let rightDepth = this.$rightDepth.val()
-                if (rightConfig.q) {
-                    this.setDepth(rightConfig.q, this.rightGraph, rightDepth, Move.Right);
-                }
-                else {
-                    rightConfig.qSet.forEach((process) => {
-                        this.setDepth(process, this.rightGraph, rightDepth, Move.Right);
-                    })
-                    if (rightConfig.qStarSet) {
-                        rightConfig.qStarSet.forEach((process) => {
-                            this.setDepth(process, this.rightGraph, rightDepth, Move.Right);
-                        })
-                    }
-                }
+            this.$depth.on("change", () => {
+                this.validateDepth(this.$depth);
+                this.setDepth(this.SEGameLogic.getCurrentConfiguration().left, this.guiGraph, this.$depth.val());
             });
 
             // Use onchange instead of oninput for IE.
             if (navigator.userAgent.indexOf("MSIE ") > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./)) {
-                this.$leftZoom.on("change", () => this.resize(this.$leftZoom.val(), null));
-                this.$rightZoom.on("change", () => this.resize(null, this.$rightZoom.val()));
+                this.$zoom.on("change", () => this.resize(this.$zoom.val()));
             } else {
-                this.$leftZoom.on("input", () => this.resize(this.$leftZoom.val(), null));
-                this.$rightZoom.on("input", () => this.resize(null, this.$rightZoom.val()));
+                this.$zoom.on("input", () => this.resize(this.$zoom.val()));
             }
         }
 
-        private setDepth(processId: string, graph: GUI.ProcessGraphUI, depth: number, move: Move): void {
+        private setDepth(processId: string, graph: GUI.ProcessGraphUI, depth: number): void {
             this.clear(graph);
             let process = this.graph.processById(processId);
             this.draw(process, graph, depth, true);
-            //this.centerNode(process, move);
-
-            if (move === Move.Left)
-                this.toggleFreeze(graph, false, this.$leftFreeze);
-            else
-                this.toggleFreeze(graph, false, this.$rightFreeze);
+            this.toggleFreeze(graph, false, this.$freeze);
         }
 
         private validateDepth($input: JQuery): void {
@@ -144,7 +102,7 @@ module Activity {
         }
 
         public onShow(configuration?: any): void {
-            $(window).on("resize", () => this.resize(this.$leftZoom.val(), this.$rightZoom.val()));
+            $(window).on("resize", () => this.resize(this.$zoom.val()));
 
             this.fullscreen.onShow();
 
@@ -153,62 +111,37 @@ module Activity {
                 this.changed = false;
                 this.graph = this.project.getGraph();
                 this.displayOptions();
-                this.newGame(true, true, configuration);
+                this.newGame(true, configuration);
             }
 
             this.tooltip.setGraph(this.graph);
 
-            this.leftGraph.setOnSelectListener((processId) => {
-                if (this.leftGraph.getProcessDataObject(processId.toString()).status === "unexpanded")
-                    this.draw(this.graph.processById(processId), this.leftGraph, this.$leftDepth.val(), true);
+            this.guiGraph.setOnSelectListener((processId) => {
+                if (this.guiGraph.getProcessDataObject(processId.toString()).status === "unexpanded")
+                    this.draw(this.graph.processById(processId), this.guiGraph, this.$depth.val(), true);
             });
 
-            this.rightGraph.setOnSelectListener((processId) => {
-                if (this.rightGraph.getProcessDataObject(processId.toString()).status === "unexpanded")
-                    this.draw(this.graph.processById(processId), this.rightGraph, this.$rightDepth.val(), true);
-            });
-
-            this.leftGraph.setHoverOnListener((processId) => {
+            this.guiGraph.setHoverOnListener((processId) => {
                 this.timeout = setTimeout(() => {
                     var tooltipAnchor = $("#se-game-canvas-tooltip-left");
-                    var position = this.leftGraph.getPosition(processId);
+                    var position = this.guiGraph.getPosition(processId);
 
-                    tooltipAnchor.css("left", position.x - this.$leftContainer.scrollLeft());
-                    tooltipAnchor.css("top", position.y - this.$leftContainer.scrollTop() - 10);
+                    tooltipAnchor.css("left", position.x - this.$guiContainer.scrollLeft());
+                    tooltipAnchor.css("top", position.y - this.$guiContainer.scrollTop() - 10);
 
                     tooltipAnchor.tooltip({ title: this.tooltip.ccsNotationForProcessId(processId), html: true });
                     tooltipAnchor.tooltip("show");
                 }, 1000)
             });
 
-            this.leftGraph.setHoverOutListener(() => {
+            this.guiGraph.setHoverOutListener(() => {
                 clearTimeout(this.timeout);
                 $("#se-game-canvas-tooltip-left").tooltip("destroy");
             });
 
-            this.rightGraph.setHoverOnListener((processId) => {
-                this.timeout = setTimeout(() => {
-                    var tooltipAnchor = $("#se-game-canvas-tooltip-right");
-                    var position = this.rightGraph.getPosition(processId);
+            this.guiGraph.bindCanvasEvents();
 
-                    tooltipAnchor.css("left", position.x - this.$rightContainer.scrollLeft());
-                    tooltipAnchor.css("top", position.y - this.$rightContainer.scrollTop() - 10);
-
-                    tooltipAnchor.tooltip({ title: this.tooltip.ccsNotationForProcessId(processId), html: true });
-                    tooltipAnchor.tooltip("show");
-                }, 1000)
-            });
-
-            this.rightGraph.setHoverOutListener(() => {
-                clearTimeout(this.timeout);
-                $("#se-game-canvas-tooltip-right").tooltip("destroy");
-            });
-
-            this.leftGraph.bindCanvasEvents();
-            this.rightGraph.bindCanvasEvents();
-
-            this.toggleFreeze(this.leftGraph, this.$leftFreeze.data("frozen"), this.$leftFreeze); // (un)freeze, depending on the lock icon
-            this.toggleFreeze(this.rightGraph, this.$rightFreeze.data("frozen"), this.$rightFreeze); // (un)freeze, depending on the lock icon
+            this.toggleFreeze(this.guiGraph, this.$freeze.data("frozen"), this.$freeze); // (un)freeze, depending on the lock icon
         }
 
         public onHide(): void {
@@ -216,18 +149,13 @@ module Activity {
 
             this.fullscreen.onHide();
 
-            this.leftGraph.clearOnSelectListener();
-            this.rightGraph.clearOnSelectListener();
-            this.leftGraph.clearHoverOnListener();
-            this.rightGraph.clearHoverOnListener();
-            this.leftGraph.clearHoverOutListener();
-            this.rightGraph.clearHoverOutListener();
+            this.guiGraph.clearOnSelectListener();
+            this.guiGraph.clearHoverOnListener();
+            this.guiGraph.clearHoverOutListener();
 
-            this.leftGraph.unbindCanvasEvents();
-            this.rightGraph.unbindCanvasEvents();
+            this.guiGraph.unbindCanvasEvents();
 
-            this.leftGraph.freeze(); // force freeze for graph
-            this.rightGraph.freeze(); // force freeze for graph
+            this.guiGraph.freeze(); // force freeze for graph
         }
 
         protected checkPreconditions(): boolean {
@@ -311,7 +239,7 @@ module Activity {
             this.$energyGauge.html(str);
         }
 
-        private newGame(drawLeft: boolean, drawRight: boolean, configuration?: any): void {
+        private newGame(drawLeft: boolean, configuration?: any): void {
             var options;
 
             if (configuration) {
@@ -324,18 +252,11 @@ module Activity {
             this.succGen = CCS.getSuccGenerator(this.graph,
                 { inputMode: InputMode[this.project.getInputMode()], time: options.time, succGen: options.type, reduce: true });
 
-            if (drawLeft || !this.leftGraph.getNode(this.succGen.getProcessByName(options.leftProcess).id.toString())) {
-                this.clear(this.leftGraph);
-                this.draw(this.succGen.getProcessByName(options.leftProcess), this.leftGraph, this.$leftDepth.val(), false);
-                this.resize(1, null);
-                this.toggleFreeze(this.leftGraph, false, this.$leftFreeze);
-            }
-
-            if (drawRight || !this.rightGraph.getNode(this.succGen.getProcessByName(options.rightProcess).id.toString())) {
-                this.clear(this.rightGraph);
-                this.draw(this.succGen.getProcessByName(options.rightProcess), this.rightGraph, this.$rightDepth.val(), false)
-                this.resize(null, 1);
-                this.toggleFreeze(this.rightGraph, false, this.$rightFreeze);
+            if (drawLeft || !this.guiGraph.getNode(this.succGen.getProcessByName(options.leftProcess).id.toString())) {
+                this.clear(this.guiGraph);
+                this.draw(this.succGen.getProcessByName(options.leftProcess), this.guiGraph, this.$depth.val(), false);
+                this.resize(1);
+                this.toggleFreeze(this.guiGraph, false, this.$freeze);
             }
 
             if (this.SEGameLogic !== undefined) { this.SEGameLogic.stopGame() };
@@ -432,18 +353,18 @@ module Activity {
         }
 
         public onPlay(position: StrongSpectroscopy.Position): void {
-            this.draw(position.p, this.leftGraph, this.$leftDepth.val(), false);
-            let rightDepth = this.$rightDepth.val();
+            let depth = this.$depth.val();
+            this.draw(position.p, this.guiGraph, depth, false);
             if (position.q) {
-                this.draw(position.q, this.rightGraph, rightDepth, false);
+                this.draw(position.q, this.guiGraph, depth, false);
             }
             else {
                 position.qSet!.forEach((process) => {
-                    this.draw(process, this.rightGraph, rightDepth, false);
+                    this.draw(process, this.guiGraph, depth, false);
                 })
                 if (position.qStarSet) {
                     position.qStarSet.forEach((process) => {
-                        this.draw(process, this.rightGraph, rightDepth, false);
+                        this.draw(process, this.guiGraph, depth, false);
                     })
                 }
             }
@@ -457,9 +378,10 @@ module Activity {
                 return;
 
             var configuration = this.SEGameLogic.getCurrentConfiguration();
-            this.leftGraph.setSelected(configuration.left.id);
-
             let configIds = Object.create(null);
+
+            configIds.p = configuration.left.id;
+
             if (configuration.right.q) {
                 configIds.q = configuration.right.q.id;
             }
@@ -477,7 +399,7 @@ module Activity {
                     })
                 }
             }
-            this.rightGraph.setRightGraphNodes(configIds);
+            this.guiGraph.setRightGraphNodes(configIds);
         }
 
         private clear(graph: GUI.ProcessGraphUI): void {
@@ -488,35 +410,14 @@ module Activity {
             return this.graph.getLabel(process);
         }
 
-        public findRightCenterNode(): CCS.Process | undefined {
-            let rightConfig = this.SEGameLogic.getCurrentConfiguration().right;
-            if (rightConfig.q) {
-                return rightConfig.q;
-            }
-            if (rightConfig.qSet && rightConfig.qSet[0]) {
-                return rightConfig.qSet[0];
-            }
-            if (rightConfig.qStarSet && rightConfig.qStarSet[0]) {
-                return rightConfig.qStarSet[0];
-            }
-            // if there are only empty sets, signal to not center anything
-            return undefined;
-        }
-
-        public centerNode(process: CCS.Process | undefined, move: Move): void {
+        public centerNode(process: CCS.Process | undefined): void {
             if (!process) { return; }
-            if (move === Move.Left) {
-                var position = this.leftGraph.getPosition(process.id.toString());
-                this.$leftContainer.scrollLeft(position.x - (this.$leftContainer.width() / 2));
-                this.$leftContainer.scrollTop(position.y - (this.$leftContainer.height() / 2));
-            } else {
-                var position = this.rightGraph.getPosition(process.id.toString());
-                this.$rightContainer.scrollLeft(position.x - (this.$rightContainer.width() / 2));
-                this.$rightContainer.scrollTop(position.y - (this.$rightContainer.height() / 2));
-            }
+            var position = this.guiGraph.getPosition(process.id.toString());
+            this.$guiContainer.scrollLeft(position.x - (this.$guiContainer.width() / 2));
+            this.$guiContainer.scrollTop(position.y - (this.$guiContainer.height() / 2));
         }
 
-        private resize(leftZoom: number, rightZoom: number): void {
+        private resize(zoom: number): void {
             var offsetTop = $("#se-game-main").offset().top;
             var offsetBottom = $("#se-game-status").height();
 
@@ -524,38 +425,21 @@ module Activity {
 
             // Minimum height 265px.
             var height = Math.max(265, availableHeight);
-            this.$leftContainer.height(height);
-            this.$rightContainer.height(height);
+            this.$guiContainer.height(height);
 
-            if (leftZoom !== null) {
-                this.$leftZoom.val(leftZoom.toString());
-                this.leftCanvas.width = this.$leftContainer.width() * leftZoom;
-                this.leftCanvas.height = height * leftZoom;
-                this.leftRenderer.resize(this.leftCanvas.width, this.leftCanvas.height);
+            if (zoom !== null) {
+                this.$zoom.val(zoom.toString());
+                this.canvas.width = this.$guiContainer.width() * zoom;
+                this.canvas.height = height * zoom;
+                this.renderer.resize(this.canvas.width, this.canvas.height);
 
-                if (leftZoom > 1) {
+                if (zoom > 1) {
                     $("#se-game-left .input-group").css("right", 30);
-                    this.$leftContainer.css("overflow", "auto");
-                    this.centerNode(this.SEGameLogic.getCurrentConfiguration().left, Move.Left);
+                    this.$guiContainer.css("overflow", "auto");
+                    this.centerNode(this.SEGameLogic.getCurrentConfiguration().left);
                 } else {
                     $("#se-game-left .input-group").css("right", 10);
-                    this.$leftContainer.css("overflow", "hidden");
-                }
-            }
-
-            if (rightZoom !== null) {
-                this.$rightZoom.val(rightZoom.toString());
-                this.rightCanvas.width = this.$rightContainer.width() * rightZoom;
-                this.rightCanvas.height = height * rightZoom;
-                this.rightRenderer.resize(this.rightCanvas.width, this.rightCanvas.height);
-
-                if (rightZoom > 1) {
-                    $("#se-game-right .input-group").css("right", 30);
-                    this.$rightContainer.css("overflow", "auto");
-                    this.centerNode(this.findRightCenterNode(), Move.Right);
-                } else {
-                    $("#se-game-right .input-group").css("right", 10);
-                    this.$rightContainer.css("overflow", "hidden");
+                    this.$guiContainer.css("overflow", "hidden");
                 }
             }
         }
@@ -630,8 +514,7 @@ module Activity {
             this.cycleCache[this.strongSpectroscopy.parsePosition(this.currentLeft, this.currentRight).toString()] = true;
 
             this.gameActivity.highlightNodes();
-            this.gameActivity.centerNode(this.currentLeft, Move.Left);
-            this.gameActivity.centerNode(this.gameActivity.findRightCenterNode(), Move.Right);
+            this.gameActivity.centerNode(this.currentLeft);
 
             this.currentWinner = this.getCurrentWinner();
             this.gameLog.printIntro(this.currentWinner, this.attacker);
@@ -700,8 +583,7 @@ module Activity {
                 }
             }
             this.gameActivity.onPlay(choice.to);
-            this.gameActivity.centerNode(choice.to.p, Move.Left);
-            this.gameActivity.centerNode(this.gameActivity.findRightCenterNode(), Move.Right);
+            this.gameActivity.centerNode(choice.to.p);
         }
 
         private preparePlayer(player: Player) {

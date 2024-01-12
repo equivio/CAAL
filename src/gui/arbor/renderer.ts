@@ -12,9 +12,10 @@ class Renderer {
     private nodeStatusColors = {
         "unexpanded": "rgb(160,160,160)", // grey
         "expanded": "rgb(51, 65, 185)", // blue
-        "selected": "rgb(245, 50, 50)", // red
-        "selectedAsQ": "rgb(100, 245, 50)", // green
-        "selectedAsQStar": "rgb(255, 255, 0)" // yellow
+        "selectedAsP": "rgb(245, 50, 50)", // red
+        "selectedAsQ": "rgb(4, 98, 7)", // green
+        "selectedAsQStar": "rgb(125, 35, 130)", // purple
+        "selectedAsSingleQ": "rgb(0, 128, 128)" // teal
     }
 
     private highlightSettings = {
@@ -52,7 +53,12 @@ class Renderer {
         this.particleSystem.eachNode((node : Node, pt : Point) => {
             // node: {mass:#, p:{x,y}, name:"", data:{}}
             // pt:   {x:#, y:#}  node position in screen coords
-            this.drawRectNode(node, pt);
+            if (typeof node.data.status === "string"){
+                this.drawRectNode(node, pt);
+            }
+            else{
+                this.drawRectNodeMultiColor(node, pt);
+            }
         });
 
         // draw the edges
@@ -144,7 +150,7 @@ class Renderer {
      * @param {Point}  pt2          target point
      * @param {[type]} nodeBox1     nodebox for source node
      * @param {[type]} nodeBox2     nodebox for target node
-     * @param {number} arrowLength  the lenght of the arrowhead
+     * @param {number} arrowLength  the length of the arrowhead
      * @param {number} arrowWidth   the width of the arrowhead
      * @param {string} chevronColor the color of the arrowhead
      * @param {string} label        the label of the edge
@@ -193,7 +199,7 @@ class Renderer {
      * @param {Point}  pt2          target point
      * @param {[type]} nodeBox1     nodebox for source node
      * @param {[type]} nodeBox2     nodebox for target node
-     * @param {number} arrowLength  the lenght of the arrowhead
+     * @param {number} arrowLength  the length of the arrowhead
      * @param {number} arrowWidth   the width of the arrowhead
      * @param {string} chevronColor the color of the arrowhead
      * @param {string} label        the label of the edge
@@ -243,6 +249,39 @@ class Renderer {
         }
 
         this.ctx.fillStyle = this.nodeStatusColors[node.data.status] || this.nodeStatusColors["expanded"];
+
+        this.gfx.rect(pt.x-textWidth/2, pt.y-10, textWidth, 26, 8, {fill:this.ctx.fillStyle}); // draw the node rect
+        this.nodeBoxes[node.name] = [pt.x-textWidth/2, pt.y-11, textWidth, 28]; // save the bounds of the node-rect for drawing the edges correctly.
+
+        // draw the text
+        if (label){
+            if (node.data.color != 'none' || node.data.color != 'white') {
+                this.drawLabel(pt.x, pt.y+8, label, 'white');
+            }
+            else {
+                this.drawLabel(pt.x, pt.y+8, label, 'black');
+            }
+        }
+    }
+    /**
+     * Draws the rectangle of the node with multiple colors
+     * @param {Node}  node
+     * @param {Point} pt
+     */
+    private drawRectNodeMultiColor(node: Node, pt: Point): void {
+        // draw a circle centered at pt
+        var label = node.data.label || "";
+        var textWidth = this.ctx.measureText(label).width + 30;
+
+        if (label && label.length > 10) {
+            label = node.data.label = label.substring(0,8) + "..";
+        }
+
+        this.ctx.fillStyle = this.ctx.createLinearGradient(pt.x-textWidth/2, 0, pt.x, 0);
+        this.ctx.fillStyle.addColorStop(1, this.nodeStatusColors[node.data.status[0]]);
+        if (node.data.status[1]){
+            this.ctx.fillStyle.addColorStop(1, this.nodeStatusColors[node.data.status[1]]);
+        }
 
         this.gfx.rect(pt.x-textWidth/2, pt.y-10, textWidth, 26, 8, {fill:this.ctx.fillStyle}); // draw the node rect
         this.nodeBoxes[node.name] = [pt.x-textWidth/2, pt.y-11, textWidth, 28]; // save the bounds of the node-rect for drawing the edges correctly.
