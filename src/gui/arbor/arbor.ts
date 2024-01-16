@@ -77,7 +77,7 @@ module GUI {
             this.rightGraphNodes = {p: undefined, q: undefined, qSet: undefined, qStarSet: undefined};
         }
 
-        public setRightGraphNodes(names : {p: string, q: string | undefined, qSet: string[] | undefined, qStarSet: string[] | undefined}){
+        public setGraphNodes(names : {p: string, q: string | undefined, qSet: string[] | undefined, qStarSet: string[] | undefined}){
             if(!names) return;
 
             this.unselectRightGraphNodes();

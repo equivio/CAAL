@@ -399,7 +399,7 @@ module Activity {
                     })
                 }
             }
-            this.guiGraph.setRightGraphNodes(configIds);
+            this.guiGraph.setGraphNodes(configIds);
         }
 
         private clear(graph: GUI.ProcessGraphUI): void {
