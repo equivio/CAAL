@@ -551,11 +551,116 @@ module Property {
                 ];
             }
             let desc : string = this.firstProcess + " " + symbol + "<sub>X</sub>" + " " + this.secondProcess + "\n";
+
+            /*TODO: implement/adjust visualizations for strong- and weak spectroscopy*/
+            let line : string = "<div style='display: flex;'>";
+            let eqDiv : {[key: string]: string} = {
+                Start: "<div style='height: 35px; box-sizing: border-box; border: 1px solid rgb(0,0,0); text-align: center; padding: 2px; ",
+                End: "'></div>"};
+
+            let determineColor = function(eq, verificationResult) {
+                if(verificationResult) {
+                    return verificationResult[eq.charAt(0).toLowerCase() + eq.slice(1)] ? " background:green;" : " background:red;";
+                }
+                return " background:white;";
+            };
+
             supportedEqs.forEach((eq) => {
-                if(this.verificationResult) {
-                    desc += (this.verificationResult[eq.charAt(0).toLowerCase() + eq.slice(1)] ? "<div style='color:green;'>" : "<div style='color:red;'>") + eq + "</div>";
-                }else{desc += eq + "\n";}
+                eqDiv[eq.charAt(0).toLowerCase() + eq.slice(1)] =  determineColor(eq, this.verificationResult) + "'>" + eq + "</div>";
             })
+            
+            if(super.getType() === "weak") {
+                /*
+                let line : string = "<div style='margin: 5px; height: 40px; display: flex; align-items: center; justify-content: center;'>";
+                let eqDiv : {[key: string]: string} = {placeholder: "<div style='text-align: center; width: 160px; border: 1px solid transparent; margin: 5px; padding: 2px; z-index: 2;'></div>"};
+                supportedEqs.forEach((eq) => {
+                    if(this.verificationResult) {
+                        eqDiv[eq.charAt(0).toLowerCase() + eq.slice(1)] = "<div style='background: " + (this.verificationResult[eq.charAt(0).toLowerCase() + eq.slice(1)] ? "green;" : "red;") + " text-align: center; width: 160px; border: 1px solid rgb(0,0,0); margin: 5px; padding: 2px; z-index: 2;'>" + eq + "</div>";
+                    }else{eqDiv[eq.charAt(0).toLowerCase() + eq.slice(1)] = "<div style='background: white; text-align: center; width: 160px; border: 1px solid rgb(0,0,0); margin: 5px; padding: 2px; z-index: 2;'>" + eq + "</div>";}
+                })
+
+                desc += "<div style='margin: 5px;'>" +
+                        line + eqDiv["srbbisim"]+ "</div>" + 
+                        line + eqDiv["bbisim"] + eqDiv["srdbisim"] + "</div>" +
+                        line + eqDiv["etabisim"] + eqDiv["dbisim"] + eqDiv["sbisim"] + "</div>" +
+                        line + eqDiv["placeholder"] + eqDiv["bisimulation"] + eqDiv["placeholder"] +eqDiv["placeholder"] + "</div>" +
+                        line + eqDiv["etasim"] + eqDiv["twoNestedSimulation"] + eqDiv["csim"] + eqDiv["srsim"] + eqDiv["scsim"] + "</div>" +
+                        line + eqDiv["readySimulation"] + eqDiv["possibleFutures"] + eqDiv["placeholder"] + eqDiv["placeholder"] + "</div>" +
+                        line + eqDiv["simulation"] + eqDiv["readiness"] + eqDiv["impossibleFutures"] + eqDiv["sreadiness"] + eqDiv["sifutures"] + "</div>" +
+                        line + eqDiv["placeholder"] + eqDiv["failures"] + eqDiv["sfailures"] + "</div>" +
+                        line + eqDiv["traceInclusion"] + "</div>" +
+                        "</div>";
+                */
+
+                desc += "<div style='margin: 5px; width:640px; border: 1px solid rgb(0,0,0);'>" +
+                        line + 
+                            eqDiv["Start"] + "width:640px;" + eqDiv["srbbisim"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:320px;" + eqDiv["bbisim"] + 
+                            eqDiv["Start"] + "width:320px;" + eqDiv["srdbisim"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:200px;" + eqDiv["etabisim"] + 
+                            eqDiv["Start"] + "width:240px;" + eqDiv["dbisim"] + 
+                            eqDiv["Start"] + "width:200px; border-bottom: 1px solid transparent;" + eqDiv["sbisim"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:80px; border-bottom: 1px solid transparent;" + eqDiv["etasim"] + 
+                            eqDiv["Start"] + "width:360px;" + eqDiv["bisimulation"] + 
+                            eqDiv["Start"] + determineColor("sbisim", this.verificationResult) + "width:200px; border-top: 1px solid transparent;" + eqDiv["End"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + determineColor("etasim", this.verificationResult) + "width:80px; border-top: 1px solid transparent; border-bottom: 1px solid transparent;" + eqDiv["End"] + 
+                            eqDiv["Start"] + "width:240px;" + eqDiv["twoNestedSimulation"] + 
+                            eqDiv["Start"] + "width:120px; border-bottom: 1px solid transparent;" + eqDiv["csim"] + 
+                            eqDiv["Start"] + "width:100px;" + eqDiv["srsim"] + 
+                            eqDiv["Start"] + "width:100px;" + eqDiv["scsim"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + determineColor("etasim", this.verificationResult) + "width:80px; border-top: 1px solid transparent;" + eqDiv["End"] + 
+                            eqDiv["Start"] + "width:120px;" + eqDiv["readySimulation"] + 
+                            eqDiv["Start"] + "width:120px;" + eqDiv["possibleFutures"] + 
+                            eqDiv["Start"] + determineColor("csim", this.verificationResult) + "width:120px; border-top: 1px solid transparent;" + eqDiv["End"] + 
+                            eqDiv["Start"] + "width:100px;" + eqDiv["sreadiness"] + 
+                            eqDiv["Start"] + "width:100px;" + eqDiv["sifutures"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:140px; border-bottom: 1px solid transparent;" + eqDiv["simulation"] + 
+                            eqDiv["Start"] + "width:150px;" + eqDiv["readiness"] + 
+                            eqDiv["Start"] + "width:150px;" + eqDiv["impossibleFutures"] + 
+                            eqDiv["Start"] + "width:200px; border-bottom: 1px solid transparent;" + eqDiv["sfailures"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + determineColor("simulation", this.verificationResult) + "width:140px; border-top: 1px solid transparent;" + eqDiv["End"] + 
+                            eqDiv["Start"] + "width:300px;" + eqDiv["failures"] + 
+                            eqDiv["Start"] + determineColor("sfailures", this.verificationResult) + "width:200px; border-top: 1px solid transparent;" + eqDiv["End"] +  "</div>" +
+                        line +  
+                            eqDiv["Start"] + "width:640px;" + eqDiv["traceInclusion"] + "</div>" + "</div>";
+            }
+            else{
+                desc += "<div style='margin: 5px; width:640px; border: 1px solid rgb(0,0,0);'>" +
+                        line + 
+                            eqDiv["Start"] + "width:640px;" + eqDiv["bisimulation"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:640px;" + eqDiv["twoNestedSimulation"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:400px;" + eqDiv["readySimulation"] +
+                            eqDiv["Start"] + "width:240px; border-bottom: 1px solid transparent;" + eqDiv["possibleFutures"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:160px; border-bottom: 1px solid transparent;" + eqDiv["simulation"] +
+                            eqDiv["Start"] + "width:240px;" + eqDiv["readinessTraces"] +
+                            eqDiv["Start"] + determineColor("possibleFutures", this.verificationResult)  + "width:240px; border-top: 1px solid transparent;" + eqDiv["End"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + determineColor("simulation", this.verificationResult) + "width:160px; border-top: 1px solid transparent; border-bottom: 1px solid transparent;" + eqDiv["End"] +
+                            eqDiv["Start"] + "width:160px;" + eqDiv["failureTraces"] +
+                            eqDiv["Start"] + "width:160px;" + eqDiv["readiness"] +
+                            eqDiv["Start"] + "width:160px; border-bottom: 1px solid transparent;" + eqDiv["impossibleFutures"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + determineColor("simulation", this.verificationResult) + "width:160px; border-top: 1px solid transparent; border-bottom: 1px solid transparent;" + eqDiv["End"] +
+                            eqDiv["Start"] + "width:320px;" + eqDiv["revivals"] +
+                            eqDiv["Start"] + determineColor("impossibleFutures", this.verificationResult) + "width:160px; border-top: 1px solid transparent;" + eqDiv["End"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + determineColor("simulation", this.verificationResult) + "width:160px; border-top: 1px solid transparent;" + eqDiv["End"] +
+                            eqDiv["Start"] + "width:480px;" + eqDiv["failures"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:640px;" + eqDiv["traceInclusion"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:640px;" + eqDiv["enabledness"] +  "</div>" + "</div>";
+            }
             if(this.verificationResult) {
                 this.verificationResult = undefined;
                 return desc;
