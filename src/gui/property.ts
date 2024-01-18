@@ -552,15 +552,14 @@ module Property {
             }
             let desc : string = this.firstProcess + " " + symbol + "<sub>X</sub>" + " " + this.secondProcess + "\n";
 
-            /*TODO: implement/adjust visualizations for strong- and weak spectroscopy*/
             let line : string = "<div style='display: flex;'>";
             let eqDiv : {[key: string]: string} = {
-                Start: "<div style='height: 35px; box-sizing: border-box; border: 1px solid rgb(0,0,0); text-align: center; padding: 2px; ",
+                Start: "<div style='height: 35px; box-sizing: border-box; border: 1px solid rgb(0,0,0); display: flex; align-items: center; justify-content: center; padding: 2px; ",
                 End: "'></div>"};
 
             let determineColor = function(eq, verificationResult) {
                 if(verificationResult) {
-                    return verificationResult[eq.charAt(0).toLowerCase() + eq.slice(1)] ? " background:green;" : " background:red;";
+                    return verificationResult[eq.charAt(0).toLowerCase() + eq.slice(1)] ? " background:rgb(20,140,20);" : " background:rgb(240,40,40);";
                 }
                 return " background:white;";
             };
@@ -570,28 +569,6 @@ module Property {
             })
             
             if(super.getType() === "weak") {
-                /*
-                let line : string = "<div style='margin: 5px; height: 40px; display: flex; align-items: center; justify-content: center;'>";
-                let eqDiv : {[key: string]: string} = {placeholder: "<div style='text-align: center; width: 160px; border: 1px solid transparent; margin: 5px; padding: 2px; z-index: 2;'></div>"};
-                supportedEqs.forEach((eq) => {
-                    if(this.verificationResult) {
-                        eqDiv[eq.charAt(0).toLowerCase() + eq.slice(1)] = "<div style='background: " + (this.verificationResult[eq.charAt(0).toLowerCase() + eq.slice(1)] ? "green;" : "red;") + " text-align: center; width: 160px; border: 1px solid rgb(0,0,0); margin: 5px; padding: 2px; z-index: 2;'>" + eq + "</div>";
-                    }else{eqDiv[eq.charAt(0).toLowerCase() + eq.slice(1)] = "<div style='background: white; text-align: center; width: 160px; border: 1px solid rgb(0,0,0); margin: 5px; padding: 2px; z-index: 2;'>" + eq + "</div>";}
-                })
-
-                desc += "<div style='margin: 5px;'>" +
-                        line + eqDiv["srbbisim"]+ "</div>" + 
-                        line + eqDiv["bbisim"] + eqDiv["srdbisim"] + "</div>" +
-                        line + eqDiv["etabisim"] + eqDiv["dbisim"] + eqDiv["sbisim"] + "</div>" +
-                        line + eqDiv["placeholder"] + eqDiv["bisimulation"] + eqDiv["placeholder"] +eqDiv["placeholder"] + "</div>" +
-                        line + eqDiv["etasim"] + eqDiv["twoNestedSimulation"] + eqDiv["csim"] + eqDiv["srsim"] + eqDiv["scsim"] + "</div>" +
-                        line + eqDiv["readySimulation"] + eqDiv["possibleFutures"] + eqDiv["placeholder"] + eqDiv["placeholder"] + "</div>" +
-                        line + eqDiv["simulation"] + eqDiv["readiness"] + eqDiv["impossibleFutures"] + eqDiv["sreadiness"] + eqDiv["sifutures"] + "</div>" +
-                        line + eqDiv["placeholder"] + eqDiv["failures"] + eqDiv["sfailures"] + "</div>" +
-                        line + eqDiv["traceInclusion"] + "</div>" +
-                        "</div>";
-                */
-
                 desc += "<div style='margin: 5px; width:640px; border: 1px solid rgb(0,0,0);'>" +
                         line + 
                             eqDiv["Start"] + "width:640px;" + eqDiv["srbbisim"] +  "</div>" +
@@ -663,10 +640,8 @@ module Property {
             }
             if(this.verificationResult) {
                 this.verificationResult = undefined;
-                return desc;
             }
-            // remove last linebreak
-            return desc.slice(0,-1);
+            return desc;
         }
 
         public getClassName() : string {

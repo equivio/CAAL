@@ -18,7 +18,6 @@ module Activity {
             $("#verify-all").on("click", () => this.verifyAll());
             $("#verify-stop").on("click", () => this.stopVerify());
             $("input[name=property-type]").on("change", () => this.showSelectedPropertyType());
-            $("#verify-spectroscopy").on("click", () => this.toggleRelation());
 
             var $propertyTable = $("#property-table-properties");
             (<any>$propertyTable).sortable({
@@ -230,8 +229,8 @@ module Activity {
         private setPropertyModalOptions() : void {
             var processes = this.graph.getNamedProcesses().reverse();
             var $lists = $("#firstProcess").add($("#secondProcess")).add($("#hmlProcess")).empty();
-            $("#verify-spectroscopy").prop("checked", false);
             $("#relation-radio").prop("checked", true);
+            $("#spectroscopy-radio").prop("checked", false);
             $("#hml-radio").prop("checked", false);
 
             for (var i = 0; i < processes.length; i++) {
@@ -284,17 +283,6 @@ module Activity {
             $("#property-modal").modal("show");
         }
 
-        private toggleRelation() : void {
-            let $spectroscopyToggle = $("#verify-spectroscopy");
-            let $relationType = $(".relation-type");
-            if ($spectroscopyToggle.is(':checked')) {
-                $relationType.hide();
-            }
-            else {
-                $relationType.show();
-            }
-        }
-
         private getSelectedPropertyType() : string {
             return $("input[name=property-type]:checked").val();
         }
@@ -305,7 +293,15 @@ module Activity {
 
         private showSelectedPropertyType() : void {
             if (this.getSelectedPropertyType() === "relation") {
-                $("#add-hml-formula").fadeOut(200, () => $("#add-relation").fadeIn(200));
+                $("#add-hml-formula").fadeOut(200, () => $("#add-relation").fadeOut(200, () => {
+                    $(".relation-type").show();
+                    $("#add-relation").fadeIn(200);
+                }));
+            } else if (this.getSelectedPropertyType() === "spectroscopy") {
+                $("#add-hml-formula").fadeOut(200, () => $("#add-relation").fadeOut(200, () => {
+                    $(".relation-type").hide();
+                    $("#add-relation").fadeIn(200);
+                }));
             } else {
                 $("#add-relation").fadeOut(200, () => $("#add-hml-formula").fadeIn(200, () => this.formulaEditor.focus()));
             }
@@ -329,7 +325,22 @@ module Activity {
                     options["type"] = $("#tccsTransition option:selected").val();
                     options["time"] = $("#tccsTransition option:selected").data("time");
                 }
-            } else {
+            } else if(this.getSelectedPropertyType() === "spectroscopy") {
+                propertyName = "Spectroscopy";
+                options = {
+                    firstProcess: $("#firstProcess option:selected").val(),
+                    secondProcess: $("#secondProcess option:selected").val(),
+                    type: null,
+                    time: null
+                };
+
+                if (this.project.getInputMode() === InputMode.CCS) {
+                    options["type"] = $("#ccsTransition option:selected").val();
+                } else {
+                    options["type"] = $("#tccsTransition option:selected").val();
+                    options["time"] = $("#tccsTransition option:selected").data("time");
+                }
+            }else {
                 propertyName = "HML";
                 options = {
                     process: $("#hmlProcess option:selected").val(),
@@ -340,7 +351,7 @@ module Activity {
 
             options["comment"] = $("#propertyComment").val();
 
-            if (propertyName !== "HML" && $("#verify-spectroscopy").is(":checked")){
+            if (propertyName === "Spectroscopy"){
                 var property = new window["Property"]["SpectroscopyAtOnce"](options);
                 this.project.addProperty(property);
                 if (e) {
