@@ -155,7 +155,7 @@ module StrongSpectroscopy {
         return combinations;
     }
 
-    function getSetDifference(set: CCS.Process[], subset: CCS.Process[]) {
+    export function getSetDifference(set: CCS.Process[], subset: CCS.Process[]) {
         if (subset.length == 0) {
             return set;
         }

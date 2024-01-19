@@ -23,6 +23,7 @@ module GUI {
         clearHoverOutListener() : void;
 
         setGraphNodes(names : {p: string, q: string | undefined, qSet: string[] | undefined, qStarSet: string[] | undefined}) : void;
+        toggleSelectForChallenge(name : string) : boolean;
         setSelected(name : string) : void;
         getSelected() : string;
         highlightToNode(name: string) : void;

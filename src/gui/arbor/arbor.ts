@@ -13,8 +13,8 @@ module GUI {
         private handler : Handler;
         private highlightedEdges : Edge[] = [];
         private selectedNode : Node;
-        //private rightGraphNodes : Node | Node[] | Node[][];
-        private rightGraphNodes : {p: Node | undefined, q: Node | undefined, qSet: Node[] | undefined, qStarSet: Node[] | undefined} = Object.create(null);
+        private graphNodes : {p: Node | undefined, q: Node | undefined, qSet: Node[] | undefined, qStarSet: Node[] | undefined} = Object.create(null);
+        private selectedForChallenge : Node[] = [];
 
         constructor(renderer, options = {repulsion: 400, stiffness: 800, friction: 0.5, integrator: "verlet"}) {
             this.sys = arbor.ParticleSystem(options);
@@ -57,35 +57,35 @@ module GUI {
             }
         }
 
-        public unselectRightGraphNodes(){
-            if(!this.rightGraphNodes) return;
-            if(this.rightGraphNodes.q){
-                this.rightGraphNodes.q.data.status = "expanded";
+        public unselectGraphNodes(){
+            if(!this.graphNodes) return;
+            if(this.graphNodes.q){
+                this.graphNodes.q.data.status = "expanded";
             }
             else{
-                if(this.rightGraphNodes.qSet){
-                    this.rightGraphNodes.qSet.forEach((node) => {
+                if(this.graphNodes.qSet){
+                    this.graphNodes.qSet.forEach((node) => {
                         node.data.status = "expanded";
                     })
                 }
-                if(this.rightGraphNodes.qStarSet){
-                    this.rightGraphNodes.qStarSet.forEach((node) => {
+                if(this.graphNodes.qStarSet){
+                    this.graphNodes.qStarSet.forEach((node) => {
                         node.data.status = "expanded";
                     })
                 }
             }
-            this.rightGraphNodes = {p: undefined, q: undefined, qSet: undefined, qStarSet: undefined};
+            this.graphNodes = {p: undefined, q: undefined, qSet: undefined, qStarSet: undefined};
         }
 
         public setGraphNodes(names : {p: string, q: string | undefined, qSet: string[] | undefined, qStarSet: string[] | undefined}){
             if(!names) return;
 
-            this.unselectRightGraphNodes();
+            this.unselectGraphNodes();
 
             let pNode = this.sys.getNode(names.p);
             if(pNode){
                 pNode.data.status = ["selectedAsP"];
-                this.rightGraphNodes.p = pNode;
+                this.graphNodes.p = pNode;
             }
 
             if(names.q){
@@ -97,7 +97,7 @@ module GUI {
                     else{
                         newNode.data.status = ["selectedAsSingleQ"];
                     }
-                    this.rightGraphNodes.q = newNode;
+                    this.graphNodes.q = newNode;
                 }
             }
             else{
@@ -107,7 +107,7 @@ module GUI {
                         let newNode = this.sys.getNode(name);
                         if(newNode){
                             if(!initialized){
-                                this.rightGraphNodes.qStarSet = [];
+                                this.graphNodes.qStarSet = [];
                                 initialized = true;
                             }
                             if (!(typeof newNode.data.status === "string")){
@@ -116,7 +116,7 @@ module GUI {
                             else{
                                 newNode.data.status = ["selectedAsQStar"];
                             }
-                            this.rightGraphNodes.qStarSet!.push(newNode);
+                            this.graphNodes.qStarSet!.push(newNode);
                         }
                     })
                 }
@@ -126,7 +126,7 @@ module GUI {
                         let newNode = this.sys.getNode(name);
                         if(newNode){
                             if(!initialized){
-                                this.rightGraphNodes.qSet = [];
+                                this.graphNodes.qSet = [];
                                 initialized = true;
                             }
                             if (!(typeof newNode.data.status === "string")){
@@ -135,13 +135,32 @@ module GUI {
                             else{
                                 newNode.data.status = ["selectedAsQ"];
                             }
-                            this.rightGraphNodes.qSet!.push(newNode);
+                            this.graphNodes.qSet!.push(newNode);
                         }
                     })
                 }
             }
 
             this.renderer.redraw();
+        }
+
+        public toggleSelectForChallenge(name: string) : boolean {
+            let newNode = this.sys.getNode(name);
+            let index = this.selectedForChallenge.indexOf(newNode); // pointer comparison should be correct
+            let statusIndex = newNode.data.status[0] === "selectedAsP" ? 1 : 0;
+            if (index > -1) {
+                // deselect
+                this.selectedForChallenge.splice(index, 1);
+                newNode.data.status[statusIndex] = "selectedAsQ";
+                this.renderer.redraw();
+                return false;
+            }
+            // else select
+
+            newNode.data.status[statusIndex] = "selectedForChallenge";
+            this.selectedForChallenge.push(newNode);
+            this.renderer.redraw();
+            return true;
         }
 
         public setSelected(name: string) {

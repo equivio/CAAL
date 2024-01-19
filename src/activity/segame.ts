@@ -230,6 +230,18 @@ module Activity {
             });
         }
 
+        public getGuiGraph(): GUI.ProcessGraphUI {
+            return this.guiGraph;
+        }
+
+        public getDepth(): JQuery {
+            return this.$depth;
+        }
+
+        public getGraph(): ccs.Graph {
+            return this.graph;
+        }
+
         private displayEnergyGauge(energyLeft: number[]): void {
             let str = "Energy Budget: (";
             for (let i = 0; i < energyLeft.length; i++) {
@@ -317,7 +329,7 @@ module Activity {
             }
         }
 
-        private draw(process: CCS.Process, graph: GUI.ProcessGraphUI, depth: number, highlightNodes: boolean): void {
+        public draw(process: CCS.Process, graph: GUI.ProcessGraphUI, depth: number, highlightNodes: boolean): void {
             var allTransitions = CCS.getNSuccessors(
                 CCS.getSuccGenerator(this.graph, { inputMode: InputMode[this.project.getInputMode()], time: "timed", succGen: "strong", reduce: true }),
                 process,
@@ -457,6 +469,8 @@ module Activity {
 
         private currentLeft: CCS.Process;
         private currentRight: { q: CCS.Process | undefined, qSet: CCS.Process[] | undefined, qStarSet: CCS.Process[] | undefined };
+        private selectedForChallenge : CCS.Process[] = [];
+        private $confirmChallengeBtn: JQuery;
 
         private attacker: Player;
         private defender: Player;
@@ -465,6 +479,8 @@ module Activity {
         private moveCount: number = 1;
 
         private cycleCache: any;
+
+        private readyForInput: boolean = true;
 
         constructor(gameActivity: SEGame, gameLog: GameLog, succGen: CCS.SuccessorGenerator,
             energyBudget: number[], currentLeft: CCS.Process, currentRight: any) {
@@ -479,6 +495,11 @@ module Activity {
             this.strongSpectroscopy = new StrongSpectroscopy.Game(this.succGen, this.currentLeft,
                 this.currentRight.qSet![0]!);
             this.attackerWinBudgets = StrongSpectroscopy.computeWinningBudgets(this.strongSpectroscopy);
+
+            this.$confirmChallengeBtn = $("#se-game-confirm-challenge");
+            // no duplicate event listeners with this
+            this.$confirmChallengeBtn.off("click");
+            this.$confirmChallengeBtn.on("click", () => this.confirmChallenge());
         }
 
         public getTransitionStr(update: string): string {
@@ -515,6 +536,18 @@ module Activity {
 
             this.gameActivity.highlightNodes();
             this.gameActivity.centerNode(this.currentLeft);
+
+            this.gameActivity.getGuiGraph().setOnSelectListener((processId) => {
+                // keep previous onClick-functionality
+                if (this.gameActivity.getGuiGraph().getProcessDataObject(processId.toString()).status === "unexpanded"){
+                    this.gameActivity.draw(this.gameActivity.getGraph().processById(processId), this.gameActivity.getGuiGraph(), this.gameActivity.getDepth().val(), true);
+                }
+
+                // handling of clicks on procs for move selection
+                if (!this.readyForInput) { return; }
+                this.readyForInput = false;
+                this.selectMoveFromGraphView(processId);
+            });
 
             this.currentWinner = this.getCurrentWinner();
             this.gameLog.printIntro(this.currentWinner, this.attacker);
@@ -560,6 +593,101 @@ module Activity {
 
         }
 
+        private selectMoveFromGraphView(processId: string){
+            let config = this.getCurrentConfiguration();
+
+            // decisions
+            if (config.right.q){
+                // positive
+                if (config.left.id === processId) {
+                    let fromPos = new StrongSpectroscopy.Position(config.left, false, undefined, undefined, config.right.q);
+                    let toPos = new StrongSpectroscopy.Position(config.left, false, [config.right.q]);
+                    let choice = new StrongSpectroscopy.Move(fromPos, toPos, [[1,4],0,0,0,0,0]);
+                    // TODO: remove if table is removed
+                    $("#se-game-transitions-table").find("tbody").empty();
+                    this.play(this.attacker, choice);
+                    return;
+                }
+                // negative
+                if (config.right.q.id === processId) {
+                    let fromPos = new StrongSpectroscopy.Position(config.left, false, undefined, undefined, config.right.q);
+                    let toPos = new StrongSpectroscopy.Position(config.right.q, false, [config.left]);
+                    let choice = new StrongSpectroscopy.Move(fromPos, toPos, [[1,5],0,0,0,0,-1]);
+                    // TODO: remove if table is removed
+                    $("#se-game-transitions-table").find("tbody").empty();
+                    this.play(this.attacker, choice);
+                    return;
+                }
+                return;
+            }
+            // defender positions
+            if (config.right.qStarSet) {
+                // revivals
+                if (config.right.qStarSet.some((qStar) => { return qStar.id === processId })) {
+                    let fromPos = new StrongSpectroscopy.Position(config.left, true, config.right.qSet, config.right.qStarSet);
+                    let toPos = new StrongSpectroscopy.Position(config.left, false, config.right.qStarSet);
+                    let choice = new StrongSpectroscopy.Move(fromPos, toPos, [[1,3],0,0,0,0,0]);
+                    // TODO: remove if table is removed
+                    $("#se-game-transitions-table").find("tbody").empty();
+                    this.play(this.defender, choice);
+                    return;
+                }
+                // conj. answers
+                let foundProcess;
+                // check if selected proc is in qSet and save if true
+                if (foundProcess = config.right.qSet.find((q) => { return q.id === processId; })) {
+                    let fromPos = new StrongSpectroscopy.Position(config.left, true, config.right.qSet, config.right.qStarSet);
+                    let toPos = new StrongSpectroscopy.Position(config.left, false, undefined, undefined, foundProcess);
+                    let choice = new StrongSpectroscopy.Move(fromPos, toPos, [0,0,0,[3,4],0,0]);
+                    // TODO: remove if table is removed
+                    $("#se-game-transitions-table").find("tbody").empty();
+                    this.play(this.defender, choice);
+                    return;
+                }
+                return;
+            }
+            // conj. challenge provisional selection
+            let foundProcess;
+            // check if selected proc is in qSet and save in variable if true
+            if (foundProcess = config.right.qSet.find((q) => { return q.id === processId; })) {
+                // save selected proc if selected for challenge
+                if (this.gameActivity.getGuiGraph().toggleSelectForChallenge(processId)) {
+                    this.selectedForChallenge.push(foundProcess);
+                    this.readyForInput = true;
+                    return;
+                }
+                // remove saved proc if deselected
+                let removeIndex = this.selectedForChallenge.indexOf(foundProcess);
+                this.selectedForChallenge.splice(removeIndex, 1);
+                this.readyForInput = true;
+                return
+            }
+            this.readyForInput = true;
+        }
+
+        private confirmChallenge() {
+            if (!this.readyForInput) { return; }
+
+            this.readyForInput = false;
+
+            let config = this.getCurrentConfiguration();
+
+            if (!config.right.qSet || config.right.qStarSet) {
+                return;
+            }
+
+            let fromPos = new StrongSpectroscopy.Position(config.left, false, config.right.qSet);
+            let toPos = new StrongSpectroscopy.Position(config.left, true, StrongSpectroscopy.getSetDifference(config.right.qSet, this.selectedForChallenge), this.selectedForChallenge);
+            let choice = new StrongSpectroscopy.Move(fromPos, toPos, [0,-1,0,0,0,0]);
+
+            // cleanup
+            this.selectedForChallenge = [];
+
+            // TODO: remove if table is removed
+            $("#se-game-transitions-table").find("tbody").empty();
+            this.play(this.attacker, choice);
+        }
+
         public play(player: Player, choice: StrongSpectroscopy.Move): void {
             this.gameLog.printPlay(player, choice, this);
             this.saveCurrentConfig(choice.to);
@@ -575,9 +703,11 @@ module Activity {
                     this.moveCount++;
                     this.gameLog.printMoveStart(this.moveCount, this.getCurrentConfiguration());
                     if (choice.to.isDefenderPosition) {
+                        if (this.defender instanceof Player) { this.readyForInput = true; }
                         this.preparePlayer(this.defender);
                     }
                     else {
+                        if (this.attacker instanceof Player) { this.readyForInput = true; }
                         this.preparePlayer(this.attacker);
                     }
                 }

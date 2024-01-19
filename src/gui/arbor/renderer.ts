@@ -15,7 +15,8 @@ class Renderer {
         "selectedAsP": "rgb(245, 50, 50)", // red
         "selectedAsQ": "rgb(4, 98, 7)", // green
         "selectedAsQStar": "rgb(125, 35, 130)", // purple
-        "selectedAsSingleQ": "rgb(0, 128, 128)" // teal
+        "selectedAsSingleQ": "rgb(0, 128, 128)", // teal
+        "selectedForChallenge": "rgb(125, 35, 130)" // same purple, but semantically different
     }
 
     private highlightSettings = {
@@ -304,6 +305,7 @@ class Renderer {
      * @param {string}                   label the text to be written.
      * @param {CanvasRenderingContext2D} ctx   the canvas to draw on.
      */
+    // TODO:
     private drawLabel(x : number, y : number, label : string, color? : string) : void {
         this.ctx.save();
         this.ctx.font = "14px 'Open Sans'";
