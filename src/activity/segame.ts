@@ -10,7 +10,7 @@ module Activity {
         private SEGameLogic: SEGameLogic;
         private fullscreen: Fullscreen;
         private tooltip: ProcessTooltip;
-        private timeout: any;
+        public timeout: any;
         private $leftProcessList: JQuery;
         private $rightProcessList: JQuery;
         private $ccsGameTypes: JQuery;
@@ -234,6 +234,14 @@ module Activity {
             return this.guiGraph;
         }
 
+        public getGuiContainer(): JQuery {
+            return this.$guiContainer;
+        }
+
+        public getTooltip(): ProcessTooltip {
+            return this.tooltip;
+        }
+
         public getDepth(): JQuery {
             return this.$depth;
         }
@@ -242,10 +250,10 @@ module Activity {
             return this.graph;
         }
 
-        private displayEnergyGauge(energyLeft: number[]): void {
+        public displayEnergyGauge(energyLeft: number[], preview: boolean): void {
             let str = "Energy Budget: (";
             for (let i = 0; i < energyLeft.length; i++) {
-                str += energyLeft[i] === Infinity ? "∞" : energyLeft[i];
+                str += energyLeft[i] === Infinity ? "∞" : (preview && energyLeft[i] < this.SEGameLogic.getEnergyLeft()[i] ? "<span style='color:red;'>" + energyLeft[i] + "</span>" : energyLeft[i]);
                 str += i < energyLeft.length - 1 ? ", " : ")";
             }
             this.$energyGauge.html(str);
@@ -273,7 +281,7 @@ module Activity {
             if (this.SEGameLogic !== undefined) { this.SEGameLogic.stopGame() };
 
             let budget = this.getEnergyBudgetFromRelation(options.relation);
-            this.displayEnergyGauge(budget);
+            this.displayEnergyGauge(budget, false);
 
             this.SEGameLogic = new SEGameLogic(this, new GameLog(options.time), this.succGen, budget, this.succGen.getProcessByName(options.leftProcess),
                 { q: undefined, qSet: [this.succGen.getProcessByName(options.rightProcess)], qStarSet: undefined })
@@ -381,7 +389,7 @@ module Activity {
             }
 
             this.highlightNodes();
-            this.displayEnergyGauge(this.SEGameLogic.getEnergyLeft());
+            this.displayEnergyGauge(this.SEGameLogic.getEnergyLeft(), false);
         }
 
         public highlightNodes(): void {
@@ -497,8 +505,9 @@ module Activity {
 
             this.$confirmChallengeBtn = $("#se-game-confirm-challenge");
             // no duplicate event listeners with this
-            this.$confirmChallengeBtn.off("click");
+            this.$confirmChallengeBtn.off();
             this.$confirmChallengeBtn.on("click", () => this.confirmChallenge());
+            this.$confirmChallengeBtn.hover(() => this.previewChallengeCost(), () => this.gameActivity.displayEnergyGauge(this.energyLeft, false));
         }
 
         public getTransitionStr(update: string): string {
@@ -546,6 +555,30 @@ module Activity {
                 if (!this.readyForInput) { return; }
                 this.readyForInput = false;
                 this.selectMoveFromGraphView(processId);
+            });
+
+            this.gameActivity.getGuiGraph().setHoverOnListener((processId) => {
+                // keep previous functionality
+                this.gameActivity.timeout = setTimeout(() => {
+                    var tooltipAnchor = $("#se-game-canvas-tooltip-left");
+                    var position = this.gameActivity.getGuiGraph().getPosition(processId);
+
+                    tooltipAnchor.css("left", position.x - this.gameActivity.getGuiContainer().scrollLeft());
+                    tooltipAnchor.css("top", position.y - this.gameActivity.getGuiContainer().scrollTop() - 10);
+
+                    tooltipAnchor.tooltip({ title: this.gameActivity.getTooltip().ccsNotationForProcessId(processId), html: true });
+                    tooltipAnchor.tooltip("show");
+                }, 1000)
+
+                if (!this.readyForInput) { return; }
+                this.previewMoveCost(processId);
+            });
+
+            this.gameActivity.getGuiGraph().setHoverOutListener(() => {
+                // keep previous functionality
+                clearTimeout(this.gameActivity.timeout);
+                $("#se-game-canvas-tooltip-left").tooltip("destroy");
+                this.gameActivity.displayEnergyGauge(this.energyLeft, false);
             });
 
             this.currentWinner = this.getCurrentWinner();
@@ -673,9 +706,7 @@ module Activity {
 
             let config = this.getCurrentConfiguration();
 
-            if (!config.right.qSet || config.right.qStarSet) {
-                return;
-            }
+            if (!config.right.qSet || config.right.qStarSet) { return;  }
 
             let fromPos = new StrongSpectroscopy.Position(config.left, false, config.right.qSet);
             let toPos = new StrongSpectroscopy.Position(config.left, true, StrongSpectroscopy.getSetDifference(config.right.qSet, this.selectedForChallenge), this.selectedForChallenge);
@@ -687,6 +718,48 @@ module Activity {
             // TODO: remove if table is removed
             $("#se-game-transitions-table").find("tbody").empty();
             this.play(this.attacker, choice);
+        }
+
+        private previewChallengeCost() {
+            if (!this.readyForInput) { return; }
+
+            let config = this.getCurrentConfiguration();
+
+            if (!config.right.qSet || config.right.qStarSet) { return; }
+            this.gameActivity.displayEnergyGauge(StrongSpectroscopy.update(this.energyLeft, [0,-1,0,0,0,0]), true);
+        }
+
+        private previewMoveCost(processId: string) {
+            let config = this.getCurrentConfiguration();
+
+            // decisions
+            if (config.right.q){
+                // positive
+                if (config.left.id === processId) {
+                    this.gameActivity.displayEnergyGauge(StrongSpectroscopy.update(this.energyLeft, [[1,4],0,0,0,0,0]), true);
+                    return;
+                }
+                // negative
+                if (config.right.q.id === processId) {
+                    this.gameActivity.displayEnergyGauge(StrongSpectroscopy.update(this.energyLeft, [[1,5],0,0,0,0,-1]), true);
+                    return;
+                }
+                return;
+            }
+            // defender positions
+            if (config.right.qStarSet) {
+                // revivals
+                if (config.right.qStarSet.some((qStar) => { return qStar.id === processId })) {
+                    this.gameActivity.displayEnergyGauge(StrongSpectroscopy.update(this.energyLeft, [[1,3],0,0,0,0,0]), true);
+                    return;
+                }
+                // conj. answers
+                let foundProcess;
+                // check if selected proc is in qSet and save if true
+                if (foundProcess = config.right.qSet.find((q) => { return q.id === processId; })) {
+                    this.gameActivity.displayEnergyGauge(StrongSpectroscopy.update(this.energyLeft, [0,0,0,[3,4],0,0]), true);
+                }
+            }
         }
 
         public play(player: Player, choice: StrongSpectroscopy.Move): void {
