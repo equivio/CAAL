@@ -59,6 +59,10 @@ module GUI {
 
         public unselectGraphNodes(){
             if(!this.graphNodes) return;
+            
+            if (this.graphNodes.p){
+                this.graphNodes.p.data.status = "expanded";
+            }
             if(this.graphNodes.q){
                 this.graphNodes.q.data.status = "expanded";
             }

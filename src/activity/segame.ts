@@ -50,12 +50,12 @@ module Activity {
             this.renderer = new Renderer(this.canvas);
             this.guiGraph = new GUI.ArborGraph(this.renderer);
 
-            this.$leftProcessList.on("change", () => this.newGame(true));
-            this.$rightProcessList.on("change", () => this.newGame(false));
-            this.$ccsGameTypes.on("change", () => this.newGame(true));
-            this.$gameRelation.on("change", () => this.newGame(false));
-            this.$playerType.on("change", () => this.newGame(false));
-            this.$restart.on("click", () => this.newGame(false));
+            this.$leftProcessList.on("change", () => this.newGame());
+            this.$rightProcessList.on("change", () => this.newGame());
+            this.$ccsGameTypes.on("change", () => this.newGame());
+            this.$gameRelation.on("change", () => this.newGame());
+            this.$playerType.on("change", () => this.newGame());
+            this.$restart.on("click", () => this.newGame());
             this.$freeze.on("click", (e) => this.toggleFreeze(this.guiGraph, !this.$freeze.data("frozen"), $(e.currentTarget)));
 
             // Manually remove focus from depth input when the canvas is clicked.
@@ -111,7 +111,7 @@ module Activity {
                 this.changed = false;
                 this.graph = this.project.getGraph();
                 this.displayOptions();
-                this.newGame(true, configuration);
+                this.newGame(configuration);
             }
 
             this.tooltip.setGraph(this.graph);
@@ -251,7 +251,7 @@ module Activity {
             this.$energyGauge.html(str);
         }
 
-        private newGame(drawLeft: boolean, configuration?: any): void {
+        private newGame(configuration?: any): void {
             var options;
 
             if (configuration) {
@@ -264,12 +264,11 @@ module Activity {
             this.succGen = CCS.getSuccGenerator(this.graph,
                 { inputMode: InputMode[this.project.getInputMode()], time: options.time, succGen: options.type, reduce: true });
 
-            if (drawLeft || !this.guiGraph.getNode(this.succGen.getProcessByName(options.leftProcess).id.toString())) {
-                this.clear(this.guiGraph);
-                this.draw(this.succGen.getProcessByName(options.leftProcess), this.guiGraph, this.$depth.val(), false);
-                this.resize(1);
-                this.toggleFreeze(this.guiGraph, false, this.$freeze);
-            }
+            this.clear(this.guiGraph);
+            this.draw(this.succGen.getProcessByName(options.leftProcess), this.guiGraph, this.$depth.val(), false);
+            this.draw(this.succGen.getProcessByName(options.rightProcess), this.guiGraph, this.$depth.val(), false);
+            this.resize(1);
+            this.toggleFreeze(this.guiGraph, false, this.$freeze);
 
             if (this.SEGameLogic !== undefined) { this.SEGameLogic.stopGame() };
 
@@ -618,6 +617,7 @@ module Activity {
                     this.play(this.attacker, choice);
                     return;
                 }
+                this.readyForInput = true;
                 return;
             }
             // defender positions
@@ -644,6 +644,7 @@ module Activity {
                     this.play(this.defender, choice);
                     return;
                 }
+                this.readyForInput = true;
                 return;
             }
             // conj. challenge provisional selection
