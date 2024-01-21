@@ -524,7 +524,7 @@ module Property {
                 ];
             }
             else{
-                var symbol = "⪯";
+                var symbol = "≦";
                 var supportedEqs = [
                     "Srbbisim",
                     "Bbisim",
@@ -837,7 +837,12 @@ module Property {
 
         // TODO: distinguish between weak and strong
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>2n</sub>" + " " + this.secondProcess;
         }
         
@@ -856,7 +861,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>RS</sub>" + " " + this.secondProcess;
         }
         
@@ -875,7 +885,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>PF</sub>" + " " + this.secondProcess;
         }
 
@@ -894,7 +909,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>R</sub>" + " " + this.secondProcess;
         }
 
@@ -913,7 +933,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>IF</sub>" + " " + this.secondProcess;
         }
 
@@ -932,7 +957,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>F</sub>" + " " + this.secondProcess;
         }
 
@@ -991,7 +1021,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>RT</sub>" + " " + this.secondProcess;
         }
 
@@ -1010,7 +1045,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>FT</sub>" + " " + this.secondProcess;
         }
 
@@ -1029,7 +1069,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>RV</sub>" + " " + this.secondProcess;
         }
 
@@ -1048,7 +1093,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>E</sub>" + " " + this.secondProcess;
         }
 
@@ -1107,7 +1157,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>srbbisim</sub>" + " " + this.secondProcess;
         }
         
@@ -1126,7 +1181,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>bbsim</sub>" + " " + this.secondProcess;
         }
         
@@ -1145,7 +1205,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>srdbisim</sub>" + " " + this.secondProcess;
         }
         
@@ -1164,7 +1229,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>dbisim</sub>" + " " + this.secondProcess;
         }
         
@@ -1183,7 +1253,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>etabisim</sub>" + " " + this.secondProcess;
         }
         
@@ -1202,7 +1277,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>sbisim</sub>" + " " + this.secondProcess;
         }
         
@@ -1221,7 +1301,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>etasim</sub>" + " " + this.secondProcess;
         }
         
@@ -1240,7 +1325,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>Csim</sub>" + " " + this.secondProcess;
         }
         
@@ -1259,7 +1349,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>sfailures</sub>" + " " + this.secondProcess;
         }
 
@@ -1278,7 +1373,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>sifutures</sub>" + " " + this.secondProcess;
         }
 
@@ -1297,7 +1397,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>sreadiness</sub>" + " " + this.secondProcess;
         }
 
@@ -1316,7 +1421,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>scsim</sub>" + " " + this.secondProcess;
         }
 
@@ -1335,7 +1445,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>srsim</sub>" + " " + this.secondProcess;
         }
 
