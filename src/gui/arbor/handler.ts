@@ -7,7 +7,6 @@ class Handler {
     public selectedNode : Node = null;
     public draggedObject : refNode = null;
     public hoverNode : refNode = null;
-    public hoverEdge : any = null;
     public mouseP : Point = null;
     public onClick : Function = null;
     public onHover : Function = null;
@@ -74,22 +73,9 @@ class Handler {
             else if (this.hoverNode !== null && newHoverNode.distance > this.hoverDistance) {
                 if (this.onHoverOut) {   
                     this.onHoverOut(this.hoverNode.node.name); // call the onHoverOut function given by the user of the arbor-graph
-                    this.hoverNode = null;
+                    this.hoverNode = null;      
                 }
             }
-        }
-
-        this.hoverEdge = null;
-        if (this.hoverNode === null) {
-            let canvasPos = s;
-            this.renderer.particleSystem.eachEdge( (e: Edge, p1: Point, p2: Point) => {
-                for (let d of e.data.datas) {
-                    if (canvasPos.x >= d.x && canvasPos.x <= d.x + d.width && canvasPos.y >= d.y && canvasPos.y <= d.y + 20) {
-                        console.log("Hover!! " + d.label);
-                        this.hoverEdge = { edge: e, label: d };
-                    }
-                }
-            });
         }
 
         return false;
