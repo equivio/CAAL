@@ -294,9 +294,11 @@ module Activity {
             if (options.playerType === "defender") {
                 attacker = new Computer(PlayType.Attacker);
                 defender = new Human(PlayType.Defender, this);
+                $("#se-game-confirm-challenge").hide();
             } else {
                 attacker = new Human(PlayType.Attacker, this);
                 defender = new Computer(PlayType.Defender);
+                $("#se-game-confirm-challenge").show();
             }
 
             this.SEGameLogic.setPlayers(attacker, defender);
@@ -454,10 +456,12 @@ module Activity {
 
                 if (zoom > 1) {
                     $("#se-game-left .input-group").css("right", 30);
+                    $("#se-game-confirm-challenge-container").css("right", 128);
                     this.$guiContainer.css("overflow", "auto");
                     this.centerNode(this.SEGameLogic.getCurrentConfiguration().left);
                 } else {
                     $("#se-game-left .input-group").css("right", 10);
+                    $("#se-game-confirm-challenge-container").css("right", 108);
                     this.$guiContainer.css("overflow", "hidden");
                 }
             }
@@ -701,7 +705,6 @@ module Activity {
 
         private confirmChallenge() {
             if (!this.readyForInput) { return; }
-
             this.readyForInput = false;
 
             let config = this.getCurrentConfiguration();
@@ -776,6 +779,12 @@ module Activity {
                 if (choice.to.isDefenderPosition || !this.cycleExists()) {
                     this.moveCount++;
                     this.gameLog.printMoveStart(this.moveCount, this.getCurrentConfiguration());
+                    if (choice.to.qSet && !choice.to.qStarSet && this.attacker instanceof Player) {
+                        $("#se-game-confirm-challenge").show();
+                    }
+                    else {
+                        $("#se-game-confirm-challenge").hide();                        
+                    }
                     if (choice.to.isDefenderPosition) {
                         if (this.defender instanceof Player) { this.readyForInput = true; }
                         this.preparePlayer(this.defender);
