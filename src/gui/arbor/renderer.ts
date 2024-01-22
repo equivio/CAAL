@@ -75,10 +75,7 @@ class Renderer {
             var isSelfloop = edge.source.name === edge.target.name;
             var oppo = this.particleSystem.getEdges(edge.target, edge.source)[0];
 
-            function strShorten(str) {
-                return str.length > 10 ? str.substring(0,8) + ".." : str;
-            }
-            var label = strShorten(edge.data.datas.map((data) => data.label).join(","));
+            var label = edge.data.datas; //this.strShorten(edge.data.datas.map((data) => data.label).join(","));
 
             this.ctx.save();
             if (edge.data.highlight){
@@ -115,6 +112,10 @@ class Renderer {
             }
             this.ctx.restore();
         });
+    }
+
+    strShorten(str) {
+        return str.length > 10 ? str.substring(0,8) + ".." : str;
     }
 
     drawSelfEdge(pt1, pt2, arrowLength, arrowWidth, chevronColor, label, nodeBox ) {
@@ -154,9 +155,9 @@ class Renderer {
      * @param {number} arrowLength  the length of the arrowhead
      * @param {number} arrowWidth   the width of the arrowhead
      * @param {string} chevronColor the color of the arrowhead
-     * @param {string} label        the label of the edge
+     * @param {[type]} label        the labels of the edge
      */
-    drawNormalEdge(pt1: Point, pt2: Point, nodeBox1, nodeBox2, arrowLength: number, arrowWidth: number, chevronColor: string, label: string) {
+    drawNormalEdge(pt1: Point, pt2: Point, nodeBox1, nodeBox2, arrowLength: number, arrowWidth: number, chevronColor: string, label: any[]) {
         var tail : Point = this.intersect_line_box(pt1, pt2, nodeBox1)
         var temp = this.intersect_line_box(tail, pt2, nodeBox2);
         var head : Point = (temp != null) ? temp : this.intersect_line_box(pt1, pt2, nodeBox2);
@@ -205,7 +206,7 @@ class Renderer {
      * @param {string} chevronColor the color of the arrowhead
      * @param {string} label        the label of the edge
      */
-    drawBendingEdge(pt1 : Point, pt2: Point, nodeBox1, nodeBox2, arrowLength: number, arrowWidth: number, chevronColor: string, label: string) {
+    drawBendingEdge(pt1 : Point, pt2: Point, nodeBox1, nodeBox2, arrowLength: number, arrowWidth: number, chevronColor: string, label: any[]) {
         var midPoint = pt1.add(pt2).multiply(0.5);
         var angle = Math.atan2(-(pt2.y-pt1.y), pt2.x - pt1.x) - Math.PI/2;
 
@@ -257,10 +258,10 @@ class Renderer {
         // draw the text
         if (label){
             if (node.data.color != 'none' || node.data.color != 'white') {
-                this.drawLabel(pt.x, pt.y+8, label, 'white');
+                this.drawNodeLabel(pt.x, pt.y+8, label, 'white');
             }
             else {
-                this.drawLabel(pt.x, pt.y+8, label, 'black');
+                this.drawNodeLabel(pt.x, pt.y+8, label, 'black');
             }
         }
     }
@@ -290,28 +291,51 @@ class Renderer {
         // draw the text
         if (label){
             if (node.data.color != 'none' || node.data.color != 'white') {
-                this.drawLabel(pt.x, pt.y+8, label, 'white');
+                this.drawNodeLabel(pt.x, pt.y+8, label, 'white');
             }
             else {
-                this.drawLabel(pt.x, pt.y+8, label, 'black');
+                this.drawNodeLabel(pt.x, pt.y+8, label, 'black');
             }
         }
+    }
+    /**
+     * Draws the label upon the node
+     * @param {number}                   x     the x coordinate
+     * @param {number}                   y     the y coordinate
+     * @param {string}                   label the text to be written.
+     * @param {CanvasRenderingContext2D} ctx   the canvas to draw on.
+     */
+    private drawNodeLabel(x : number, y : number, label : string, color? : string) : void {
+        this.ctx.save();
+        this.ctx.font = "14px 'Open Sans'";
+        this.ctx.textAlign = "center";
+        this.ctx.fillStyle = color === undefined ? "black" : color;
+        this.ctx.fillText(label, x, y);
+        this.ctx.restore();
     }
 
     /**
      * Draws the label upon the edge
      * @param {number}                   x     the x coordinate
      * @param {number}                   y     the y coordinate
-     * @param {string}                   label the text to be written.
+     * @param {any[]}                    labels the text to be written.
      * @param {CanvasRenderingContext2D} ctx   the canvas to draw on.
      */
-    // TODO:
-    private drawLabel(x : number, y : number, label : string, color? : string) : void {
+
+    private drawLabel(x : number, y : number, labels : any[], color? : string) : void {
         this.ctx.save();
         this.ctx.font = "14px 'Open Sans'";
         this.ctx.textAlign = "center";
         this.ctx.fillStyle = color === undefined ? "black" : color;
-        this.ctx.fillText(label, x, y);
+        for (let l in labels) {
+            let txt = this.strShorten(labels[l].label);
+            let width = this.ctx.measureText(txt).width;
+            this.ctx.fillText(txt, x, y);
+            labels[l].x = x;
+            labels[l].y = y;
+            labels[l].width = width;
+            x += width + 5;
+        }
         this.ctx.restore();
     }
 
