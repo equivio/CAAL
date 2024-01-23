@@ -236,6 +236,17 @@ module GUI {
             this.handler.onClick = null;
         }
 
+        public setOnEdgeSelectListener(f : (edge : any) => void) : void {
+            this.handler.onEdgeClick = (edge) => {
+                f(edge);
+            };
+        }
+
+        public clearOnEdgeSelectListener() : void {
+            this.handler.onEdgeClick = null;
+        }
+
+
         public setHoverOnListener(f : (identifier : string) => void) : void {
             this.handler.onHover = f
         }

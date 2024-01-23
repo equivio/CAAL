@@ -7,9 +7,11 @@ class Handler {
     public selectedNode : Node = null;
     public draggedObject : refNode = null;
     public hoverNode : refNode = null;
+    public selectedEdge : any = null;
     public hoverEdge : any = null;
     public mouseP : Point = null;
     public onClick : Function = null;
+    public onEdgeClick : Function = null;
     public onHover : Function = null;
     public onHoverOut : Function = null;
     private isDragging : boolean = false;
@@ -54,6 +56,18 @@ class Handler {
             $(this.renderer.canvas).bind('mousemove', this.dragged); // bind drag
             $(window).bind('mouseup', this.dropped); // bind mouse dropped
         }
+        else{
+            this.renderer.particleSystem.eachEdge( (e: Edge, p1: Point, p2: Point) => {
+                for (let d of e.data.datas) {
+                    if (this.mouseP.x >= d.x - d.width && this.mouseP.x <= d.x && this.mouseP.y >= d.y - 20 && this.mouseP.y <= d.y) {
+                        this.selectedEdge = { edge: e, label: d };
+                        $(this.renderer.canvas).unbind('mousemove', this.hover); // unbind hover
+                        $(window).bind('mouseup', this.dropped); // bind mouse dropped
+                    }
+                }
+            });
+        }
+
         return false;
     }
 
@@ -84,7 +98,7 @@ class Handler {
             let canvasPos = s;
             this.renderer.particleSystem.eachEdge( (e: Edge, p1: Point, p2: Point) => {
                 for (let d of e.data.datas) {
-                    if (canvasPos.x >= d.x && canvasPos.x <= d.x + d.width && canvasPos.y >= d.y && canvasPos.y <= d.y + 20) {
+                    if (canvasPos.x >= d.x - d.width && canvasPos.x <= d.x && canvasPos.y >= d.y - 20 && canvasPos.y <= d.y) {
                         console.log("Hover!! " + d.label);
                         this.hoverEdge = { edge: e, label: d };
                     }
@@ -124,6 +138,13 @@ class Handler {
         this.selectedNode = null;
         this.draggedObject = null;
         
+        if (this.selectedEdge && !this.isDragging && this.onEdgeClick) {
+            this.onEdgeClick(this.selectedEdge);
+            console.log(this.selectedEdge.label);
+        }
+
+        this.selectedEdge = null;
+
         $(window).unbind('mouseup', this.dropped);
         $(this.renderer.canvas).unbind('mousemove', this.dragged);
         $(this.renderer.canvas).bind('mousemove', this.hover); // event for hovering over a node
