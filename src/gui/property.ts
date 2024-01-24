@@ -524,7 +524,7 @@ module Property {
                 ];
             }
             else{
-                var symbol = "⪯";
+                var symbol = "≦";
                 var supportedEqs = [
                     "Srbbisim",
                     "Bbisim",
@@ -550,18 +550,95 @@ module Property {
                     "Sfailures"
                 ];
             }
-            let desc : string = this.firstProcess + " " + symbol + "<sub>X</sub>" + " " + this.secondProcess + "\n";
+            let desc : string = this.firstProcess + " " + symbol + "<sub>X</sub>" + " " + this.secondProcess+ " (" + super.getType() + " relations using spectroscopy)" + "\n";
+
+            let line : string = "<div style='display: flex;'>";
+            let eqDiv : {[key: string]: string} = {
+                Start: "<div style='height: 35px; box-sizing: border-box; border: 1px solid rgb(0,0,0); display: flex; align-items: center; justify-content: center; padding: 2px; ",
+                End: "'></div>"};
+
+            let determineColor = function(eq, verificationResult) {
+                if(verificationResult) {
+                    return verificationResult[eq.charAt(0).toLowerCase() + eq.slice(1)] ? " background:rgb(65,180,65, 0.8);" : " background:rgb(255,0,0, 0.6);";
+                }
+                return " background:white;";
+            };
+
             supportedEqs.forEach((eq) => {
-                if(this.verificationResult) {
-                    desc += (this.verificationResult[eq.charAt(0).toLowerCase() + eq.slice(1)] ? "<div style='color:green;'>" : "<div style='color:red;'>") + eq + "</div>";
-                }else{desc += eq + "\n";}
+                eqDiv[eq.charAt(0).toLowerCase() + eq.slice(1)] =  determineColor(eq, this.verificationResult) + "'>" + eq + "</div>";
             })
-            if(this.verificationResult) {
-                this.verificationResult = undefined;
-                return desc;
+            
+            if(super.getType() === "weak") {
+                desc += "<div style='margin: 5px; width:640px; border: 1px solid rgb(0,0,0);'>" +
+                        line + 
+                            eqDiv["Start"] + "width:640px;" + eqDiv["srbbisim"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:320px;" + eqDiv["bbisim"] + 
+                            eqDiv["Start"] + "width:320px;" + eqDiv["srdbisim"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:200px;" + eqDiv["etabisim"] + 
+                            eqDiv["Start"] + "width:240px;" + eqDiv["dbisim"] + 
+                            eqDiv["Start"] + "width:200px; border-bottom: 1px solid transparent;" + eqDiv["sbisim"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:80px; border-bottom: 1px solid transparent;" + eqDiv["etasim"] + 
+                            eqDiv["Start"] + "width:360px;" + eqDiv["bisimulation"] + 
+                            eqDiv["Start"] + determineColor("sbisim", this.verificationResult) + "width:200px; border-top: 1px solid transparent;" + eqDiv["End"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + determineColor("etasim", this.verificationResult) + "width:80px; border-top: 1px solid transparent; border-bottom: 1px solid transparent;" + eqDiv["End"] + 
+                            eqDiv["Start"] + "width:240px;" + eqDiv["twoNestedSimulation"] + 
+                            eqDiv["Start"] + "width:120px; border-bottom: 1px solid transparent;" + eqDiv["csim"] + 
+                            eqDiv["Start"] + "width:100px;" + eqDiv["srsim"] + 
+                            eqDiv["Start"] + "width:100px;" + eqDiv["scsim"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + determineColor("etasim", this.verificationResult) + "width:80px; border-top: 1px solid transparent;" + eqDiv["End"] + 
+                            eqDiv["Start"] + "width:120px;" + eqDiv["readySimulation"] + 
+                            eqDiv["Start"] + "width:120px;" + eqDiv["possibleFutures"] + 
+                            eqDiv["Start"] + determineColor("csim", this.verificationResult) + "width:120px; border-top: 1px solid transparent;" + eqDiv["End"] + 
+                            eqDiv["Start"] + "width:100px;" + eqDiv["sreadiness"] + 
+                            eqDiv["Start"] + "width:100px;" + eqDiv["sifutures"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:140px; border-bottom: 1px solid transparent;" + eqDiv["simulation"] + 
+                            eqDiv["Start"] + "width:150px;" + eqDiv["readiness"] + 
+                            eqDiv["Start"] + "width:150px;" + eqDiv["impossibleFutures"] + 
+                            eqDiv["Start"] + "width:200px; border-bottom: 1px solid transparent;" + eqDiv["sfailures"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + determineColor("simulation", this.verificationResult) + "width:140px; border-top: 1px solid transparent;" + eqDiv["End"] + 
+                            eqDiv["Start"] + "width:300px;" + eqDiv["failures"] + 
+                            eqDiv["Start"] + determineColor("sfailures", this.verificationResult) + "width:200px; border-top: 1px solid transparent;" + eqDiv["End"] +  "</div>" +
+                        line +  
+                            eqDiv["Start"] + "width:640px;" + eqDiv["traceInclusion"] + "</div>" + "</div>";
             }
-            // remove last linebreak
-            return desc.slice(0,-1);
+            else{
+                desc += "<div style='margin: 5px; width:640px; border: 1px solid rgb(0,0,0);'>" +
+                        line + 
+                            eqDiv["Start"] + "width:640px;" + eqDiv["bisimulation"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:640px;" + eqDiv["twoNestedSimulation"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:400px;" + eqDiv["readySimulation"] +
+                            eqDiv["Start"] + "width:240px; border-bottom: 1px solid transparent;" + eqDiv["possibleFutures"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:160px; border-bottom: 1px solid transparent;" + eqDiv["simulation"] +
+                            eqDiv["Start"] + "width:240px;" + eqDiv["readinessTraces"] +
+                            eqDiv["Start"] + determineColor("possibleFutures", this.verificationResult)  + "width:240px; border-top: 1px solid transparent;" + eqDiv["End"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + determineColor("simulation", this.verificationResult) + "width:160px; border-top: 1px solid transparent; border-bottom: 1px solid transparent;" + eqDiv["End"] +
+                            eqDiv["Start"] + "width:160px;" + eqDiv["failureTraces"] +
+                            eqDiv["Start"] + "width:160px;" + eqDiv["readiness"] +
+                            eqDiv["Start"] + "width:160px; border-bottom: 1px solid transparent;" + eqDiv["impossibleFutures"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + determineColor("simulation", this.verificationResult) + "width:160px; border-top: 1px solid transparent; border-bottom: 1px solid transparent;" + eqDiv["End"] +
+                            eqDiv["Start"] + "width:320px;" + eqDiv["revivals"] +
+                            eqDiv["Start"] + determineColor("impossibleFutures", this.verificationResult) + "width:160px; border-top: 1px solid transparent;" + eqDiv["End"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + determineColor("simulation", this.verificationResult) + "width:160px; border-top: 1px solid transparent;" + eqDiv["End"] +
+                            eqDiv["Start"] + "width:480px;" + eqDiv["failures"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:640px;" + eqDiv["traceInclusion"] +  "</div>" +
+                        line + 
+                            eqDiv["Start"] + "width:640px;" + eqDiv["enabledness"] +  "</div>" + "</div>";
+            }
+            return desc;
         }
 
         public getClassName() : string {
@@ -757,7 +834,12 @@ module Property {
 
         // TODO: distinguish between weak and strong
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>2n</sub>" + " " + this.secondProcess;
         }
         
@@ -776,7 +858,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>RS</sub>" + " " + this.secondProcess;
         }
         
@@ -795,7 +882,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>PF</sub>" + " " + this.secondProcess;
         }
 
@@ -814,7 +906,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>R</sub>" + " " + this.secondProcess;
         }
 
@@ -833,7 +930,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>IF</sub>" + " " + this.secondProcess;
         }
 
@@ -852,7 +954,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>F</sub>" + " " + this.secondProcess;
         }
 
@@ -911,7 +1018,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>RT</sub>" + " " + this.secondProcess;
         }
 
@@ -930,7 +1042,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>FT</sub>" + " " + this.secondProcess;
         }
 
@@ -949,7 +1066,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>RV</sub>" + " " + this.secondProcess;
         }
 
@@ -968,7 +1090,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>E</sub>" + " " + this.secondProcess;
         }
 
@@ -1027,7 +1154,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>srbbisim</sub>" + " " + this.secondProcess;
         }
         
@@ -1046,7 +1178,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>bbsim</sub>" + " " + this.secondProcess;
         }
         
@@ -1065,7 +1202,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>srdbisim</sub>" + " " + this.secondProcess;
         }
         
@@ -1084,7 +1226,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>dbisim</sub>" + " " + this.secondProcess;
         }
         
@@ -1103,7 +1250,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>etabisim</sub>" + " " + this.secondProcess;
         }
         
@@ -1122,7 +1274,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>sbisim</sub>" + " " + this.secondProcess;
         }
         
@@ -1141,7 +1298,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>etasim</sub>" + " " + this.secondProcess;
         }
         
@@ -1160,7 +1322,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>Csim</sub>" + " " + this.secondProcess;
         }
         
@@ -1179,7 +1346,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>sfailures</sub>" + " " + this.secondProcess;
         }
 
@@ -1198,7 +1370,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>sifutures</sub>" + " " + this.secondProcess;
         }
 
@@ -1217,7 +1394,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>sreadiness</sub>" + " " + this.secondProcess;
         }
 
@@ -1236,7 +1418,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>scsim</sub>" + " " + this.secondProcess;
         }
 
@@ -1255,7 +1442,12 @@ module Property {
         }
 
         public getDescription() : string {
-            var symbol = "⪯"
+            if (super.getType() === "strong"){
+                var symbol = "⪯";
+            }
+            else{
+                var symbol = "≦";
+            }
             return this.firstProcess + " " + symbol + "<sub>srsim</sub>" + " " + this.secondProcess;
         }
 

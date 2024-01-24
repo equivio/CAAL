@@ -14,11 +14,10 @@ module Activity {
             this.queue = [];
 
             $("#add-property").on("click", () => this.showPropertyModal());
-            $("#delete-all").on("click", () => this.deleteAllProperties());
+            //$("#delete-all").on("click", () => this.deleteAllProperties());
             $("#verify-all").on("click", () => this.verifyAll());
             $("#verify-stop").on("click", () => this.stopVerify());
             $("input[name=property-type]").on("change", () => this.showSelectedPropertyType());
-            $("#verify-spectroscopy").on("click", () => this.toggleRelation());
 
             var $propertyTable = $("#property-table-properties");
             (<any>$propertyTable).sortable({
@@ -230,8 +229,8 @@ module Activity {
         private setPropertyModalOptions() : void {
             var processes = this.graph.getNamedProcesses().reverse();
             var $lists = $("#firstProcess").add($("#secondProcess")).add($("#hmlProcess")).empty();
-            $("#verify-spectroscopy").prop("checked", false);
             $("#relation-radio").prop("checked", true);
+            $("#spectroscopy-radio").prop("checked", false);
             $("#hml-radio").prop("checked", false);
 
             for (var i = 0; i < processes.length; i++) {
@@ -268,11 +267,14 @@ module Activity {
                     } else {
                         $("#tccsTransition [value=" + property.getType() + "][data-time=" + property.getTime() + "]").prop("selected", true);
                     }
-
-                    $("#relationType").val(property.getClassName());
                     $("#firstProcess").val(property.getFirstProcess());
                     $("#secondProcess").val(property.getSecondProcess());
-                    this.setSelectedPropertyType("relation");
+                    if(property instanceof Property.SpectroscopyAtOnce) {
+                        this.setSelectedPropertyType("spectroscopy");
+                    }else{
+                        $("#relationType").val(property.getClassName());
+                        this.setSelectedPropertyType("relation");
+                    }
                 }
 
                 $("#save-property").on("click", e.data, (e) => this.saveProperty(e));
@@ -282,17 +284,6 @@ module Activity {
 
             this.formulaEditor.focus();
             $("#property-modal").modal("show");
-        }
-
-        private toggleRelation() : void {
-            let $spectroscopyToggle = $("#verify-spectroscopy");
-            let $relationType = $(".relation-type");
-            if ($spectroscopyToggle.is(':checked')) {
-                $relationType.hide();
-            }
-            else {
-                $relationType.show();
-            }
         }
 
         private getSelectedPropertyType() : string {
@@ -305,7 +296,17 @@ module Activity {
 
         private showSelectedPropertyType() : void {
             if (this.getSelectedPropertyType() === "relation") {
-                $("#add-hml-formula").fadeOut(200, () => $("#add-relation").fadeIn(200));
+                $("#add-hml-formula").fadeOut(200)
+                $("#add-relation").fadeOut(200, () => {
+                    $(".relation-type").show();
+                    $("#add-relation").fadeIn(200);
+                });
+            } else if (this.getSelectedPropertyType() === "spectroscopy") {
+                $("#add-hml-formula").fadeOut(200)
+                $("#add-relation").fadeOut(200, () => {
+                    $(".relation-type").hide();
+                    $("#add-relation").fadeIn(200);
+                });
             } else {
                 $("#add-relation").fadeOut(200, () => $("#add-hml-formula").fadeIn(200, () => this.formulaEditor.focus()));
             }
@@ -329,7 +330,22 @@ module Activity {
                     options["type"] = $("#tccsTransition option:selected").val();
                     options["time"] = $("#tccsTransition option:selected").data("time");
                 }
-            } else {
+            } else if(this.getSelectedPropertyType() === "spectroscopy") {
+                propertyName = "Spectroscopy";
+                options = {
+                    firstProcess: $("#firstProcess option:selected").val(),
+                    secondProcess: $("#secondProcess option:selected").val(),
+                    type: null,
+                    time: null
+                };
+
+                if (this.project.getInputMode() === InputMode.CCS) {
+                    options["type"] = $("#ccsTransition option:selected").val();
+                } else {
+                    options["type"] = $("#tccsTransition option:selected").val();
+                    options["time"] = $("#tccsTransition option:selected").data("time");
+                }
+            }else {
                 propertyName = "HML";
                 options = {
                     process: $("#hmlProcess option:selected").val(),
@@ -340,7 +356,7 @@ module Activity {
 
             options["comment"] = $("#propertyComment").val();
 
-            if (propertyName !== "HML" && $("#verify-spectroscopy").is(":checked")){
+            if (propertyName === "Spectroscopy"){
                 var property = new window["Property"]["SpectroscopyAtOnce"](options);
                 this.project.addProperty(property);
                 if (e) {
@@ -365,7 +381,7 @@ module Activity {
             this.project.deleteProperty(e.data.property);
             e.data.property.getRow().fadeOut(200, function() {$(this).remove()});
         }
-        private deleteAllProperties() : void {
+        /*private deleteAllProperties() : void {
             let props = this.project.getProperties();
             while(props.length > 0){
                 props.forEach((prop) => {
@@ -373,7 +389,7 @@ module Activity {
                 })
                 props = this.project.getProperties();
             }
-        }
+        }*/
 
         private verify(e) : void {
             if (this.verifyingProperty == null) {
