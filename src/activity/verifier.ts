@@ -14,7 +14,7 @@ module Activity {
             this.queue = [];
 
             $("#add-property").on("click", () => this.showPropertyModal());
-            $("#delete-all").on("click", () => this.deleteAllProperties());
+            //$("#delete-all").on("click", () => this.deleteAllProperties());
             $("#verify-all").on("click", () => this.verifyAll());
             $("#verify-stop").on("click", () => this.stopVerify());
             $("input[name=property-type]").on("change", () => this.showSelectedPropertyType());
@@ -267,11 +267,14 @@ module Activity {
                     } else {
                         $("#tccsTransition [value=" + property.getType() + "][data-time=" + property.getTime() + "]").prop("selected", true);
                     }
-
-                    $("#relationType").val(property.getClassName());
                     $("#firstProcess").val(property.getFirstProcess());
                     $("#secondProcess").val(property.getSecondProcess());
-                    this.setSelectedPropertyType("relation");
+                    if(property instanceof Property.SpectroscopyAtOnce) {
+                        this.setSelectedPropertyType("spectroscopy");
+                    }else{
+                        $("#relationType").val(property.getClassName());
+                        this.setSelectedPropertyType("relation");
+                    }
                 }
 
                 $("#save-property").on("click", e.data, (e) => this.saveProperty(e));
@@ -293,15 +296,17 @@ module Activity {
 
         private showSelectedPropertyType() : void {
             if (this.getSelectedPropertyType() === "relation") {
-                $("#add-hml-formula").fadeOut(200, () => $("#add-relation").fadeOut(200, () => {
+                $("#add-hml-formula").fadeOut(200)
+                $("#add-relation").fadeOut(200, () => {
                     $(".relation-type").show();
                     $("#add-relation").fadeIn(200);
-                }));
+                });
             } else if (this.getSelectedPropertyType() === "spectroscopy") {
-                $("#add-hml-formula").fadeOut(200, () => $("#add-relation").fadeOut(200, () => {
+                $("#add-hml-formula").fadeOut(200)
+                $("#add-relation").fadeOut(200, () => {
                     $(".relation-type").hide();
                     $("#add-relation").fadeIn(200);
-                }));
+                });
             } else {
                 $("#add-relation").fadeOut(200, () => $("#add-hml-formula").fadeIn(200, () => this.formulaEditor.focus()));
             }
@@ -376,7 +381,7 @@ module Activity {
             this.project.deleteProperty(e.data.property);
             e.data.property.getRow().fadeOut(200, function() {$(this).remove()});
         }
-        private deleteAllProperties() : void {
+        /*private deleteAllProperties() : void {
             let props = this.project.getProperties();
             while(props.length > 0){
                 props.forEach((prop) => {
@@ -384,7 +389,7 @@ module Activity {
                 })
                 props = this.project.getProperties();
             }
-        }
+        }*/
 
         private verify(e) : void {
             if (this.verifyingProperty == null) {

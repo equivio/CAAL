@@ -550,7 +550,7 @@ module Property {
                     "Sfailures"
                 ];
             }
-            let desc : string = this.firstProcess + " " + symbol + "<sub>X</sub>" + " " + this.secondProcess + "\n";
+            let desc : string = this.firstProcess + " " + symbol + "<sub>X</sub>" + " " + this.secondProcess+ " (" + super.getType() + " relations using spectroscopy)" + "\n";
 
             let line : string = "<div style='display: flex;'>";
             let eqDiv : {[key: string]: string} = {
@@ -559,7 +559,7 @@ module Property {
 
             let determineColor = function(eq, verificationResult) {
                 if(verificationResult) {
-                    return verificationResult[eq.charAt(0).toLowerCase() + eq.slice(1)] ? " background:rgb(20,140,20);" : " background:rgb(240,40,40);";
+                    return verificationResult[eq.charAt(0).toLowerCase() + eq.slice(1)] ? " background:rgb(65,180,65, 0.8);" : " background:rgb(255,0,0, 0.6);";
                 }
                 return " background:white;";
             };
@@ -637,9 +637,6 @@ module Property {
                             eqDiv["Start"] + "width:640px;" + eqDiv["traceInclusion"] +  "</div>" +
                         line + 
                             eqDiv["Start"] + "width:640px;" + eqDiv["enabledness"] +  "</div>" + "</div>";
-            }
-            if(this.verificationResult) {
-                this.verificationResult = undefined;
             }
             return desc;
         }
