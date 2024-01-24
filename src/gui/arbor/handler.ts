@@ -7,10 +7,15 @@ class Handler {
     public selectedNode : Node = null;
     public draggedObject : refNode = null;
     public hoverNode : refNode = null;
+    public selectedEdge : any = null;
+    public hoverEdge : any = null;
     public mouseP : Point = null;
     public onClick : Function = null;
+    public onEdgeClick : Function = null;
     public onHover : Function = null;
     public onHoverOut : Function = null;
+    public onEdgeHover : Function = null;
+    public onEdgeHoverOut : Function = null;
     private isDragging : boolean = false;
     private mouseDownPos : Point;
     public clickDistance = 50;
@@ -53,6 +58,18 @@ class Handler {
             $(this.renderer.canvas).bind('mousemove', this.dragged); // bind drag
             $(window).bind('mouseup', this.dropped); // bind mouse dropped
         }
+        else{
+            this.renderer.particleSystem.eachEdge( (e: Edge, p1: Point, p2: Point) => {
+                for (let d of e.data.datas) {
+                    if (this.mouseP.x >= d.x - d.width && this.mouseP.x <= d.x && this.mouseP.y >= d.y - 20 && this.mouseP.y <= d.y) {
+                        this.selectedEdge = { edge: e, label: d };
+                        $(this.renderer.canvas).unbind('mousemove', this.hover); // unbind hover
+                        $(window).bind('mouseup', this.dropped); // bind mouse dropped
+                    }
+                }
+            });
+        }
+
         return false;
     }
 
@@ -73,9 +90,31 @@ class Handler {
             else if (this.hoverNode !== null && newHoverNode.distance > this.hoverDistance) {
                 if (this.onHoverOut) {   
                     this.onHoverOut(this.hoverNode.node.name); // call the onHoverOut function given by the user of the arbor-graph
-                    this.hoverNode = null;      
+                    this.hoverNode = null;
                 }
             }
+        }
+
+        if (this.hoverEdge &&
+            !(s.x >= this.hoverEdge.label.x - this.hoverEdge.label.width/2 && s.x <= this.hoverEdge.label.x + this.hoverEdge.label.width/2 && s.y >= this.hoverEdge.label.y - 20 && s.y <= this.hoverEdge.label.y)) {
+                if (this.onEdgeHoverOut) {
+                    this.onEdgeHoverOut(this.hoverEdge);
+                    this.hoverEdge = null;
+                }
+            }
+
+        if (this.hoverNode === null) {
+            let canvasPos = s;
+            this.renderer.particleSystem.eachEdge( (e: Edge, p1: Point, p2: Point) => {
+                for (let d of e.data.datas) {
+                    if (canvasPos.x >= d.x - d.width/2 && canvasPos.x <= d.x + d.width/2 && canvasPos.y >= d.y - 20 && canvasPos.y <= d.y) {
+                        this.hoverEdge = { edge: e, label: d };
+                        if (this.onEdgeHover){
+                            this.onEdgeHover(this.hoverEdge);
+                        }
+                    }
+                }
+            });
         }
 
         return false;
@@ -110,6 +149,12 @@ class Handler {
         this.selectedNode = null;
         this.draggedObject = null;
         
+        if (this.selectedEdge && !this.isDragging && this.onEdgeClick) {
+            this.onEdgeClick(this.selectedEdge);
+        }
+
+        this.selectedEdge = null;
+
         $(window).unbind('mouseup', this.dropped);
         $(this.renderer.canvas).unbind('mousemove', this.dragged);
         $(this.renderer.canvas).bind('mousemove', this.hover); // event for hovering over a node

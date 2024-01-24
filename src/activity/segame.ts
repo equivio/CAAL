@@ -10,7 +10,7 @@ module Activity {
         private SEGameLogic: SEGameLogic;
         private fullscreen: Fullscreen;
         private tooltip: ProcessTooltip;
-        private timeout: any;
+        public timeout: any;
         private $leftProcessList: JQuery;
         private $rightProcessList: JQuery;
         private $ccsGameTypes: JQuery;
@@ -50,12 +50,12 @@ module Activity {
             this.renderer = new Renderer(this.canvas);
             this.guiGraph = new GUI.ArborGraph(this.renderer);
 
-            this.$leftProcessList.on("change", () => this.newGame(true));
-            this.$rightProcessList.on("change", () => this.newGame(false));
-            this.$ccsGameTypes.on("change", () => this.newGame(true));
-            this.$gameRelation.on("change", () => this.newGame(false));
-            this.$playerType.on("change", () => this.newGame(false));
-            this.$restart.on("click", () => this.newGame(false));
+            this.$leftProcessList.on("change", () => this.newGame());
+            this.$rightProcessList.on("change", () => this.newGame());
+            this.$ccsGameTypes.on("change", () => this.newGame());
+            this.$gameRelation.on("change", () => this.newGame());
+            this.$playerType.on("change", () => this.newGame());
+            this.$restart.on("click", () => this.newGame());
             this.$freeze.on("click", (e) => this.toggleFreeze(this.guiGraph, !this.$freeze.data("frozen"), $(e.currentTarget)));
 
             // Manually remove focus from depth input when the canvas is clicked.
@@ -111,7 +111,7 @@ module Activity {
                 this.changed = false;
                 this.graph = this.project.getGraph();
                 this.displayOptions();
-                this.newGame(true, configuration);
+                this.newGame(configuration);
             }
 
             this.tooltip.setGraph(this.graph);
@@ -150,8 +150,11 @@ module Activity {
             this.fullscreen.onHide();
 
             this.guiGraph.clearOnSelectListener();
+            this.guiGraph.clearOnEdgeSelectListener();
             this.guiGraph.clearHoverOnListener();
             this.guiGraph.clearHoverOutListener();
+            this.guiGraph.clearEdgeHoverOnListener();
+            this.guiGraph.clearEdgeHoverOutListener();
 
             this.guiGraph.unbindCanvasEvents();
 
@@ -230,16 +233,36 @@ module Activity {
             });
         }
 
-        private displayEnergyGauge(energyLeft: number[]): void {
+        public getGuiGraph(): GUI.ProcessGraphUI {
+            return this.guiGraph;
+        }
+
+        public getGuiContainer(): JQuery {
+            return this.$guiContainer;
+        }
+
+        public getTooltip(): ProcessTooltip {
+            return this.tooltip;
+        }
+
+        public getDepth(): JQuery {
+            return this.$depth;
+        }
+
+        public getGraph(): ccs.Graph {
+            return this.graph;
+        }
+
+        public displayEnergyGauge(energyLeft: number[], preview: boolean): void {
             let str = "Energy Budget: (";
             for (let i = 0; i < energyLeft.length; i++) {
-                str += energyLeft[i] === Infinity ? "∞" : energyLeft[i];
+                str += energyLeft[i] === Infinity ? "∞" : (preview && energyLeft[i] < this.SEGameLogic.getEnergyLeft()[i] ? "<span style='color:red;'>" + energyLeft[i] + "</span>" : energyLeft[i]);
                 str += i < energyLeft.length - 1 ? ", " : ")";
             }
             this.$energyGauge.html(str);
         }
 
-        private newGame(drawLeft: boolean, configuration?: any): void {
+        private newGame(configuration?: any): void {
             var options;
 
             if (configuration) {
@@ -252,17 +275,16 @@ module Activity {
             this.succGen = CCS.getSuccGenerator(this.graph,
                 { inputMode: InputMode[this.project.getInputMode()], time: options.time, succGen: options.type, reduce: true });
 
-            if (drawLeft || !this.guiGraph.getNode(this.succGen.getProcessByName(options.leftProcess).id.toString())) {
-                this.clear(this.guiGraph);
-                this.draw(this.succGen.getProcessByName(options.leftProcess), this.guiGraph, this.$depth.val(), false);
-                this.resize(1);
-                this.toggleFreeze(this.guiGraph, false, this.$freeze);
-            }
+            this.clear(this.guiGraph);
+            this.draw(this.succGen.getProcessByName(options.leftProcess), this.guiGraph, this.$depth.val(), false);
+            this.draw(this.succGen.getProcessByName(options.rightProcess), this.guiGraph, this.$depth.val(), false);
+            this.resize(1);
+            this.toggleFreeze(this.guiGraph, false, this.$freeze);
 
             if (this.SEGameLogic !== undefined) { this.SEGameLogic.stopGame() };
 
             let budget = this.getEnergyBudgetFromRelation(options.relation);
-            this.displayEnergyGauge(budget);
+            this.displayEnergyGauge(budget, false);
 
             this.SEGameLogic = new SEGameLogic(this, new GameLog(options.time), this.succGen, budget, this.succGen.getProcessByName(options.leftProcess),
                 { q: undefined, qSet: [this.succGen.getProcessByName(options.rightProcess)], qStarSet: undefined })
@@ -275,9 +297,11 @@ module Activity {
             if (options.playerType === "defender") {
                 attacker = new Computer(PlayType.Attacker);
                 defender = new Human(PlayType.Defender, this);
+                $("#se-game-confirm-challenge").hide();
             } else {
                 attacker = new Human(PlayType.Attacker, this);
                 defender = new Computer(PlayType.Defender);
+                $("#se-game-confirm-challenge").show();
             }
 
             this.SEGameLogic.setPlayers(attacker, defender);
@@ -317,7 +341,7 @@ module Activity {
             }
         }
 
-        private draw(process: CCS.Process, graph: GUI.ProcessGraphUI, depth: number, highlightNodes: boolean): void {
+        public draw(process: CCS.Process, graph: GUI.ProcessGraphUI, depth: number, highlightNodes: boolean): void {
             var allTransitions = CCS.getNSuccessors(
                 CCS.getSuccGenerator(this.graph, { inputMode: InputMode[this.project.getInputMode()], time: "timed", succGen: "strong", reduce: true }),
                 process,
@@ -370,7 +394,7 @@ module Activity {
             }
 
             this.highlightNodes();
-            this.displayEnergyGauge(this.SEGameLogic.getEnergyLeft());
+            this.displayEnergyGauge(this.SEGameLogic.getEnergyLeft(), false);
         }
 
         public highlightNodes(): void {
@@ -399,7 +423,7 @@ module Activity {
                     })
                 }
             }
-            this.guiGraph.setRightGraphNodes(configIds);
+            this.guiGraph.setGraphNodes(configIds);
         }
 
         private clear(graph: GUI.ProcessGraphUI): void {
@@ -435,10 +459,12 @@ module Activity {
 
                 if (zoom > 1) {
                     $("#se-game-left .input-group").css("right", 30);
+                    $("#se-game-confirm-challenge-container").css("right", 128);
                     this.$guiContainer.css("overflow", "auto");
                     this.centerNode(this.SEGameLogic.getCurrentConfiguration().left);
                 } else {
                     $("#se-game-left .input-group").css("right", 10);
+                    $("#se-game-confirm-challenge-container").css("right", 108);
                     this.$guiContainer.css("overflow", "hidden");
                 }
             }
@@ -457,6 +483,8 @@ module Activity {
 
         private currentLeft: CCS.Process;
         private currentRight: { q: CCS.Process | undefined, qSet: CCS.Process[] | undefined, qStarSet: CCS.Process[] | undefined };
+        private selectedForChallenge : CCS.Process[] = [];
+        private $confirmChallengeBtn: JQuery;
 
         private attacker: Player;
         private defender: Player;
@@ -465,6 +493,8 @@ module Activity {
         private moveCount: number = 1;
 
         private cycleCache: any;
+
+        private readyForInput: boolean = true;
 
         constructor(gameActivity: SEGame, gameLog: GameLog, succGen: CCS.SuccessorGenerator,
             energyBudget: number[], currentLeft: CCS.Process, currentRight: any) {
@@ -479,6 +509,12 @@ module Activity {
             this.strongSpectroscopy = new StrongSpectroscopy.Game(this.succGen, this.currentLeft,
                 this.currentRight.qSet![0]!);
             this.attackerWinBudgets = StrongSpectroscopy.computeWinningBudgets(this.strongSpectroscopy);
+
+            this.$confirmChallengeBtn = $("#se-game-confirm-challenge");
+            // no duplicate event listeners with this
+            this.$confirmChallengeBtn.off();
+            this.$confirmChallengeBtn.on("click", () => this.confirmChallenge());
+            this.$confirmChallengeBtn.hover(() => this.previewChallengeCost(), () => this.gameActivity.displayEnergyGauge(this.energyLeft, false));
         }
 
         public getTransitionStr(update: string): string {
@@ -515,6 +551,52 @@ module Activity {
 
             this.gameActivity.highlightNodes();
             this.gameActivity.centerNode(this.currentLeft);
+
+            this.gameActivity.getGuiGraph().setOnSelectListener((processId) => {
+                // keep previous onClick-functionality
+                if (this.gameActivity.getGuiGraph().getProcessDataObject(processId.toString()).status === "unexpanded"){
+                    this.gameActivity.draw(this.gameActivity.getGraph().processById(processId), this.gameActivity.getGuiGraph(), this.gameActivity.getDepth().val(), true);
+                }
+
+                // handling of clicks on procs for move selection
+                if (!this.readyForInput) { return; }
+                this.readyForInput = false;
+                this.selectMoveFromGraphView(processId);
+            });
+
+            this.gameActivity.getGuiGraph().setOnEdgeSelectListener((edge) => {
+                if (!this.readyForInput) { return; }
+                this.readyForInput = false;
+                this.selectObservationFromGraphView(edge);
+            });
+
+            this.gameActivity.getGuiGraph().setHoverOnListener((processId) => {
+                // keep previous functionality
+                this.gameActivity.timeout = setTimeout(() => {
+                    var tooltipAnchor = $("#se-game-canvas-tooltip-left");
+                    var position = this.gameActivity.getGuiGraph().getPosition(processId);
+
+                    tooltipAnchor.css("left", position.x - this.gameActivity.getGuiContainer().scrollLeft());
+                    tooltipAnchor.css("top", position.y - this.gameActivity.getGuiContainer().scrollTop() - 10);
+
+                    tooltipAnchor.tooltip({ title: this.gameActivity.getTooltip().ccsNotationForProcessId(processId), html: true });
+                    tooltipAnchor.tooltip("show");
+                }, 1000)
+
+                if (!this.readyForInput) { return; }
+                this.previewMoveCost(processId);
+            });
+
+            this.gameActivity.getGuiGraph().setHoverOutListener(() => {
+                // keep previous functionality
+                clearTimeout(this.gameActivity.timeout);
+                $("#se-game-canvas-tooltip-left").tooltip("destroy");
+                this.gameActivity.displayEnergyGauge(this.energyLeft, false);
+            });
+
+            this.gameActivity.getGuiGraph().setEdgeHoverOnListener((edge) => this.previewObservationCost(edge));
+
+            this.gameActivity.getGuiGraph().setEdgeHoverOutListener(() => this.gameActivity.displayEnergyGauge(this.energyLeft, false))
 
             this.currentWinner = this.getCurrentWinner();
             this.gameLog.printIntro(this.currentWinner, this.attacker);
@@ -560,6 +642,168 @@ module Activity {
 
         }
 
+        private selectMoveFromGraphView(processId: string){
+            let config = this.getCurrentConfiguration();
+
+            // decisions
+            if (config.right.q){
+                // positive
+                if (config.left.id === processId) {
+                    let fromPos = new StrongSpectroscopy.Position(config.left, false, undefined, undefined, config.right.q);
+                    let toPos = new StrongSpectroscopy.Position(config.left, false, [config.right.q]);
+                    let choice = new StrongSpectroscopy.Move(fromPos, toPos, [[1,4],0,0,0,0,0]);
+                    
+                    this.play(this.attacker, choice);
+                    return;
+                }
+                // negative
+                if (config.right.q.id === processId) {
+                    let fromPos = new StrongSpectroscopy.Position(config.left, false, undefined, undefined, config.right.q);
+                    let toPos = new StrongSpectroscopy.Position(config.right.q, false, [config.left]);
+                    let choice = new StrongSpectroscopy.Move(fromPos, toPos, [[1,5],0,0,0,0,-1]);
+                    
+                    this.play(this.attacker, choice);
+                    return;
+                }
+                this.readyForInput = true;
+                return;
+            }
+            // defender positions
+            if (config.right.qStarSet) {
+                // revivals
+                if (config.right.qStarSet.some((qStar) => { return qStar.id === processId })) {
+                    let fromPos = new StrongSpectroscopy.Position(config.left, true, config.right.qSet, config.right.qStarSet);
+                    let toPos = new StrongSpectroscopy.Position(config.left, false, config.right.qStarSet);
+                    let choice = new StrongSpectroscopy.Move(fromPos, toPos, [[1,3],0,0,0,0,0]);
+                    
+                    this.play(this.defender, choice);
+                    return;
+                }
+                // conj. answers
+                let foundProcess;
+                // check if selected proc is in qSet and save if true
+                if (foundProcess = config.right.qSet.find((q) => { return q.id === processId; })) {
+                    let fromPos = new StrongSpectroscopy.Position(config.left, true, config.right.qSet, config.right.qStarSet);
+                    let toPos = new StrongSpectroscopy.Position(config.left, false, undefined, undefined, foundProcess);
+                    let choice = new StrongSpectroscopy.Move(fromPos, toPos, [0,0,0,[3,4],0,0]);
+
+                    this.play(this.defender, choice);
+                    return;
+                }
+                this.readyForInput = true;
+                return;
+            }
+            // conj. challenge provisional selection
+            let foundProcess;
+            // check if selected proc is in qSet and save in variable if true
+            if (foundProcess = config.right.qSet.find((q) => { return q.id === processId; })) {
+                // save selected proc if selected for challenge
+                if (this.gameActivity.getGuiGraph().toggleSelectForChallenge(processId)) {
+                    this.selectedForChallenge.push(foundProcess);
+                    this.readyForInput = true;
+                    return;
+                }
+                // remove saved proc if deselected
+                let removeIndex = this.selectedForChallenge.indexOf(foundProcess);
+                this.selectedForChallenge.splice(removeIndex, 1);
+                this.readyForInput = true;
+                return
+            }
+            this.readyForInput = true;
+        }
+
+        private selectObservationFromGraphView(edge){
+            let config = this.getCurrentConfiguration();
+            
+            if (!config.right.qSet || config.right.qStarSet || edge.edge.source.name !== config.left.id) {
+                this.readyForInput = true;
+                return;
+            }
+
+            let choices = this.strongSpectroscopy.getPossibleMoves(new StrongSpectroscopy.Position(config.left, false, config.right.qSet));
+            let choice = choices.find((e) => { return e.to.p.id === edge.edge.target.name && e.actionName === edge.label.label; })!;
+
+            this.play(this.attacker, choice);
+        }
+
+        private confirmChallenge() {
+            if (!this.readyForInput) { return; }
+            this.readyForInput = false;
+
+            let config = this.getCurrentConfiguration();
+
+            if (!config.right.qSet || config.right.qStarSet) { 
+                this.readyForInput = true;
+                return;
+            }
+
+            let fromPos = new StrongSpectroscopy.Position(config.left, false, config.right.qSet);
+            let toPos = new StrongSpectroscopy.Position(config.left, true, StrongSpectroscopy.getSetDifference(config.right.qSet, this.selectedForChallenge), this.selectedForChallenge);
+            let choice = new StrongSpectroscopy.Move(fromPos, toPos, [0,-1,0,0,0,0]);
+
+            // cleanup
+            this.selectedForChallenge = [];
+
+            this.play(this.attacker, choice);
+        }
+
+        private previewChallengeCost() {
+            if (!this.readyForInput) { return; }
+
+            let config = this.getCurrentConfiguration();
+
+            if (!config.right.qSet || config.right.qStarSet) { return; }
+            this.gameActivity.displayEnergyGauge(StrongSpectroscopy.update(this.energyLeft, [0,-1,0,0,0,0]), true);
+        }
+
+        private previewMoveCost(processId: string) {
+            let config = this.getCurrentConfiguration();
+
+            // decisions
+            if (config.right.q){
+                // positive
+                if (config.left.id === processId) {
+                    this.gameActivity.displayEnergyGauge(StrongSpectroscopy.update(this.energyLeft, [[1,4],0,0,0,0,0]), true);
+                    return;
+                }
+                // negative
+                if (config.right.q.id === processId) {
+                    this.gameActivity.displayEnergyGauge(StrongSpectroscopy.update(this.energyLeft, [[1,5],0,0,0,0,-1]), true);
+                    return;
+                }
+                return;
+            }
+            // defender positions
+            if (config.right.qStarSet) {
+                // revivals
+                if (config.right.qStarSet.some((qStar) => { return qStar.id === processId })) {
+                    this.gameActivity.displayEnergyGauge(StrongSpectroscopy.update(this.energyLeft, [[1,3],0,0,0,0,0]), true);
+                    return;
+                }
+                // conj. answers
+                let foundProcess;
+                // check if selected proc is in qSet and save if true
+                if (foundProcess = config.right.qSet.find((q) => { return q.id === processId; })) {
+                    this.gameActivity.displayEnergyGauge(StrongSpectroscopy.update(this.energyLeft, [0,0,0,[3,4],0,0]), true);
+                }
+            }
+        }
+
+        private previewObservationCost(edge: any) {
+            if (!this.readyForInput) { return; }
+
+            let config = this.getCurrentConfiguration();
+            
+            if (!config.right.qSet || config.right.qStarSet || edge.edge.source.name !== config.left.id) { return; }
+
+            let choices = this.strongSpectroscopy.getPossibleMoves(new StrongSpectroscopy.Position(config.left, false, config.right.qSet));
+            let choice = choices.find((e) => { return e.to.p.id === edge.edge.target.name && e.actionName === edge.label.label; })!;
+
+            if (choice){
+                this.gameActivity.displayEnergyGauge(StrongSpectroscopy.update(this.energyLeft, choice.update), true);
+            }
+        }
+
         public play(player: Player, choice: StrongSpectroscopy.Move): void {
             this.gameLog.printPlay(player, choice, this);
             this.saveCurrentConfig(choice.to);
@@ -574,10 +818,18 @@ module Activity {
                 if (choice.to.isDefenderPosition || !this.cycleExists()) {
                     this.moveCount++;
                     this.gameLog.printMoveStart(this.moveCount, this.getCurrentConfiguration());
+                    if (choice.to.qSet && !choice.to.qStarSet && this.attacker instanceof Player) {
+                        $("#se-game-confirm-challenge").show();
+                    }
+                    else {
+                        $("#se-game-confirm-challenge").hide();                        
+                    }
                     if (choice.to.isDefenderPosition) {
+                        if (this.defender instanceof Player) { this.readyForInput = true; }
                         this.preparePlayer(this.defender);
                     }
                     else {
+                        if (this.attacker instanceof Player) { this.readyForInput = true; }
                         this.preparePlayer(this.attacker);
                     }
                 }
@@ -777,61 +1029,16 @@ module Activity {
     }
 
     class Human extends Player {
-
-        private $table;
-
         constructor(playType: PlayType, private gameActivity: SEGame) {
             super(playType);
-
-            this.$table = $("#se-game-transitions-table").find("tbody");
         }
 
         protected prepareAttack(choices: any, game: SEGameLogic): void {
-            this.fillTable(choices, game);
             game.getGameLog().printPrepareMove();
         }
 
         protected prepareDefend(choices: any, game: SEGameLogic): void {
-            this.fillTable(choices, game);
             game.getGameLog().printPrepareMove();
-        }
-
-        private fillTable(choices: any, game: SEGameLogic): void {
-            var actionTransition: string;
-
-            this.$table.empty();
-            choices.forEach((choice) => {
-                var row = $("<tr></tr>");
-                //row.attr("data-target-id", choice.targetProcess.id); // attach targetid on the row
-                // TODO: einheitlich machen
-                var sourcePositionLabel = choice.from.toString();
-                var $source = this.labelWithTooltip(sourcePositionLabel);
-                var $sourceTd = $("<td id='source'></td>").append($source);
-                actionTransition = choice.updateToString();
-                var $actionTd = $("<td id='update'></td>").append(actionTransition);
-                var $targetTd = $("<td id='target'></td>").append(this.labelWithTooltip(choice.to.toString()));
-
-                // onClick
-                $(row).on("click", (event) => {
-                    this.clickChoice(choice, game);
-                });
-
-                row.append($sourceTd, $actionTd, $targetTd);
-                this.$table.append(row);
-            });
-        }
-
-        private labelWithTooltip(label: string): JQuery {
-            return Tooltip.wrapProcess(label);
-        }
-
-        private clickChoice(choice: any, game: SEGameLogic): void {
-            this.$table.empty();
-            game.play(this, choice);
-        }
-
-        public abortPlay(): void {
-            this.$table.empty();
         }
     }
 
@@ -936,7 +1143,7 @@ module Activity {
         }
 
         public printPrepareMove() {
-            this.println("Pick a move from the table.", "<p class='se-game-prompt'>");
+            this.println("Pick a move from the graph.", "<p class='se-game-prompt'>");
         }
 
         private printConfiguration(configuration: any): void {
