@@ -230,6 +230,7 @@ module Activity {
             var processes = this.graph.getNamedProcesses().reverse();
             var $lists = $("#firstProcess").add($("#secondProcess")).add($("#hmlProcess")).empty();
             $("#relation-radio").prop("checked", true);
+            $(".relation-type").show();
             $("#spectroscopy-radio").prop("checked", false);
             $("#hml-radio").prop("checked", false);
 
