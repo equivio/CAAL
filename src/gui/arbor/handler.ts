@@ -14,6 +14,8 @@ class Handler {
     public onEdgeClick : Function = null;
     public onHover : Function = null;
     public onHoverOut : Function = null;
+    public onEdgeHover : Function = null;
+    public onEdgeHoverOut : Function = null;
     private isDragging : boolean = false;
     private mouseDownPos : Point;
     public clickDistance = 50;
@@ -93,14 +95,23 @@ class Handler {
             }
         }
 
-        this.hoverEdge = null;
+        if (this.hoverEdge &&
+            !(s.x >= this.hoverEdge.label.x - this.hoverEdge.label.width/2 && s.x <= this.hoverEdge.label.x + this.hoverEdge.label.width/2 && s.y >= this.hoverEdge.label.y - 20 && s.y <= this.hoverEdge.label.y)) {
+                if (this.onEdgeHoverOut) {
+                    this.onEdgeHoverOut(this.hoverEdge);
+                    this.hoverEdge = null;
+                }
+            }
+
         if (this.hoverNode === null) {
             let canvasPos = s;
             this.renderer.particleSystem.eachEdge( (e: Edge, p1: Point, p2: Point) => {
                 for (let d of e.data.datas) {
-                    if (canvasPos.x >= d.x - d.width && canvasPos.x <= d.x && canvasPos.y >= d.y - 20 && canvasPos.y <= d.y) {
-                        console.log("Hover!! " + d.label);
+                    if (canvasPos.x >= d.x - d.width/2 && canvasPos.x <= d.x + d.width/2 && canvasPos.y >= d.y - 20 && canvasPos.y <= d.y) {
                         this.hoverEdge = { edge: e, label: d };
+                        if (this.onEdgeHover){
+                            this.onEdgeHover(this.hoverEdge);
+                        }
                     }
                 }
             });
@@ -140,7 +151,6 @@ class Handler {
         
         if (this.selectedEdge && !this.isDragging && this.onEdgeClick) {
             this.onEdgeClick(this.selectedEdge);
-            console.log(this.selectedEdge.label);
         }
 
         this.selectedEdge = null;

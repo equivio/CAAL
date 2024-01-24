@@ -263,6 +263,22 @@ module GUI {
             this.handler.onHoverOut = null;
         }
 
+        public setEdgeHoverOnListener(f : (edge) => void ) : void {
+            this.handler.onEdgeHover = f;
+        }
+
+        public clearEdgeHoverOnListener() : void {
+            this.handler.onEdgeHover = null;
+        }
+
+        public setEdgeHoverOutListener(f : (edge) => void ) : void {
+            this.handler.onEdgeHoverOut = f;
+        }
+
+        public clearEdgeHoverOutListener() : void {
+            this.handler.onEdgeHoverOut = null;
+        }
+
         public clearAll() : void {
             this.sys.prune((node, from, to) => true);
         }

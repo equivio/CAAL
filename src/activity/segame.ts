@@ -150,8 +150,11 @@ module Activity {
             this.fullscreen.onHide();
 
             this.guiGraph.clearOnSelectListener();
+            this.guiGraph.clearOnEdgeSelectListener();
             this.guiGraph.clearHoverOnListener();
             this.guiGraph.clearHoverOutListener();
+            this.guiGraph.clearEdgeHoverOnListener();
+            this.guiGraph.clearEdgeHoverOutListener();
 
             this.guiGraph.unbindCanvasEvents();
 
@@ -561,6 +564,12 @@ module Activity {
                 this.selectMoveFromGraphView(processId);
             });
 
+            this.gameActivity.getGuiGraph().setOnEdgeSelectListener((edge) => {
+                if (!this.readyForInput) { return; }
+                this.readyForInput = false;
+                this.selectObservationFromGraphView(edge);
+            });
+
             this.gameActivity.getGuiGraph().setHoverOnListener((processId) => {
                 // keep previous functionality
                 this.gameActivity.timeout = setTimeout(() => {
@@ -584,6 +593,10 @@ module Activity {
                 $("#se-game-canvas-tooltip-left").tooltip("destroy");
                 this.gameActivity.displayEnergyGauge(this.energyLeft, false);
             });
+
+            this.gameActivity.getGuiGraph().setEdgeHoverOnListener((edge) => this.previewObservationCost(edge));
+
+            this.gameActivity.getGuiGraph().setEdgeHoverOutListener(() => this.gameActivity.displayEnergyGauge(this.energyLeft, false))
 
             this.currentWinner = this.getCurrentWinner();
             this.gameLog.printIntro(this.currentWinner, this.attacker);
@@ -639,8 +652,7 @@ module Activity {
                     let fromPos = new StrongSpectroscopy.Position(config.left, false, undefined, undefined, config.right.q);
                     let toPos = new StrongSpectroscopy.Position(config.left, false, [config.right.q]);
                     let choice = new StrongSpectroscopy.Move(fromPos, toPos, [[1,4],0,0,0,0,0]);
-                    // TODO: remove if table is removed
-                    $("#se-game-transitions-table").find("tbody").empty();
+                    
                     this.play(this.attacker, choice);
                     return;
                 }
@@ -649,8 +661,7 @@ module Activity {
                     let fromPos = new StrongSpectroscopy.Position(config.left, false, undefined, undefined, config.right.q);
                     let toPos = new StrongSpectroscopy.Position(config.right.q, false, [config.left]);
                     let choice = new StrongSpectroscopy.Move(fromPos, toPos, [[1,5],0,0,0,0,-1]);
-                    // TODO: remove if table is removed
-                    $("#se-game-transitions-table").find("tbody").empty();
+                    
                     this.play(this.attacker, choice);
                     return;
                 }
@@ -664,8 +675,7 @@ module Activity {
                     let fromPos = new StrongSpectroscopy.Position(config.left, true, config.right.qSet, config.right.qStarSet);
                     let toPos = new StrongSpectroscopy.Position(config.left, false, config.right.qStarSet);
                     let choice = new StrongSpectroscopy.Move(fromPos, toPos, [[1,3],0,0,0,0,0]);
-                    // TODO: remove if table is removed
-                    $("#se-game-transitions-table").find("tbody").empty();
+                    
                     this.play(this.defender, choice);
                     return;
                 }
@@ -676,8 +686,7 @@ module Activity {
                     let fromPos = new StrongSpectroscopy.Position(config.left, true, config.right.qSet, config.right.qStarSet);
                     let toPos = new StrongSpectroscopy.Position(config.left, false, undefined, undefined, foundProcess);
                     let choice = new StrongSpectroscopy.Move(fromPos, toPos, [0,0,0,[3,4],0,0]);
-                    // TODO: remove if table is removed
-                    $("#se-game-transitions-table").find("tbody").empty();
+
                     this.play(this.defender, choice);
                     return;
                 }
@@ -703,13 +712,30 @@ module Activity {
             this.readyForInput = true;
         }
 
+        private selectObservationFromGraphView(edge){
+            let config = this.getCurrentConfiguration();
+            
+            if (!config.right.qSet || config.right.qStarSet || edge.edge.source.name !== config.left.id) {
+                this.readyForInput = true;
+                return;
+            }
+
+            let choices = this.strongSpectroscopy.getPossibleMoves(new StrongSpectroscopy.Position(config.left, false, config.right.qSet));
+            let choice = choices.find((e) => { return e.to.p.id === edge.edge.target.name && e.actionName === edge.label.label; })!;
+
+            this.play(this.attacker, choice);
+        }
+
         private confirmChallenge() {
             if (!this.readyForInput) { return; }
             this.readyForInput = false;
 
             let config = this.getCurrentConfiguration();
 
-            if (!config.right.qSet || config.right.qStarSet) { return;  }
+            if (!config.right.qSet || config.right.qStarSet) { 
+                this.readyForInput = true;
+                return;
+            }
 
             let fromPos = new StrongSpectroscopy.Position(config.left, false, config.right.qSet);
             let toPos = new StrongSpectroscopy.Position(config.left, true, StrongSpectroscopy.getSetDifference(config.right.qSet, this.selectedForChallenge), this.selectedForChallenge);
@@ -718,8 +744,6 @@ module Activity {
             // cleanup
             this.selectedForChallenge = [];
 
-            // TODO: remove if table is removed
-            $("#se-game-transitions-table").find("tbody").empty();
             this.play(this.attacker, choice);
         }
 
@@ -762,6 +786,21 @@ module Activity {
                 if (foundProcess = config.right.qSet.find((q) => { return q.id === processId; })) {
                     this.gameActivity.displayEnergyGauge(StrongSpectroscopy.update(this.energyLeft, [0,0,0,[3,4],0,0]), true);
                 }
+            }
+        }
+
+        private previewObservationCost(edge: any) {
+            if (!this.readyForInput) { return; }
+
+            let config = this.getCurrentConfiguration();
+            
+            if (!config.right.qSet || config.right.qStarSet || edge.edge.source.name !== config.left.id) { return; }
+
+            let choices = this.strongSpectroscopy.getPossibleMoves(new StrongSpectroscopy.Position(config.left, false, config.right.qSet));
+            let choice = choices.find((e) => { return e.to.p.id === edge.edge.target.name && e.actionName === edge.label.label; })!;
+
+            if (choice){
+                this.gameActivity.displayEnergyGauge(StrongSpectroscopy.update(this.energyLeft, choice.update), true);
             }
         }
 
@@ -990,61 +1029,16 @@ module Activity {
     }
 
     class Human extends Player {
-
-        private $table;
-
         constructor(playType: PlayType, private gameActivity: SEGame) {
             super(playType);
-
-            this.$table = $("#se-game-transitions-table").find("tbody");
         }
 
         protected prepareAttack(choices: any, game: SEGameLogic): void {
-            this.fillTable(choices, game);
             game.getGameLog().printPrepareMove();
         }
 
         protected prepareDefend(choices: any, game: SEGameLogic): void {
-            this.fillTable(choices, game);
             game.getGameLog().printPrepareMove();
-        }
-
-        private fillTable(choices: any, game: SEGameLogic): void {
-            var actionTransition: string;
-
-            this.$table.empty();
-            choices.forEach((choice) => {
-                var row = $("<tr></tr>");
-                //row.attr("data-target-id", choice.targetProcess.id); // attach targetid on the row
-                // TODO: einheitlich machen
-                var sourcePositionLabel = choice.from.toString();
-                var $source = this.labelWithTooltip(sourcePositionLabel);
-                var $sourceTd = $("<td id='source'></td>").append($source);
-                actionTransition = choice.updateToString();
-                var $actionTd = $("<td id='update'></td>").append(actionTransition);
-                var $targetTd = $("<td id='target'></td>").append(this.labelWithTooltip(choice.to.toString()));
-
-                // onClick
-                $(row).on("click", (event) => {
-                    this.clickChoice(choice, game);
-                });
-
-                row.append($sourceTd, $actionTd, $targetTd);
-                this.$table.append(row);
-            });
-        }
-
-        private labelWithTooltip(label: string): JQuery {
-            return Tooltip.wrapProcess(label);
-        }
-
-        private clickChoice(choice: any, game: SEGameLogic): void {
-            this.$table.empty();
-            game.play(this, choice);
-        }
-
-        public abortPlay(): void {
-            this.$table.empty();
         }
     }
 
@@ -1149,7 +1143,7 @@ module Activity {
         }
 
         public printPrepareMove() {
-            this.println("Pick a move from the table.", "<p class='se-game-prompt'>");
+            this.println("Pick a move from the graph.", "<p class='se-game-prompt'>");
         }
 
         private printConfiguration(configuration: any): void {
