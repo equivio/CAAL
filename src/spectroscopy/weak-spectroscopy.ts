@@ -968,7 +968,7 @@ module WeakSpectroscopy {
                     if (energyLevels.every((energyLevel) => { return energyLevel[1] > 0 || energyLevel[2] > 0 || energyLevel[3] > 1 || energyLevel[4] > 0 || energyLevel[5] > 0 || energyLevel[7] > 1 })) {
                         equalities["sifutures"] = true;
                         equalities["sfailures"] = true;
-                        equalities["traces"] = true;
+                        equalities["traceInclusion"] = true;
                     } 
                 }
             }
