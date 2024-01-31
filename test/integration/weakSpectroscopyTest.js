@@ -107,7 +107,7 @@ QUnit.test("sbisim and etabisim", function ( assert ) {
 });
 
 // P56 P57
-QUnit.test("(1,0,0,1,0,0,1,1) and (1,0,1,0,0,0,0,1)", function ( assert ) {
+QUnit.test("(1,0,0,2,0,0,1,1) and (1,0,1,1,0,0,0,1)", function ( assert ) {
     let graph = CCSParser.parse("Div = tau.Div; P = a.(b.0 + tau.Div); Q = a.(b.0 + tau.0);", {ccs: CCS}),
         strongSuccGen = getStrictSuccGenerator(graph),
         weakSuccGen = getWeakSuccGenerator(graph),
@@ -115,7 +115,7 @@ QUnit.test("(1,0,0,1,0,0,1,1) and (1,0,1,0,0,0,0,1)", function ( assert ) {
         processQ = graph.processByName("Q");
     let game = new weakSpectroscopy.Game(strongSuccGen, weakSuccGen, processP, processQ);
     let winningBudgets = weakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
-    assert.ok(compareBudgets(winningBudgets, [[1,0,0,1,0,0,1,1], [1,0,1,0,0,0,0,1]]), "Winning Budgets should be (1,0,0,1,0,0,1,1) and (1,0,1,0,0,0,0,1), not " + winningBudgets.map(e => " (" + e.budget + ")"));
+    assert.ok(compareBudgets(winningBudgets, [[1,0,0,2,0,0,1,1], [1,0,1,1,0,0,0,1]]), "Winning Budgets should be (1,0,0,2,0,0,1,1) and (1,0,1,1,0,0,0,1), not " + winningBudgets.map(e => " (" + e.budget + ")"));
 });
 
 QUnit.test("etasim", function ( assert ) {
@@ -410,7 +410,7 @@ QUnit.test("(3,0,0,1,0,0,2,1),(3,0,1,0,0,0,2,1),(3,0,0,1,0,2,0,0)", function ( a
 });
 
 // P54 P55
-QUnit.test("(1,0,0,0,0,0,0,0)", function ( assert ) {
+QUnit.test("(1,0,0,1,0,0,0,0)", function ( assert ) {
     let graph = CCSParser.parse("P55sub = tau.P55sub + b.0; P = a.b.0; Q = a.P55sub;", {ccs: CCS}),
         strongSuccGen = getStrictSuccGenerator(graph),
         weakSuccGen = getWeakSuccGenerator(graph),
@@ -418,7 +418,7 @@ QUnit.test("(1,0,0,0,0,0,0,0)", function ( assert ) {
         processQ = graph.processByName("Q");
     let game = new weakSpectroscopy.Game(strongSuccGen, weakSuccGen, processP, processQ);
     let winningBudgets = weakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
-    assert.ok(compareBudgets(winningBudgets, [[1,0,0,0,0,0,0,0]]), "Winning Budgets should be (1,0,0,0,0,0,0,0), not " + winningBudgets.map(e => " (" + e.budget + ")"));
+    assert.ok(compareBudgets(winningBudgets, [[1,0,0,1,0,0,0,0]]), "Winning Budgets should be (1,0,0,1,0,0,0,0), not " + winningBudgets.map(e => " (" + e.budget + ")"));
 });
 
 // P55 P56
@@ -434,7 +434,7 @@ QUnit.test("(2,0,1,1,0,0,2,2),(2,0,2,0,0,0,1,2)", function ( assert ) {
 });
 
 // P57 P56
-QUnit.test("(1,0,0,0,0,0,0,0)", function ( assert ) {
+QUnit.test("(1,0,0,1,0,0,0,0)", function ( assert ) {
     let graph = CCSParser.parse("Div = tau.Div; P = a.(b.0 + tau.0); Q = a.(b.0 + tau.Div);", {ccs: CCS}),
         strongSuccGen = getStrictSuccGenerator(graph),
         weakSuccGen = getWeakSuccGenerator(graph),
@@ -442,7 +442,7 @@ QUnit.test("(1,0,0,0,0,0,0,0)", function ( assert ) {
         processQ = graph.processByName("Q");
     let game = new weakSpectroscopy.Game(strongSuccGen, weakSuccGen, processP, processQ);
     let winningBudgets = weakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
-    assert.ok(compareBudgets(winningBudgets, [[1,0,0,0,0,0,0,0]]), "Winning Budgets should be (1,0,0,0,0,0,0,0), not " + winningBudgets.map(e => " (" + e.budget + ")"));
+    assert.ok(compareBudgets(winningBudgets, [[1,0,0,1,0,0,0,0]]), "Winning Budgets should be (1,0,0,1,0,0,0,0), not " + winningBudgets.map(e => " (" + e.budget + ")"));
 });
 
 //

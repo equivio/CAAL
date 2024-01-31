@@ -42,6 +42,7 @@ module WeakSpectroscopy {
 
         public defenderStuck(moves: Move[]) {
             if (!this.isDefenderPosition) { throw new Error("Not a defender position."); }
+            if (this.isStablePosition) { return false; }
             if (!this.isBranchingPosition) { return this.qSet!.length === 0; }
             if (this.qSet!.length !== 0) { return false; }
             // check for possible moves from this position
@@ -228,20 +229,11 @@ module WeakSpectroscopy {
             while (todo.length > 0) {
                 let pos = todo.pop()!;
                 if (pos.isDefenderPosition) {
-                    // conjunctive (stable) / branching answers
-                    pos.qSet!.forEach((q) => {
-                        let newPos: Position = new Position(pos.p, false, false, false, false, undefined, q);
+                    if(pos.qSet!.length === 0 && pos.isStablePosition) {
+                        // conjunctive stable finishing
+                        let newPos: Position = new Position(pos.p, true, false, false, false, []);
                         let update = Array(8).fill(0);
-                        if (pos.isStablePosition) {
-                            update[3] = -1;
-                        } else {
-                            if (pos.isBranchingPosition) {
-                                update[1] = -1;
-                                update[2] = -1;
-                            } else {
-                                update[2] = -1;
-                            }
-                        }
+                        update[3] = -1;
                         // check if newPos was already discovered to avoid duplicates
                         if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
                             this.addPosition(newPos);
@@ -253,28 +245,55 @@ module WeakSpectroscopy {
                             if (!destPos) { throw new Error("Position does not exist despite check"); }
                             this.addMove(new Move(pos, destPos, update))
                         }
-                    })
-
-                    // branching observations
-                    if (pos.isBranchingPosition){
-                        let qSetPrime: CCS.Process[] = [];
-                        let isTau: boolean = pos.alpha!.getLabel() === "tau";
-                        pos.qSetAlpha!.forEach((proc) => {
-                            let transitions = strongSuccGen.getSuccessors(proc.id).transitionsForAction(pos.alpha!);
-                            transitions.forEach((transition) => { qSetPrime.push(transition.targetProcess); })
-                            if (isTau && !qSetPrime.some((position) => { return proc.id === position.id; })){ qSetPrime.push(proc); }
+                    }
+                    else{
+                        // conjunctive (stable) / branching answers
+                        pos.qSet!.forEach((q) => {
+                            let newPos: Position = new Position(pos.p, false, false, false, false, undefined, q);
+                            let update = Array(8).fill(0);
+                            if (pos.isStablePosition) {
+                                update[3] = -1;
+                            } else {
+                                if (pos.isBranchingPosition) {
+                                    update[1] = -1;
+                                    update[2] = -1;
+                                } else {
+                                    update[2] = -1;
+                                }
+                            }
+                            // check if newPos was already discovered to avoid duplicates
+                            if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
+                                this.addPosition(newPos);
+                                this.addMove(new Move(pos, newPos, update));
+                                todo.push(newPos);
+                            }
+                            else {
+                                let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
+                                if (!destPos) { throw new Error("Position does not exist despite check"); }
+                                this.addMove(new Move(pos, destPos, update))
+                            }
                         })
-                        let newPos: Position = new Position(pos.pPrime!, false, false, false, true, qSetPrime);
-                        // check if newPos was already discovered to avoid duplicates
-                        if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
-                            this.addPosition(newPos);
-                            this.addMove(new Move(pos, newPos, [[1,6],-1,-1,0,0,0,0,0]));
-                            todo.push(newPos);
-                        }
-                        else {
-                            let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
-                            if (!destPos) { throw new Error("Position does not exist despite check"); }
-                            this.addMove(new Move(pos, destPos, [[1,6],-1,-1,0,0,0,0,0]))
+                        // branching observations
+                        if (pos.isBranchingPosition){
+                            let qSetPrime: CCS.Process[] = [];
+                            let isTau: boolean = pos.alpha!.getLabel() === "tau";
+                            pos.qSetAlpha!.forEach((proc) => {
+                                let transitions = strongSuccGen.getSuccessors(proc.id).transitionsForAction(pos.alpha!);
+                                transitions.forEach((transition) => { qSetPrime.push(transition.targetProcess); })
+                                if (isTau && !qSetPrime.some((position) => { return proc.id === position.id; })){ qSetPrime.push(proc); }
+                            })
+                            let newPos: Position = new Position(pos.pPrime!, false, false, false, true, qSetPrime);
+                            // check if newPos was already discovered to avoid duplicates
+                            if (!this.positions.some((existingPos) => { return existingPos.isEqualTo(newPos) })) {
+                                this.addPosition(newPos);
+                                this.addMove(new Move(pos, newPos, [[1,6],-1,-1,0,0,0,0,0]));
+                                todo.push(newPos);
+                            }
+                            else {
+                                let destPos = this.positions.find((existingPos) => { return existingPos.isEqualTo(newPos) })
+                                if (!destPos) { throw new Error("Position does not exist despite check"); }
+                                this.addMove(new Move(pos, destPos, [[1,6],-1,-1,0,0,0,0,0]))
+                            }
                         }
                     }
                 }
