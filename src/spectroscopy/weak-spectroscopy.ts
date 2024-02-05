@@ -111,33 +111,6 @@ module WeakSpectroscopy {
 
             return true;
         }
-
-        // TODO: adjust for weak spectroscopy positions when needed for energy game view
-        // public toString(): string {
-        //     let str = "(" + this.p.toString() + ",";
-        //     if (this.q) {
-        //         str += this.q.toString()
-        //     }
-        //     else {
-        //         str += "{"
-        //         for (let i = 0; i < this.qSet!.length; i++) {
-        //             str += this.qSet![i].toString();
-        //             str += i < this.qSet!.length - 1 ? "," : ""
-        //         }
-        //         str += "}";
-        //         if (this.qStarSet) {
-        //             str += ",{";
-        //             for (let i = 0; i < this.qStarSet!.length; i++) {
-        //                 str += this.qStarSet![i].toString();
-        //                 str += i < this.qStarSet!.length - 1 ? "," : ""
-        //             }
-        //             str += "}";
-        //         }
-
-        //     }
-        //     str += ")"
-        //     return str;
-        // }
     }
 
 

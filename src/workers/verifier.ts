@@ -223,26 +223,39 @@ messageHandlers.isStronglyTraceEq = data => {
 };
 
 messageHandlers.isWeaklyTraceEq = data => {
-    var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
-    var defendSuccGen = attackSuccGen;
-    var leftProcess = graph.processByName(data.leftProcess);
-    var rightProcess = graph.processByName(data.rightProcess);
-    var formula;
-    
-    var leftToRightTraceInclusion = Equivalence.isTraceIncluded(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id, graph);
-    var rightToLeftTraceInclusion : any;
-    
-    if (!leftToRightTraceInclusion.isSatisfied) {
-        formula = leftToRightTraceInclusion.formula;
-    } else {
-        rightToLeftTraceInclusion = Equivalence.isTraceIncluded(attackSuccGen, defendSuccGen, rightProcess.id, leftProcess.id, graph);
-        formula = rightToLeftTraceInclusion.formula;
+    if (inputMode === "TCCS"){
+        var attackSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        var defendSuccGen = attackSuccGen;
+        var leftProcess = graph.processByName(data.leftProcess);
+        var rightProcess = graph.processByName(data.rightProcess);
+        var formula;
+        
+        var leftToRightTraceInclusion = Equivalence.isTraceIncluded(attackSuccGen, defendSuccGen, leftProcess.id, rightProcess.id, graph);
+        var rightToLeftTraceInclusion : any;
+        
+        if (!leftToRightTraceInclusion.isSatisfied) {
+            formula = leftToRightTraceInclusion.formula;
+        } else {
+            rightToLeftTraceInclusion = Equivalence.isTraceIncluded(attackSuccGen, defendSuccGen, rightProcess.id, leftProcess.id, graph);
+            formula = rightToLeftTraceInclusion.formula;
+        }
+        
+        data.result = {
+            isSatisfied: (leftToRightTraceInclusion.isSatisfied && rightToLeftTraceInclusion.isSatisfied),
+            formula: formula
+        };
     }
-    
-    data.result = {
-        isSatisfied: (leftToRightTraceInclusion.isSatisfied && rightToLeftTraceInclusion.isSatisfied),
-        formula: formula
-    };
+    else {
+        var strongSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "strong", reduce: true}),
+            weakSuccGen = CCS.getSuccGenerator(graph, {inputMode: inputMode, time: data.time, succGen: "weak", reduce: true});
+        let game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.leftProcess), graph.processByName(data.rightProcess))
+        let leftToRightWinningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let leftToRightTraceInclusion = leftToRightWinningBudgets.every((energyLevel) => { return energyLevel.budget.slice(1).some((dim) => { return dim > 0; }) });
+        game = new WeakSpectroscopy.Game(strongSuccGen, weakSuccGen, graph.processByName(data.rightProcess), graph.processByName(data.leftProcess))
+        let rightToLeftWinningBudgets = WeakSpectroscopy.computeWinningBudgets(game).entries().next().value[1];
+        let rightToLeftTraceInclusion = rightToLeftWinningBudgets.every((energyLevel) => { return energyLevel.budget.slice(1).some((dim) => { return dim > 0; }) });
+        data.result = {isSatisfied: leftToRightTraceInclusion && rightToLeftTraceInclusion, formula: !leftToRightTraceInclusion ? leftToRightWinningBudgets[0].hml.propagateNegation(false).toString() : (!rightToLeftTraceInclusion ? rightToLeftWinningBudgets[0].hml.propagateNegation(false).toString() : undefined)};
+    }
     self.postMessage(data);
 };
 
